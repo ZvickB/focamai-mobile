@@ -14,6 +14,8 @@ export default function HomeScreen({ navigation }) {
     finalResults,
     followUpNotes,
     handleFinalizeRefinement,
+    handleProbeFinalizeRequest,
+    handleProbeSimpleFinalizeRoute,
     handleRetryWithFeedback,
     handleSelectProduct,
     handleShowProductsNow,
@@ -36,6 +38,7 @@ export default function HomeScreen({ navigation }) {
     setProductQuery,
     setRetryFeedback,
     showPreviewResults,
+    submittedAmazonDomain,
     submittedQuery,
   } = useGuidedSearch();
   const progressMessage = progress.hasFinalResults
@@ -167,6 +170,18 @@ export default function HomeScreen({ navigation }) {
               </Text>
             </Pressable>
             <Pressable
+              onPress={handleProbeFinalizeRequest}
+              className="rounded-2xl bg-sky-600 px-4 py-3"
+            >
+              <Text className="text-sm font-semibold text-white">Probe finalize</Text>
+            </Pressable>
+            <Pressable
+              onPress={handleProbeSimpleFinalizeRoute}
+              className="rounded-2xl bg-cyan-700 px-4 py-3"
+            >
+              <Text className="text-sm font-semibold text-white">Probe simple route</Text>
+            </Pressable>
+            <Pressable
               onPress={handleRetryWithFeedback}
               disabled={!canRetry}
               className={`rounded-2xl px-4 py-3 ${canRetry ? "bg-amber-500" : "bg-slate-300"}`}
@@ -198,6 +213,9 @@ export default function HomeScreen({ navigation }) {
             </Text>
             <Text className="mt-1 text-sm leading-5 text-slate-700">
               Submitted query: {submittedQuery || "none"}
+            </Text>
+            <Text className="mt-1 text-sm leading-5 text-slate-700">
+              Submitted domain: {submittedAmazonDomain || "none"}
             </Text>
             <Text className="mt-1 text-sm leading-5 text-slate-700">
               Discovery token: {discoveryToken ? "present" : "missing"}

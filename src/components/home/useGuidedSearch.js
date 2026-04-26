@@ -24,6 +24,7 @@ const FINALIZE_REQUEST_MODE_DEFAULT = "guided_finalize";
 const FINALIZE_REQUEST_MODE_EMPTY_NOTES = "guided_empty_notes";
 const FINALIZE_REQUEST_MODE_REFINED = "guided_refined";
 const FINALIZE_REQUEST_MODE_RETRY = "guided_retry";
+const DEFAULT_AMAZON_DOMAIN = "amazon.com";
 
 function nowMs() {
   return Date.now();
@@ -89,6 +90,22 @@ function sanitizeCandidatePool(pool) {
     ...pool,
     candidates: safeCandidates,
   };
+}
+
+function appendAmazonDomain(searchParams, amazonDomain) {
+  if (amazonDomain) {
+    searchParams.set("amazonDomain", amazonDomain);
+  }
+}
+
+function resolveSubmittedAmazonDomain(payload, fallbackAmazonDomain = "") {
+  return (
+    payload?.amazonDomain ||
+    payload?.candidatePool?.amazonDomain ||
+    payload?.candidatePool?.marketplace ||
+    fallbackAmazonDomain ||
+    DEFAULT_AMAZON_DOMAIN
+  );
 }
 
 function normalizeResultItem(item) {
@@ -179,29 +196,205 @@ async function readJsonResponse(response, requestStartedAt) {
   };
 }
 
-async function fetchDiscoveryResults(query) {
+async function fetchDiscoveryResults(query, { signal } = {}) {
   const searchParams = new URLSearchParams({ query });
   const requestStartedAt = nowMs();
-  const response = await fetch(buildApiUrl(`${SEARCH_API_PATHS.rainforestDiscover}?${searchParams.toString()}`));
+  const response = await fetch(buildApiUrl(`${SEARCH_API_PATHS.rainforestDiscover}?${searchParams.toString()}`), {
+    signal,
+  });
   return readJsonResponse(response, requestStartedAt);
 }
 
-async function fetchRefinementPrompt(query) {
+async function fetchRefinementPrompt(query, { signal } = {}) {
   const searchParams = new URLSearchParams({ query });
   const requestStartedAt = nowMs();
-  const response = await fetch(buildApiUrl(`${SEARCH_API_PATHS.refine}?${searchParams.toString()}`));
+  const response = await fetch(buildApiUrl(`${SEARCH_API_PATHS.refine}?${searchParams.toString()}`), {
+    signal,
+  });
   return readJsonResponse(response, requestStartedAt);
 }
 
-async function fetchFramingFields(query) {
+async function fetchFramingFields(query, { signal } = {}) {
   const searchParams = new URLSearchParams({ query });
   const requestStartedAt = nowMs();
-  const response = await fetch(buildApiUrl(`${SEARCH_API_PATHS.framingFields}?${searchParams.toString()}`));
+  const response = await fetch(buildApiUrl(`${SEARCH_API_PATHS.framingFields}?${searchParams.toString()}`), {
+    signal,
+  });
   return readJsonResponse(response, requestStartedAt);
+}
+
+async function probeFinalizeRequest({
+  query,
+  amazonDomain,
+  discoveryToken,
+  followUpNotes,
+  rejectionFeedback,
+  retryCount,
+  excludedCandidateIds,
+  requestMode,
+}) {
+  console.log("[mobile-guided-search] finalize probe sent", {
+    hasDiscoveryToken: Boolean(discoveryToken),
+    amazonDomain,
+    query,
+    requestMode,
+    retryCount,
+  });
+
+  const response = await fetch(buildApiUrl(SEARCH_API_PATHS.finalize), {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      query,
+      amazonDomain,
+      discoveryToken,
+      followUpNotes,
+      rejectionFeedback,
+      retryCount,
+      excludedCandidateIds,
+      requestMode,
+    }),
+  });
+
+  const rawBody = await response.text();
+
+  console.log("[mobile-guided-search] finalize probe response", {
+    ok: response.ok,
+    status: response.status,
+    requestId: response.headers?.get?.("x-request-id") || "",
+    bodyPreview: rawBody.trim().slice(0, 400),
+  });
+
+  return {
+    ok: response.ok,
+    status: response.status,
+    bodyPreview: rawBody.trim().slice(0, 400),
+  };
+}
+
+async function probeSimpleFinalizeRoute({
+  query,
+  amazonDomain,
+  discoveryToken,
+  requestMode,
+}) {
+  console.log("[mobile-guided-search] simple finalize probe sent", {
+    hasDiscoveryToken: Boolean(discoveryToken),
+    amazonDomain,
+    query,
+    requestMode,
+  });
+
+  const response = await fetch(buildApiUrl("/api/search/finalize-probe"), {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      query,
+      amazonDomain,
+      discoveryToken,
+      requestMode,
+    }),
+  });
+
+  const rawBody = await response.text();
+
+  console.log("[mobile-guided-search] simple finalize probe response", {
+    ok: response.ok,
+    status: response.status,
+    requestId: response.headers?.get?.("x-request-id") || "",
+    bodyPreview: rawBody.trim().slice(0, 400),
+  });
+
+  return {
+    ok: response.ok,
+    status: response.status,
+    bodyPreview: rawBody.trim().slice(0, 400),
+  };
+}
+
+function createFinalizeAbortState(externalSignal) {
+  const timeoutController = new AbortController();
+  const timeoutId = setTimeout(() => {
+    timeoutController.abort();
+  }, FINALIZE_REQUEST_TIMEOUT_MS);
+
+  if (typeof AbortSignal !== "undefined" && typeof AbortSignal.any === "function") {
+    return {
+      signal: externalSignal
+        ? AbortSignal.any([externalSignal, timeoutController.signal])
+        : timeoutController.signal,
+      cleanup() {
+        clearTimeout(timeoutId);
+      },
+      wasTimedOut() {
+        return timeoutController.signal.aborted && !externalSignal?.aborted;
+      },
+      wasCanceled() {
+        return Boolean(externalSignal?.aborted);
+      },
+    };
+  }
+
+  const requestController = new AbortController();
+  const abortFromExternalSignal = () => {
+    requestController.abort();
+  };
+  const canListenToExternalAbort =
+    externalSignal &&
+    typeof externalSignal.addEventListener === "function" &&
+    typeof externalSignal.removeEventListener === "function";
+
+  if (externalSignal?.aborted) {
+    requestController.abort();
+  } else if (canListenToExternalAbort) {
+    externalSignal.addEventListener("abort", abortFromExternalSignal, { once: true });
+  }
+
+  const abortFromTimeout = () => {
+    requestController.abort();
+  };
+
+  if (timeoutController.signal.aborted) {
+    requestController.abort();
+  } else if (
+    typeof timeoutController.signal.addEventListener === "function" &&
+    typeof timeoutController.signal.removeEventListener === "function"
+  ) {
+    timeoutController.signal.addEventListener("abort", abortFromTimeout, { once: true });
+  }
+
+  return {
+    signal: requestController.signal,
+    cleanup() {
+      clearTimeout(timeoutId);
+
+      if (canListenToExternalAbort) {
+        externalSignal.removeEventListener("abort", abortFromExternalSignal);
+      }
+
+      if (
+        typeof timeoutController.signal.removeEventListener === "function" &&
+        typeof timeoutController.signal.addEventListener === "function"
+      ) {
+        timeoutController.signal.removeEventListener("abort", abortFromTimeout);
+      }
+    },
+    wasTimedOut() {
+      return timeoutController.signal.aborted && !externalSignal?.aborted;
+    },
+    wasCanceled() {
+      return Boolean(externalSignal?.aborted);
+    },
+  };
 }
 
 async function finalizeGuidedSearch({
   query,
+  amazonDomain,
   discoveryToken,
   followUpNotes,
   rejectionFeedback,
@@ -211,32 +404,26 @@ async function finalizeGuidedSearch({
   signal,
 }) {
   const requestStartedAt = nowMs();
-  const requestController = new AbortController();
-  const abortFromExternalSignal = () => {
-    requestController.abort();
-  };
-
-  if (signal) {
-    if (signal.aborted) {
-      requestController.abort();
-    } else {
-      signal.addEventListener("abort", abortFromExternalSignal, { once: true });
-    }
-  }
-
-  const timeoutId = setTimeout(() => {
-    requestController.abort();
-  }, FINALIZE_REQUEST_TIMEOUT_MS);
+  const abortState = createFinalizeAbortState(signal);
 
   try {
+    console.log("[mobile-guided-search] finalize request sent", {
+      query,
+      amazonDomain,
+      hasDiscoveryToken: Boolean(discoveryToken),
+      requestMode,
+      retryCount,
+    });
+
     const response = await fetch(buildApiUrl(SEARCH_API_PATHS.finalize), {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      signal: requestController.signal,
+      signal: abortState.signal,
       body: JSON.stringify({
         query,
+        amazonDomain,
         discoveryToken,
         followUpNotes,
         rejectionFeedback,
@@ -246,28 +433,40 @@ async function finalizeGuidedSearch({
       }),
     });
 
+    console.log("[mobile-guided-search] finalize response received", {
+      ok: response.ok,
+      status: response.status,
+      requestId: response.headers?.get?.("x-request-id") || "",
+    });
+
     return readJsonResponse(response, requestStartedAt);
   } catch (error) {
-    if (error?.name === "AbortError") {
-      if (signal?.aborted) {
-        throw error;
+    console.log("[mobile-guided-search] finalize request threw", {
+      message: error instanceof Error ? error.message : String(error),
+      name: error?.name || "",
+    });
+
+    if (error?.name === "AbortError" || error?.name === "TimeoutError") {
+      if (abortState.wasTimedOut()) {
+        throw new Error("Search took too long to finalize. Try again.");
       }
 
-      throw new Error("Finalize took too long. Try again or reset the search.");
+      if (abortState.wasCanceled()) {
+        const abortError = new Error("Finalize request canceled.");
+        abortError.name = "AbortError";
+        throw abortError;
+      }
     }
 
     throw error;
   } finally {
-    clearTimeout(timeoutId);
-
-    if (signal) {
-      signal.removeEventListener("abort", abortFromExternalSignal);
-    }
+    abortState.cleanup();
   }
 }
 
-async function fetchEnrichment({ token, query }) {
+async function fetchEnrichment({ token, query, amazonDomain }) {
   const searchParams = new URLSearchParams({ token, query });
+  appendAmazonDomain(searchParams, amazonDomain);
   const requestStartedAt = nowMs();
   const response = await fetch(buildApiUrl(`${SEARCH_API_PATHS.enrichment}?${searchParams.toString()}`));
   return readJsonResponse(response, requestStartedAt);
@@ -398,6 +597,7 @@ export function useGuidedSearch() {
   const [errorMessage, setErrorMessage] = useState("");
   const [hasStartedSearch, setHasStartedSearch] = useState(false);
   const [submittedQuery, setSubmittedQuery] = useState("");
+  const [submittedAmazonDomain, setSubmittedAmazonDomain] = useState("");
   const [discoveryToken, setDiscoveryToken] = useState("");
   const [candidatePool, setCandidatePool] = useState(null);
   const [previewResults, setPreviewResults] = useState([]);
@@ -422,6 +622,7 @@ export function useGuidedSearch() {
   const [isEnrichmentReady, setIsEnrichmentReady] = useState(false);
   const activeSearchIdRef = useRef(0);
   const enrichmentPollRef = useRef({ timerId: null, searchId: 0 });
+  const initialRequestRef = useRef({ controller: null, searchId: 0 });
   const finalizeRequestRef = useRef({ requestId: 0, controller: null, searchId: 0 });
   const analyticsSearchIdRef = useRef("");
   const analyticsSessionIdRef = useRef("");
@@ -465,6 +666,19 @@ export function useGuidedSearch() {
     };
   }
 
+  function cancelActiveInitialRequest() {
+    const activeRequest = initialRequestRef.current;
+
+    if (activeRequest.controller) {
+      activeRequest.controller.abort();
+    }
+
+    initialRequestRef.current = {
+      controller: null,
+      searchId: activeRequest.searchId,
+    };
+  }
+
   function expireSearchSession(message = createExpiredSessionMessage()) {
     stopEnrichmentPolling();
     cancelActiveFinalizeRequest();
@@ -478,7 +692,7 @@ export function useGuidedSearch() {
     setErrorMessage(message);
   }
 
-  function startEnrichmentPolling({ token, query, searchId }) {
+  function startEnrichmentPolling({ token, query, searchId, amazonDomain }) {
     if (isEnrichmentPollingDisabled()) {
       return;
     }
@@ -499,7 +713,7 @@ export function useGuidedSearch() {
         }
 
         try {
-          const payload = await fetchEnrichment({ token, query });
+          const payload = await fetchEnrichment({ token, query, amazonDomain });
 
           if (enrichmentPollRef.current.searchId !== searchId) {
             return;
@@ -575,10 +789,11 @@ export function useGuidedSearch() {
 
     const token = variables.discoveryToken;
     const query = variables.query;
+    const amazonDomain = variables.amazonDomain;
     const pollSearchId = variables.searchId ?? activeSearchIdRef.current;
 
     if (!hasInlineEnrichment && token && query && finalizedResults.length > 0) {
-      startEnrichmentPolling({ token, query, searchId: pollSearchId });
+      startEnrichmentPolling({ token, query, searchId: pollSearchId, amazonDomain });
     }
 
     const searchId = analyticsSearchIdRef.current;
@@ -636,6 +851,11 @@ export function useGuidedSearch() {
     }
 
     if (error?.name === "AbortError") {
+      finalizeRequestRef.current = {
+        requestId: variables?.requestId ?? finalizeRequestRef.current.requestId,
+        controller: null,
+        searchId: variables?.searchId ?? finalizeRequestRef.current.searchId,
+      };
       return;
     }
 
@@ -690,6 +910,7 @@ export function useGuidedSearch() {
         : 0,
       requestMode: nextVariables?.requestMode || "",
       requestId: nextRequestId,
+      submittedAmazonDomain: nextVariables?.amazonDomain || "",
     });
     finalizeMutation.mutate(nextVariables);
   }
@@ -741,14 +962,17 @@ export function useGuidedSearch() {
 
   useEffect(() => () => {
     stopEnrichmentPolling();
+    cancelActiveInitialRequest();
     cancelActiveFinalizeRequest();
   }, []);
 
-  function resetGuidedState(nextSubmittedQuery) {
+  function resetGuidedState(nextSubmittedQuery, nextSubmittedAmazonDomain = "") {
     stopEnrichmentPolling();
+    cancelActiveInitialRequest();
     cancelActiveFinalizeRequest();
     setHasStartedSearch(true);
     setSubmittedQuery(nextSubmittedQuery);
+    setSubmittedAmazonDomain(nextSubmittedAmazonDomain);
     setSelectedProductState(null);
     setErrorMessage("");
     setDiscoveryToken("");
@@ -778,6 +1002,7 @@ export function useGuidedSearch() {
   function resetToNewSearch() {
     activeSearchIdRef.current += 1;
     stopEnrichmentPolling();
+    cancelActiveInitialRequest();
     cancelActiveFinalizeRequest();
     finalizeMutation.reset();
     setProductQuery("");
@@ -785,6 +1010,7 @@ export function useGuidedSearch() {
     setErrorMessage("");
     setHasStartedSearch(false);
     setSubmittedQuery("");
+    setSubmittedAmazonDomain("");
     setDiscoveryToken("");
     setCandidatePool(null);
     setPreviewResults([]);
@@ -839,6 +1065,12 @@ export function useGuidedSearch() {
     resetGuidedState(normalizedQuery);
     setIsDiscovering(true);
     setIsGeneratingPrompt(true);
+    const initialRequestController = new AbortController();
+
+    initialRequestRef.current = {
+      controller: initialRequestController,
+      searchId: nextSearchId,
+    };
 
     trackAnalytics({
       eventType: "search_run_upsert",
@@ -861,7 +1093,9 @@ export function useGuidedSearch() {
       },
     });
 
-    fetchDiscoveryResults(normalizedQuery)
+    fetchDiscoveryResults(normalizedQuery, {
+      signal: initialRequestController.signal,
+    })
       .then((payload) => {
         if (activeSearchIdRef.current !== nextSearchId) {
           return;
@@ -874,7 +1108,10 @@ export function useGuidedSearch() {
           return;
         }
 
+        const nextSubmittedAmazonDomain = resolveSubmittedAmazonDomain(payload);
+
         setDiscoveryToken(payload.discoveryToken || "");
+        setSubmittedAmazonDomain(nextSubmittedAmazonDomain);
         setCandidatePool(sanitizeCandidatePool(payload.candidatePool));
         setPreviewResults(normalizeResultList(payload.previewResults, { limit: null }));
         setRequestTiming((current) => ({
@@ -897,6 +1134,10 @@ export function useGuidedSearch() {
         });
       })
       .catch((nextError) => {
+        if (nextError?.name === "AbortError") {
+          return;
+        }
+
         if (activeSearchIdRef.current !== nextSearchId) {
           return;
         }
@@ -909,7 +1150,9 @@ export function useGuidedSearch() {
         }
       });
 
-    fetchRefinementPrompt(normalizedQuery)
+    fetchRefinementPrompt(normalizedQuery, {
+      signal: initialRequestController.signal,
+    })
       .then((payload) => {
         if (activeSearchIdRef.current !== nextSearchId) {
           return;
@@ -935,6 +1178,10 @@ export function useGuidedSearch() {
         }
       })
       .catch(() => {
+        if (initialRequestController.signal.aborted) {
+          return;
+        }
+
         if (activeSearchIdRef.current === nextSearchId) {
           setRefinementPrompt(createFallbackRefinementPrompt(normalizedQuery));
 
@@ -963,7 +1210,9 @@ export function useGuidedSearch() {
         lane: "framing_fields",
       });
 
-      fetchFramingFields(normalizedQuery)
+      fetchFramingFields(normalizedQuery, {
+        signal: initialRequestController.signal,
+      })
         .then((payload) => {
           if (activeSearchIdRef.current !== nextSearchId) {
             return;
@@ -985,6 +1234,10 @@ export function useGuidedSearch() {
           });
         })
         .catch((nextError) => {
+          if (nextError?.name === "AbortError") {
+            return;
+          }
+
           if (activeSearchIdRef.current !== nextSearchId) {
             return;
           }
@@ -1028,6 +1281,7 @@ export function useGuidedSearch() {
 
     const nextFinalizeRequest = {
       query: submittedQuery,
+      amazonDomain: submittedAmazonDomain,
       discoveryToken,
       originalCandidatePool: candidatePool,
       followUpNotes: normalizedFollowUpNotes,
@@ -1091,6 +1345,76 @@ export function useGuidedSearch() {
     }
   }
 
+  async function handleProbeFinalizeRequest() {
+    if (!candidatePool || !submittedQuery || isFinalizing) {
+      return;
+    }
+
+    if (!discoveryToken) {
+      expireSearchSession();
+      return;
+    }
+
+    try {
+      const normalizedFollowUpNotes = followUpNotes.trim();
+      const probeResult = await probeFinalizeRequest({
+        query: submittedQuery,
+        amazonDomain: submittedAmazonDomain,
+        discoveryToken,
+        followUpNotes: normalizedFollowUpNotes,
+        rejectionFeedback: "",
+        retryCount: 0,
+        excludedCandidateIds: [],
+        requestMode: normalizedFollowUpNotes
+          ? FINALIZE_REQUEST_MODE_REFINED
+          : FINALIZE_REQUEST_MODE_EMPTY_NOTES,
+      });
+
+      setErrorMessage(
+        probeResult.ok
+          ? `Probe finalize succeeded (${probeResult.status}). Check Metro logs for the response preview.`
+          : `Probe finalize failed (${probeResult.status}). Check Metro logs for the response preview.`,
+      );
+    } catch (error) {
+      console.log("[mobile-guided-search] finalize probe threw", {
+        message: error instanceof Error ? error.message : String(error),
+        name: error?.name || "",
+      });
+      setErrorMessage(
+        error instanceof Error ? `Probe finalize threw: ${error.message}` : "Probe finalize threw an unknown error.",
+      );
+    }
+  }
+
+  async function handleProbeSimpleFinalizeRoute() {
+    const nextQuery = submittedQuery || productQueryRef.current || productQuery;
+
+    try {
+      const probeResult = await probeSimpleFinalizeRoute({
+        query: nextQuery,
+        amazonDomain: submittedAmazonDomain,
+        discoveryToken,
+        requestMode: followUpNotes.trim() ? FINALIZE_REQUEST_MODE_REFINED : FINALIZE_REQUEST_MODE_EMPTY_NOTES,
+      });
+
+      setErrorMessage(
+        probeResult.ok
+          ? `Simple probe succeeded (${probeResult.status}). Check Metro logs for the response preview.`
+          : `Simple probe failed (${probeResult.status}). Check Metro logs for the response preview.`,
+      );
+    } catch (error) {
+      console.log("[mobile-guided-search] simple finalize probe threw", {
+        message: error instanceof Error ? error.message : String(error),
+        name: error?.name || "",
+      });
+      setErrorMessage(
+        error instanceof Error
+          ? `Simple probe threw: ${error.message}`
+          : "Simple probe threw an unknown error.",
+      );
+    }
+  }
+
   function handleRetryWithFeedback() {
     if (
       !candidatePool ||
@@ -1116,6 +1440,7 @@ export function useGuidedSearch() {
 
     const nextFinalizeRequest = {
       query: submittedQuery,
+      amazonDomain: submittedAmazonDomain,
       discoveryToken,
       originalCandidatePool: candidatePool,
       followUpNotes,
@@ -1210,9 +1535,12 @@ export function useGuidedSearch() {
     selectedProduct: selectedProductForDisplay,
     showFinalResultBadges,
     showPreviewResults,
+    submittedAmazonDomain,
     submittedQuery,
     beginGuidedSearch,
     handleFinalizeRefinement,
+    handleProbeFinalizeRequest,
+    handleProbeSimpleFinalizeRoute,
     handleRetryWithFeedback,
     handleShowProductsNow,
     resetToNewSearch,
