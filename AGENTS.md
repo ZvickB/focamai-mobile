@@ -7,6 +7,11 @@ Read this file first at the start of every chat in `mobile/`.
 - Mobile notes should explain how to translate the existing product into React Native without re-deciding the product every time.
 - Product thinking stays primarily in `../web/project-notes/`. Mobile notes focus on React Native migration, current mobile status, and how work should be carried out here.
 
+## Repo root
+- The mobile Git repository root is this `mobile/` directory, not the parent `focama/` directory.
+- Before running Git commands for mobile work, verify with `git rev-parse --show-toplevel`; it should return `C:/Users/zvick/Desktop/udemy/my projects/focama/mobile`.
+- The sibling `../web/` directory is a separate project/repo used as the product and implementation reference.
+
 ## First reads
 - Read `project-notes/session-handoff.md` first for the fastest mobile reset.
 - Read `project-notes/current-status.md` next for the immediate mobile snapshot.

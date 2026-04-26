@@ -14,8 +14,7 @@ function normalizeBaseUrl(value) {
 }
 
 export function getApiBaseUrl() {
-  const configuredBaseUrl =
-    Constants.expoConfig?.extra?.apiBaseUrl ?? Constants.manifest2?.extra?.expoClient?.extra?.apiBaseUrl;
+  const configuredBaseUrl = Constants.expoConfig?.extra?.apiBaseUrl;
   const normalizedBaseUrl = normalizeBaseUrl(configuredBaseUrl);
 
   if (!normalizedBaseUrl) {
