@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { startTransition, useEffect, useRef, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 
 import { useSearchProgress } from "../../contexts/SearchProgressContext";
@@ -404,7 +404,12 @@ async function finalizeGuidedSearch({
   signal,
 }) {
   const requestStartedAt = nowMs();
-  const abortState = createFinalizeAbortState(signal);
+
+  // Do NOT pass signal/AbortSignal to the native fetch — AbortSignal.any combined
+  // with React Native's New Architecture networking layer crashes Expo Go on device.
+  // The web version also passes no signal. Stale responses are ignored via requestId.
+  // Cancellation on reset/unmount is handled at the mutation layer, not the fetch layer.
+  const isCanceled = () => Boolean(signal?.aborted);
 
   try {
     console.log("[mobile-guided-search] finalize request sent", {
@@ -420,7 +425,6 @@ async function finalizeGuidedSearch({
       headers: {
         "Content-Type": "application/json",
       },
-      signal: abortState.signal,
       body: JSON.stringify({
         query,
         amazonDomain,
@@ -432,6 +436,12 @@ async function finalizeGuidedSearch({
         requestMode,
       }),
     });
+
+    if (isCanceled()) {
+      const abortError = new Error("Finalize request canceled.");
+      abortError.name = "AbortError";
+      throw abortError;
+    }
 
     console.log("[mobile-guided-search] finalize response received", {
       ok: response.ok,
@@ -446,21 +456,7 @@ async function finalizeGuidedSearch({
       name: error?.name || "",
     });
 
-    if (error?.name === "AbortError" || error?.name === "TimeoutError") {
-      if (abortState.wasTimedOut()) {
-        throw new Error("Search took too long to finalize. Try again.");
-      }
-
-      if (abortState.wasCanceled()) {
-        const abortError = new Error("Finalize request canceled.");
-        abortError.name = "AbortError";
-        throw abortError;
-      }
-    }
-
     throw error;
-  } finally {
-    abortState.cleanup();
   }
 }
 
@@ -774,18 +770,20 @@ export function useGuidedSearch() {
       searchId: variables.searchId ?? activeSearchIdRef.current,
     };
 
-    setCandidatePool(safeCandidatePool);
-    setPreviousResults(previousDisplayResults);
-    setResults(finalizedResults);
-    setRevealedBadgeResultsKey("");
-    setIsEnrichmentReady(hasInlineEnrichment);
-    setRequestTiming((current) => ({
-      ...current,
-      finalize: safePayload.timing || null,
-    }));
-    setRetryFeedback("");
-    setRetryCount(safePayload.retryCount ?? variables.retryCount ?? 0);
-    setSelectionState(safePayload.selection || null);
+    startTransition(() => {
+      setCandidatePool(safeCandidatePool);
+      setPreviousResults(previousDisplayResults);
+      setResults(finalizedResults);
+      setRevealedBadgeResultsKey("");
+      setIsEnrichmentReady(hasInlineEnrichment);
+      setRequestTiming((current) => ({
+        ...current,
+        finalize: safePayload.timing || null,
+      }));
+      setRetryFeedback("");
+      setRetryCount(safePayload.retryCount ?? variables.retryCount ?? 0);
+      setSelectionState(safePayload.selection || null);
+    });
 
     const token = variables.discoveryToken;
     const query = variables.query;
