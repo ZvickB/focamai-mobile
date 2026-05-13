@@ -2,7 +2,8 @@ import { useState } from "react";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || "https://focamai.com";
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || "";
+const PREVIEW_RESULT_LIMIT = 3;
 
 async function readDiscoveryResponse(response, requestStartedAt) {
   const rawBody = await response.text();
@@ -34,11 +35,28 @@ async function readDiscoveryResponse(response, requestStartedAt) {
   };
 }
 
+function normalizePreviewResults(results) {
+  if (!Array.isArray(results)) {
+    return [];
+  }
+
+  return results.slice(0, PREVIEW_RESULT_LIMIT).map((item, index) => ({
+    id: String(item?.id || item?.asin || `preview-${index}`),
+    price: item?.price || "Price not shown",
+    provider: item?.subtitle || item?.source || item?.provider || "Unknown source",
+    rating: item?.rating ?? null,
+    title: item?.title || "Untitled product",
+  }));
+}
+
 export default function HomeScreen({ navigation }) {
   const [productQuery, setProductQuery] = useState("");
   const [discoverySummary, setDiscoverySummary] = useState(null);
   const [errorMessage, setErrorMessage] = useState("");
   const [isDiscovering, setIsDiscovering] = useState(false);
+  const previewItems = Array.isArray(discoverySummary?.previewItems)
+    ? discoverySummary.previewItems
+    : [];
 
   async function handleDiscoverySearch() {
     const normalizedQuery = productQuery.trim();
@@ -54,6 +72,10 @@ export default function HomeScreen({ navigation }) {
     setDiscoverySummary(null);
 
     try {
+      if (!API_BASE_URL) {
+        throw new Error("Set EXPO_PUBLIC_API_BASE_URL to the backend API URL, then restart Expo.");
+      }
+
       const requestStartedAt = Date.now();
       const response = await fetch(
         `${API_BASE_URL}/api/search/rainforest-discover?query=${encodeURIComponent(normalizedQuery)}`,
@@ -68,6 +90,7 @@ export default function HomeScreen({ navigation }) {
         candidateCount: candidates.length,
         discoveryToken: payload.discoveryToken || "",
         previewCount: previewResults.length,
+        previewItems: normalizePreviewResults(previewResults),
         query: normalizedQuery,
         source: payload.source || "unknown",
         timingMs: payload.clientTimingMs,
@@ -135,7 +158,7 @@ export default function HomeScreen({ navigation }) {
               Backend wiring: discovery only
             </Text>
             <Text className="mt-1 text-sm leading-5 text-slate-700">
-              API base: {API_BASE_URL}
+              API base: {API_BASE_URL || "not set"}
             </Text>
             {errorMessage ? (
               <Text className="mt-3 text-sm leading-5 text-red-600">{errorMessage}</Text>
@@ -160,6 +183,24 @@ export default function HomeScreen({ navigation }) {
                 <Text className="mt-1 text-sm leading-5 text-slate-700">
                   Token: {discoverySummary.discoveryToken ? "received" : "missing"}
                 </Text>
+                {previewItems.length > 0 ? (
+                  <View className="mt-3">
+                    <Text className="text-sm font-medium text-slate-800">Tiny preview</Text>
+                    {previewItems.map((item, index) => (
+                      <View key={item.id} className="mt-2 rounded-xl border border-line bg-white px-3 py-3">
+                        <Text className="text-sm font-semibold text-slate-900">
+                          {index + 1}. {item.title}
+                        </Text>
+                        <Text className="mt-1 text-sm leading-5 text-slate-700">
+                          {item.provider} | {item.price}
+                        </Text>
+                        <Text className="mt-1 text-sm leading-5 text-slate-700">
+                          Rating: {item.rating ?? "not shown"}
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
+                ) : null}
               </View>
             ) : null}
           </View>

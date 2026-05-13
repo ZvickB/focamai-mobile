@@ -35,6 +35,9 @@
   - About navigation button
   - small status snapshot
   - discovery response summary with candidate count, preview count, source, timing, and token status
+  - tiny preview capped at 3 normalized preview results
+- Discovery-only backend access has been verified in Expo Go against the local backend using a LAN API base URL.
+- Tiny preview rendering has been verified in Expo Go.
 - No guided search logic is active.
 - No API helper is active; the discovery request is intentionally local to `HomeScreen.jsx` for this first verified slice.
 - No analytics helper is active.
@@ -57,7 +60,9 @@
 - Do not start by copying the whole old hook back into mobile.
 
 ## Next step
-- Verify the discovery-only slice in Expo Go.
-- Use a simple query such as `travel stroller`.
-- If the app reports that the server returned HTML instead of JSON, set `EXPO_PUBLIC_API_BASE_URL` to the active Render backend URL and restart Expo with `npx expo start --clear --lan`.
-- Once discovery is proven, add a tiny capped preview from normalized safe fields before adding refinement or finalize.
+- Add refinement as its own slice.
+- Call `GET /api/search/refine` after discovery starts and render only the follow-up question/helper copy first.
+- Keep follow-up notes local and do not call finalize yet.
+- `EXPO_PUBLIC_API_BASE_URL` must point to the backend API, not the public frontend site.
+- If using the deployed backend, set `EXPO_PUBLIC_API_BASE_URL` to the active Render backend URL and restart Expo with `npx expo start --clear --lan`.
+- If using the local backend from a physical device, use the computer's LAN IP, not `localhost`, because `localhost` on the phone means the phone itself.
