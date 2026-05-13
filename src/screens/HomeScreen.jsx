@@ -95,6 +95,10 @@ function normalizeFinalResults(results) {
 
   return results.slice(0, FINAL_RESULT_LIMIT).map((item, index) => ({
     id: String(item?.id || item?.asin || `final-${index}`),
+    price: item?.price || "Price not shown",
+    provider: item?.subtitle || item?.source || item?.provider || "Unknown source",
+    rating: item?.rating ?? null,
+    reviewCount: item?.reviewCount ?? item?.reviews ?? null,
     title: item?.title || "Untitled product",
   }));
 }
@@ -356,9 +360,17 @@ export default function HomeScreen({ navigation }) {
                   Final results: {finalResults.length}
                 </Text>
                 {finalResults.map((item, index) => (
-                  <Text key={item.id} className="mt-2 text-sm leading-5 text-slate-800">
-                    {index + 1}. {item.title}
-                  </Text>
+                  <View key={item.id} className="mt-3 rounded-xl border border-line bg-mist px-3 py-3">
+                    <Text className="text-sm font-semibold text-slate-900">
+                      {index + 1}. {item.title}
+                    </Text>
+                    <Text className="mt-1 text-sm leading-5 text-slate-700">
+                      {item.provider} | {item.price}
+                    </Text>
+                    <Text className="mt-1 text-sm leading-5 text-slate-700">
+                      Rating: {item.rating ?? "not shown"} | Reviews: {item.reviewCount ?? "not shown"}
+                    </Text>
+                  </View>
                 ))}
               </View>
             ) : null}

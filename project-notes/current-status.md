@@ -22,6 +22,8 @@
 - The refinement prompt slice has also been verified in Expo Go.
 - The minimal finalize slice has also been verified in Expo Go and is ahead of the previous unstable Phase 3/debug-harness attempt.
 - The mobile app still does not run the full guided flow: no enrichment, real product cards, analytics, persistence, retry, or modal/details are active.
+- The current Home UI is a functional verification scaffold, not the intended final mobile UX.
+- Current work is proving endpoint flow and native rendering safety first; final mobile UI/UX can deliberately diverge from the web layout after the data path is stable.
 - Web/product truth still lives in `../web/project-notes/`.
 
 ## Current implementation reality
@@ -70,6 +72,7 @@
 - 6-result shortlist
 - Trusted-assistant explanation tone
 - Vendor-agnostic product shape
+- Mobile does not need to copy the web UI/UX 1:1; preserve product behavior and trust principles, then design the native experience intentionally.
 
 ## Recommended next step
 - Commit the finalize checkpoint if it has not already been committed.

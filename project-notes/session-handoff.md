@@ -20,6 +20,8 @@
 - Backend stays shared with web, and the current mobile shell has only a discovery-only backend test path.
 - Product and flow decisions remain anchored in `../web/project-notes/`.
 - Rebuild the mobile app gradually and avoid reintroducing the old all-at-once debug harness.
+- The current Home UI is only a functional verification scaffold to prove endpoints and React Native rendering safety.
+- The final mobile UI/UX can deliberately differ from the web app after the data path is proven; preserve product behavior and trust principles, not the exact web layout.
 
 ## Current mobile reality
 - Current app root runs `RootNavigator.jsx` inside `SafeAreaProvider`.
@@ -56,6 +58,8 @@
 ## Migration stance from here
 - Keep the shell simple until Expo Go launches cleanly.
 - Reintroduce behavior in thin vertical slices.
+- Treat the current UI as temporary scaffolding until the endpoint flow is verified.
+- Once the data path is stable, design the mobile-native UX intentionally instead of copying the web screens 1:1.
 - Prefer the current web backend flow when search is rebuilt:
   - discovery
   - refinement

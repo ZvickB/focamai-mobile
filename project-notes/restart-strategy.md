@@ -30,6 +30,8 @@
 - Do not copy the full web guided-search hook back into mobile in one pass.
 - Do not wire discovery, refine, finalize, enrichment, analytics, and full result rendering at the same time.
 - Do not treat a successful web flow as proof that the same data path is safe in Expo Go.
+- Treat the restart UI as endpoint/data-path verification scaffolding, not the final mobile UX direction.
+- After the endpoint flow is proven, mobile UI/UX may intentionally diverge from the web layout while preserving the product behavior and trust principles.
 - Every rebuild step needs a small on-device checkpoint before adding the next moving part.
 
 ## Rebuild order
@@ -86,4 +88,3 @@
 - Then prove normalized data is small and safe.
 - Then render a minimal UI.
 - Only then build the real experience.
-
