@@ -3,9 +3,11 @@
 ## What This Is
 React Native (Expo) port of the Focama web app. Same product: user enters a query → AI asks one follow-up question → returns 6 focused product picks with fit explanations.
 
-**The backend is not touched.** The same three API endpoints (`discover`, `refine`, `finalize`) deployed on Vercel serve both the web app and this mobile app. All work here is frontend-only.
+**The backend is not touched.** The same three API endpoints (`discover`, `refine`, `finalize`) deployed on Render serve both the web app and this mobile app. All work here is frontend-only. (The web frontend is deployed on Vercel — that is separate from the API backend.)
 
-Source of truth for the migration plan: `migration-roadmap.md` in this directory.
+Current branch reality: `restart/mobile-clean-slate` is intentionally rolled back to a basic Expo shell. Read `project-notes/restart-strategy.md` before rebuilding search behavior.
+
+Source of truth for the broad migration plan: `migration-roadmap.md` in this directory. Treat it as a reference, not permission to copy the old Phase 3 search hook back in one pass.
 
 ## Claude vs Codex — When to Use Which
 **Use Claude Code (this tool) when:**
@@ -38,39 +40,31 @@ Non-negotiable. Same rules as the web app.
 npx expo start              # Start Metro bundler (scan QR with Expo Go)
 npx expo start --android    # Open directly in Android emulator
 npx expo start --ios        # Open directly in iOS simulator (Mac only)
-eas build --platform all    # Build binaries for both platforms (Phase 10)
-eas submit                  # Submit to App Store / Play Store (Phase 10)
+# EAS build/submit comes later after app behavior is stable.
 ```
 
 ## Tech Stack
 - **Framework:** Expo (managed workflow)
 - **Navigation:** React Navigation v7
 - **Styling:** NativeWind v4 (Tailwind class syntax)
-- **Animations:** React Native Reanimated 3
-- **Icons:** lucide-react-native
-- **Storage:** @react-native-async-storage/async-storage
-- **Random IDs:** expo-crypto
-- **External links:** expo-linking
-- **Env vars:** expo-constants + app.config.js
-- **Data fetching:** TanStack Query (same as web)
+- **Animations:** React Native Reanimated
+- **Currently removed during clean-slate reset:** TanStack Query, AsyncStorage, Expo Constants, Expo Crypto, Expo Linking, Expo Dev Client, lucide-react-native
+- **Re-add later only when the rebuild slice needs them.**
 
 ## Key Directories
 ```
 src/screens/            Screen-level components (one per route)
-src/components/         Shared UI components
-src/components/home/    Ported logic: useGuidedSearch, resultPresentation, HomeShared
 src/navigation/         RootNavigator and stack config
-src/contexts/           SearchProgressContext
-src/lib/                analytics.js, utils
-src/shared/             validateSearchInput (copied from web)
-src/assets/             Images, fonts
+assets/                 App icons and splash assets
+project-notes/          Current mobile status and restart strategy
 ```
 
 ## Migration Convention
 - **Read from `../web/src/`**, write to `./src/`
 - One phase at a time — don't start the next phase until the current checkpoint passes
 - Test on a real device or emulator before calling a phase done — not just "it compiles"
-- The roadmap (`migration-roadmap.md`) is the source of truth for phase order and task lists
+- Use `project-notes/restart-strategy.md` for the current rebuild discipline: one small verified slice at a time.
+- Do not copy the whole old guided-search hook back into mobile.
 
 ## RN Gotchas — Know These Before Touching Any File
 | Web | React Native replacement |
@@ -127,4 +121,5 @@ When starting a new session:
 1. `AGENTS.md` — mobile front door and source-of-truth map
 2. `project-notes/session-handoff.md` — what phase we're on and what's left
 3. `project-notes/current-status.md` — immediate snapshot
-4. `migration-roadmap.md` — current phase task list and checkpoint
+4. `project-notes/restart-strategy.md` — why the reset happened and how to rebuild safely
+5. `migration-roadmap.md` — broad phase reference, not a copy-wholesale instruction

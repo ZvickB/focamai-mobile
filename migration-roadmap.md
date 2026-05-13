@@ -5,7 +5,9 @@
 This document is the working plan for porting the Focama web app (`../web`) to React Native using Expo.
 Read it in order. Each phase has a clear goal, a file-by-file task list, and callouts for the hard parts.
 
-**Backend stays unchanged.** The same three API endpoints (`discover`, `refine`, `finalize`) serve both apps.
+**Current restart note:** on branch `restart/mobile-clean-slate`, this roadmap is a broad reference, not the active step-by-step instruction for rebuilding search. Read `project-notes/restart-strategy.md` first. The earlier attempt tried to port too much of Phase 3 at once; future work should rebuild one verified slice at a time.
+
+**Backend stays unchanged.** The staged search endpoints serve both apps when mobile reconnects to search.
 All migration work is frontend-only.
 
 ---
@@ -147,7 +149,9 @@ web/src/                                    mobile/src/
 
 **Goal:** `useGuidedSearch` runs in the mobile app and can make real API calls.
 
-This is the most important phase. Get the hook working before touching any UI.
+This phase is intentionally superseded by `project-notes/restart-strategy.md` for the clean-slate restart. Do not copy the full web hook into mobile in one pass. Rebuild discovery, refinement, finalize, enrichment, analytics, and rendering as separate verified slices.
+
+The older checklist below is kept as reference for dependencies and RN replacements, not as the current execution plan.
 
 ### Tasks
 

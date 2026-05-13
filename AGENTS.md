@@ -15,6 +15,7 @@ Read this file first at the start of every chat in `mobile/`.
 ## First reads
 - Read `project-notes/session-handoff.md` first for the fastest mobile reset.
 - Read `project-notes/current-status.md` next for the immediate mobile snapshot.
+- Read `project-notes/restart-strategy.md` before rebuilding search behavior on the clean-slate branch.
 - Read `migration-roadmap.md` for the actual phase-by-phase migration plan and file mapping.
 - Read `CLAUDE.md` for mobile stack decisions, run commands, and React Native gotchas.
 - Read `../web/project-notes/app_flow.md` for the canonical product behavior that mobile is translating.
@@ -25,6 +26,7 @@ Read this file first at the start of every chat in `mobile/`.
 - `migration-roadmap.md`: canonical migration phases, file mapping, and checkpoints.
 - `project-notes/current-status.md`: short mobile snapshot and current phase reality.
 - `project-notes/session-handoff.md`: fastest startup reset for a new mobile chat.
+- `project-notes/restart-strategy.md`: current clean-slate rebuild discipline and why the earlier Phase 3 port was removed.
 - `CLAUDE.md`: mobile stack choices, run commands, and practical RN replacements.
 - `../web/project-notes/app_flow.md`: current product behavior.
 - `../web/project-notes/current-status.md`: current web/backend reality.
@@ -60,10 +62,7 @@ Read this file first at the start of every chat in `mobile/`.
 - Reanimated replaces web motion patterns where animation is needed.
 - AsyncStorage replaces `localStorage`; treat persistence as async.
 - `scrollIntoView`, DOM layout assumptions, hover states, and direct `window` access must be rethought rather than copied.
-- Prefer direct ports for pure logic modules first:
-  - `useGuidedSearch`
-  - `resultPresentation`
-  - analytics/state helpers that are not DOM-bound
+- On the clean-slate restart branch, do not directly port the whole guided-search logic layer first. Rebuild search in small verified slices per `project-notes/restart-strategy.md`.
 - Treat screen composition, layout, keyboard handling, safe areas, modal/sheet behavior, and navigation as native-first work.
 
 ## Notes update rules

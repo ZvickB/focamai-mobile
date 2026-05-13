@@ -26,8 +26,5 @@ export default {
       bundler: "metro",
       favicon: "./assets/favicon.png",
     },
-    extra: {
-      apiBaseUrl: process.env.API_BASE_URL || "https://focamai.com",
-    },
   },
 };

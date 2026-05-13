@@ -5,53 +5,66 @@
 - Keep this focused on what is true now and where to read details.
 
 ## Current state
-- The mobile app now has a real Expo scaffold inside `mobile/`.
-- The migration target is the existing Focama web app in `../web`.
-- The backend is intentionally shared with web and should remain unchanged during normal mobile migration work.
-- The roadmap already defines the target stack:
-  - Expo managed workflow
-  - React Navigation v7
-  - NativeWind v4
-  - Reanimated 3
-  - AsyncStorage
-  - Expo Linking
-  - Expo Constants/app config
-
-## What is already decided
-- Product behavior should be translated from the web app, not redesigned from scratch here.
-- Most product thinking should continue to live in `../web/project-notes/`.
-- Mobile notes should focus on translation, RN gotchas, and current migration phase.
-- The highest-value early ports are the pure logic/shared modules rather than the DOM-heavy UI pieces.
-
-## Current notes reality
-- `mobile/CLAUDE.md` existed and already contained useful migration guidance.
-- `mobile/AGENTS.md` now exists as the mobile front door.
-- `mobile/project-notes/` now exists so future chats have a real startup note path instead of a missing folder.
+- Branch `restart/mobile-clean-slate` is a clean restart point for the mobile app.
+- Read `project-notes/restart-strategy.md` before rebuilding search behavior; it explains what went wrong in the earlier port and the new small-slice rebuild approach.
+- The old guided-search/debug harness has been removed from the active mobile code.
+- The app is now only a basic Expo + React Native shell with:
+  - NativeWind styling
+  - React Navigation stack
+  - Home, About, Contact, Privacy, and Affiliate Disclosure screens
+  - a simple Home input with a discovery-only backend test button
+- The backend remains shared with the web app, and mobile now has a minimal discovery-only request path.
+- The mobile app still does not run the full guided flow: no refinement, finalize, enrichment, cards, analytics, or persistence are active.
+- Web/product truth still lives in `../web/project-notes/`.
 
 ## Current implementation reality
-- Stage 1 scaffold is now present with:
-  - Expo app root files in `mobile/`
-  - NativeWind config (`babel.config.js`, `metro.config.js`, `tailwind.config.js`, `global.css`)
-  - Expo app config in `app.config.js`
-  - Stage 1 runtime verification completed in Expo Go on iPad
-- Phase 2 navigation shell is now present with:
-  - `RootNavigator.jsx`
-  - stub screens for Home, About, Contact, Privacy, and Affiliate Disclosure
-  - `QueryClientProvider` and `SearchProgressProvider` wired at the app root
-- No mobile test suite is present yet.
-- The mobile roadmap is still the canonical implementation plan and should be followed one phase at a time.
+- Kept:
+  - `App.js`
+  - Expo config and assets
+  - NativeWind/Metro/Babel/Tailwind setup
+  - `src/navigation/RootNavigator.jsx`
+  - basic route screens in `src/screens/`
+- Added during the restart rebuild:
+  - `src/screens/HomeScreen.jsx` can call `GET /api/search/rainforest-discover` for one query and render only a small response summary.
+- Removed from active mobile code:
+  - guided search hook
+  - result presentation helpers
+  - search progress context
+  - API helper
+  - analytics helper
+  - copied shared search-input helper
+  - finalize/debug investigation notes
+  - EAS/dev-client setup
 
-## Carry-over from web that matters most
+## Current dependencies
+- The dependency set is intentionally small for the restart.
+- Kept core app dependencies:
+  - Expo
+  - React Navigation
+  - NativeWind
+  - React Native Reanimated
+  - Safe Area Context
+- Removed old Phase 3/debug dependencies for now:
+  - TanStack Query
+  - AsyncStorage
+  - Expo Constants
+  - Expo Crypto
+  - Expo Linking
+  - Expo Dev Client
+  - lucide-react-native
+
+## Product direction to preserve later
 - Calm, focused, mobile-first product feel
 - Search-first entry point
-- Guided flow with refine/finalize/enrichment behavior
+- Guided product flow when it is rebuilt
 - 6-result shortlist
 - Trusted-assistant explanation tone
 - Vendor-agnostic product shape
 
 ## Recommended next step
-- Verify the Phase 2 checkpoint in Expo Go:
-  - Home screen renders
-  - tapping "Go to About" opens About
-  - iOS back navigation returns to Home
-- Then begin Phase 3: port the logic layer.
+- Verify the discovery-only slice in Expo Go:
+  - enter a simple product query
+  - tap `Test discovery` or submit from the keyboard
+  - confirm the response summary shows candidate count, preview count, source, timing, and token status
+- If the request returns HTML instead of JSON, set `EXPO_PUBLIC_API_BASE_URL` to the active Render backend URL and restart Expo with `--clear`.
+- After discovery is proven on device, render a tiny capped preview from the safest fields only.

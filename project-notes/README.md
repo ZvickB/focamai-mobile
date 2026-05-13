@@ -18,10 +18,11 @@ This folder holds the mobile-specific notes for the React Native app in `mobile/
 1. `../AGENTS.md`
 2. `session-handoff.md`
 3. `current-status.md`
-4. `../migration-roadmap.md`
-5. `../CLAUDE.md`
-6. `../../web/project-notes/app_flow.md`
-7. `../../web/project-notes/doc_briefs.md`
+4. `restart-strategy.md`
+5. `../migration-roadmap.md`
+6. `../CLAUDE.md`
+7. `../../web/project-notes/app_flow.md`
+8. `../../web/project-notes/doc_briefs.md`
 
 ## Working rule
 - Most product thinking happens in `web/`.
