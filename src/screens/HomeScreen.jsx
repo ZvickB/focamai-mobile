@@ -267,7 +267,7 @@ export default function HomeScreen({ navigation }) {
               Draft query: {productQuery || "none"}
             </Text>
             <Text className="mt-1 text-sm leading-5 text-slate-700">
-              Backend wiring: discovery only
+              Backend wiring: discovery, refine, and finalize scaffold
             </Text>
             <Text className="mt-1 text-sm leading-5 text-slate-700">
               API base: {API_BASE_URL || "not set"}

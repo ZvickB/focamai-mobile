@@ -24,6 +24,7 @@
 - The mobile app still does not run the full guided flow: no enrichment, real product cards, analytics, persistence, retry, or modal/details are active.
 - The current Home UI is a functional verification scaffold, not the intended final mobile UX.
 - Current work is proving endpoint flow and native rendering safety first; final mobile UI/UX can deliberately diverge from the web layout after the data path is stable.
+- Mobile UI/UX is expected to be redesigned after endpoint flow is proven; do not treat the web UI as the target layout, only as the product behavior reference.
 - Web/product truth still lives in `../web/project-notes/`.
 
 ## Current implementation reality

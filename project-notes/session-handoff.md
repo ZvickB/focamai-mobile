@@ -22,6 +22,7 @@
 - Rebuild the mobile app gradually and avoid reintroducing the old all-at-once debug harness.
 - The current Home UI is only a functional verification scaffold to prove endpoints and React Native rendering safety.
 - The final mobile UI/UX can deliberately differ from the web app after the data path is proven; preserve product behavior and trust principles, not the exact web layout.
+- Mobile UI/UX is expected to be redesigned after endpoint flow is proven; do not treat the web UI as the target layout, only as the product behavior reference.
 
 ## Current mobile reality
 - Current app root runs `RootNavigator.jsx` inside `SafeAreaProvider`.
