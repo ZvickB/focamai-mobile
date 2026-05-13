@@ -37,9 +37,11 @@
   - discovery response summary with candidate count, preview count, source, timing, and token status
   - tiny preview capped at 3 normalized preview results
   - refinement prompt and local follow-up notes box
+  - minimal `Show focused picks` button that renders final result count/titles capped at 6
 - Discovery-only backend access has been verified in Expo Go against the local backend using a LAN API base URL.
 - Tiny preview rendering has been verified in Expo Go.
 - Refinement prompt rendering has been verified in Expo Go.
+- Minimal finalize rendering has been verified in Expo Go and is ahead of the previous unstable Phase 3/debug-harness attempt.
 - No guided search logic is active.
 - No API helper is active; the discovery request is intentionally local to `HomeScreen.jsx` for this first verified slice.
 - No analytics helper is active.
@@ -62,9 +64,9 @@
 - Do not start by copying the whole old hook back into mobile.
 
 ## Next step
-- Add finalize as its own slice.
-- Send only the minimum required payload from the verified discovery/refinement state.
-- Render only final result count and titles first, capped before richer card UI.
+- Commit the finalize checkpoint if it has not already been committed.
+- Then add lightweight final-result metadata rows.
+- Keep result count capped at 6 and do not add images, modal/details, enrichment, analytics, or retry yet.
 - `EXPO_PUBLIC_API_BASE_URL` must point to the backend API, not the public frontend site.
 - If using the deployed backend, set `EXPO_PUBLIC_API_BASE_URL` to the active Render backend URL and restart Expo with `npx expo start --clear --lan`.
 - If using the local backend from a physical device, use the computer's LAN IP, not `localhost`, because `localhost` on the phone means the phone itself.

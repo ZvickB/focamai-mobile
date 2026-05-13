@@ -3,6 +3,7 @@ import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || "";
+const FINAL_RESULT_LIMIT = 6;
 const PREVIEW_RESULT_LIMIT = 3;
 
 async function readJsonResponse(response, requestStartedAt, fallbackErrorMessage) {
@@ -51,6 +52,28 @@ async function fetchRefinementPrompt(query) {
   return readJsonResponse(response, requestStartedAt, "Refinement request failed.");
 }
 
+async function finalizeSearch({ discoveryToken, followUpNotes, query }) {
+  const requestStartedAt = Date.now();
+  const normalizedNotes = followUpNotes.trim();
+  const response = await fetch(`${API_BASE_URL}/api/search/finalize`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      discoveryToken,
+      excludedCandidateIds: [],
+      followUpNotes: normalizedNotes,
+      query,
+      rejectionFeedback: "",
+      requestMode: normalizedNotes ? "guided_refined" : "guided_empty_notes",
+      retryCount: 0,
+    }),
+  });
+
+  return readJsonResponse(response, requestStartedAt, "Finalize request failed.");
+}
+
 function normalizePreviewResults(results) {
   if (!Array.isArray(results)) {
     return [];
@@ -65,12 +88,25 @@ function normalizePreviewResults(results) {
   }));
 }
 
+function normalizeFinalResults(results) {
+  if (!Array.isArray(results)) {
+    return [];
+  }
+
+  return results.slice(0, FINAL_RESULT_LIMIT).map((item, index) => ({
+    id: String(item?.id || item?.asin || `final-${index}`),
+    title: item?.title || "Untitled product",
+  }));
+}
+
 export default function HomeScreen({ navigation }) {
   const [productQuery, setProductQuery] = useState("");
   const [discoverySummary, setDiscoverySummary] = useState(null);
   const [errorMessage, setErrorMessage] = useState("");
+  const [finalResults, setFinalResults] = useState([]);
   const [followUpNotes, setFollowUpNotes] = useState("");
   const [isDiscovering, setIsDiscovering] = useState(false);
+  const [isFinalizing, setIsFinalizing] = useState(false);
   const [isGeneratingPrompt, setIsGeneratingPrompt] = useState(false);
   const [refinementPrompt, setRefinementPrompt] = useState(null);
   const previewItems = Array.isArray(discoverySummary?.previewItems)
@@ -90,6 +126,7 @@ export default function HomeScreen({ navigation }) {
     setIsGeneratingPrompt(true);
     setErrorMessage("");
     setDiscoverySummary(null);
+    setFinalResults([]);
     setFollowUpNotes("");
     setRefinementPrompt(null);
 
@@ -144,6 +181,30 @@ export default function HomeScreen({ navigation }) {
     } finally {
       setIsDiscovering(false);
       setIsGeneratingPrompt(false);
+    }
+  }
+
+  async function handleFinalizeSearch() {
+    if (!discoverySummary?.discoveryToken || !discoverySummary?.query || isFinalizing) {
+      return;
+    }
+
+    setIsFinalizing(true);
+    setErrorMessage("");
+    setFinalResults([]);
+
+    try {
+      const payload = await finalizeSearch({
+        discoveryToken: discoverySummary.discoveryToken,
+        followUpNotes,
+        query: discoverySummary.query,
+      });
+
+      setFinalResults(normalizeFinalResults(payload.results));
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "Unable to finalize results.");
+    } finally {
+      setIsFinalizing(false);
     }
   }
 
@@ -213,6 +274,9 @@ export default function HomeScreen({ navigation }) {
             {isGeneratingPrompt ? (
               <Text className="mt-3 text-sm leading-5 text-slate-700">Generating follow-up...</Text>
             ) : null}
+            {isFinalizing ? (
+              <Text className="mt-3 text-sm leading-5 text-slate-700">Finalizing focused picks...</Text>
+            ) : null}
             {discoverySummary ? (
               <View className="mt-3 rounded-xl bg-mist px-3 py-3">
                 <Text className="text-sm font-medium text-slate-800">
@@ -273,6 +337,29 @@ export default function HomeScreen({ navigation }) {
                 <Text className="mt-2 text-sm leading-5 text-slate-600">
                   Refine timing: {refinementPrompt.timingMs}ms
                 </Text>
+                <Pressable
+                  disabled={isFinalizing || !discoverySummary?.discoveryToken}
+                  onPress={handleFinalizeSearch}
+                  className={`mt-3 rounded-2xl px-4 py-3 ${
+                    isFinalizing || !discoverySummary?.discoveryToken ? "bg-slate-300" : "bg-slate-800"
+                  }`}
+                >
+                  <Text className="text-center text-sm font-semibold text-white">
+                    {isFinalizing ? "Finalizing..." : "Show focused picks"}
+                  </Text>
+                </Pressable>
+              </View>
+            ) : null}
+            {finalResults.length > 0 ? (
+              <View className="mt-3 rounded-xl border border-line bg-white px-3 py-3">
+                <Text className="text-sm font-medium text-slate-800">
+                  Final results: {finalResults.length}
+                </Text>
+                {finalResults.map((item, index) => (
+                  <Text key={item.id} className="mt-2 text-sm leading-5 text-slate-800">
+                    {index + 1}. {item.title}
+                  </Text>
+                ))}
               </View>
             ) : null}
           </View>
