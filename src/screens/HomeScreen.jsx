@@ -5,7 +5,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || "";
 const PREVIEW_RESULT_LIMIT = 3;
 
-async function readDiscoveryResponse(response, requestStartedAt) {
+async function readJsonResponse(response, requestStartedAt, fallbackErrorMessage) {
   const rawBody = await response.text();
   const contentType = response.headers?.get?.("content-type") || "";
   let payload = {};
@@ -26,13 +26,29 @@ async function readDiscoveryResponse(response, requestStartedAt) {
   }
 
   if (!response.ok) {
-    throw new Error(payload.error || "Discovery request failed.");
+    throw new Error(payload.error || fallbackErrorMessage);
   }
 
   return {
     ...payload,
     clientTimingMs: Date.now() - requestStartedAt,
   };
+}
+
+async function fetchDiscoveryResults(query) {
+  const requestStartedAt = Date.now();
+  const response = await fetch(
+    `${API_BASE_URL}/api/search/rainforest-discover?query=${encodeURIComponent(query)}`,
+  );
+
+  return readJsonResponse(response, requestStartedAt, "Discovery request failed.");
+}
+
+async function fetchRefinementPrompt(query) {
+  const requestStartedAt = Date.now();
+  const response = await fetch(`${API_BASE_URL}/api/search/refine?query=${encodeURIComponent(query)}`);
+
+  return readJsonResponse(response, requestStartedAt, "Refinement request failed.");
 }
 
 function normalizePreviewResults(results) {
@@ -53,7 +69,10 @@ export default function HomeScreen({ navigation }) {
   const [productQuery, setProductQuery] = useState("");
   const [discoverySummary, setDiscoverySummary] = useState(null);
   const [errorMessage, setErrorMessage] = useState("");
+  const [followUpNotes, setFollowUpNotes] = useState("");
   const [isDiscovering, setIsDiscovering] = useState(false);
+  const [isGeneratingPrompt, setIsGeneratingPrompt] = useState(false);
+  const [refinementPrompt, setRefinementPrompt] = useState(null);
   const previewItems = Array.isArray(discoverySummary?.previewItems)
     ? discoverySummary.previewItems
     : [];
@@ -68,37 +87,63 @@ export default function HomeScreen({ navigation }) {
     }
 
     setIsDiscovering(true);
+    setIsGeneratingPrompt(true);
     setErrorMessage("");
     setDiscoverySummary(null);
+    setFollowUpNotes("");
+    setRefinementPrompt(null);
 
     try {
       if (!API_BASE_URL) {
         throw new Error("Set EXPO_PUBLIC_API_BASE_URL to the backend API URL, then restart Expo.");
       }
 
-      const requestStartedAt = Date.now();
-      const response = await fetch(
-        `${API_BASE_URL}/api/search/rainforest-discover?query=${encodeURIComponent(normalizedQuery)}`,
-      );
-      const payload = await readDiscoveryResponse(response, requestStartedAt);
-      const candidates = Array.isArray(payload.candidatePool?.candidates)
-        ? payload.candidatePool.candidates
+      const [discoveryResult, refinementResult] = await Promise.allSettled([
+        fetchDiscoveryResults(normalizedQuery),
+        fetchRefinementPrompt(normalizedQuery),
+      ]);
+
+      if (discoveryResult.status !== "fulfilled") {
+        throw discoveryResult.reason;
+      }
+
+      const discoveryPayload = discoveryResult.value;
+      const candidates = Array.isArray(discoveryPayload.candidatePool?.candidates)
+        ? discoveryPayload.candidatePool.candidates
         : [];
-      const previewResults = Array.isArray(payload.previewResults) ? payload.previewResults : [];
+      const previewResults = Array.isArray(discoveryPayload.previewResults)
+        ? discoveryPayload.previewResults
+        : [];
 
       setDiscoverySummary({
         candidateCount: candidates.length,
-        discoveryToken: payload.discoveryToken || "",
+        discoveryToken: discoveryPayload.discoveryToken || "",
         previewCount: previewResults.length,
         previewItems: normalizePreviewResults(previewResults),
         query: normalizedQuery,
-        source: payload.source || "unknown",
-        timingMs: payload.clientTimingMs,
+        source: discoveryPayload.source || "unknown",
+        timingMs: discoveryPayload.clientTimingMs,
       });
+
+      if (refinementResult.status === "fulfilled") {
+        const refinementPayload = refinementResult.value;
+
+        setRefinementPrompt({
+          followUpPlaceholder:
+            refinementPayload.followUpPlaceholder ||
+            "Add budget, size, must-haves, dealbreakers, or how you plan to use it.",
+          helperText: refinementPayload.helperText || "",
+          prompt: refinementPayload.prompt || "What should we optimize for?",
+          timingMs: refinementPayload.clientTimingMs,
+        });
+      } else {
+        setErrorMessage("Discovery worked, but the follow-up question did not load yet.");
+      }
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Unable to run discovery.");
     } finally {
       setIsDiscovering(false);
+      setIsGeneratingPrompt(false);
     }
   }
 
@@ -133,12 +178,14 @@ export default function HomeScreen({ navigation }) {
 
           <View className="mt-5 flex-row flex-wrap gap-3">
             <Pressable
-              disabled={isDiscovering}
+              disabled={isDiscovering || isGeneratingPrompt}
               onPress={handleDiscoverySearch}
-              className={`rounded-2xl px-4 py-3 ${isDiscovering ? "bg-slate-300" : "bg-accent"}`}
+              className={`rounded-2xl px-4 py-3 ${
+                isDiscovering || isGeneratingPrompt ? "bg-slate-300" : "bg-accent"
+              }`}
             >
               <Text className="text-sm font-semibold text-white">
-                {isDiscovering ? "Searching..." : "Test discovery"}
+                {isDiscovering || isGeneratingPrompt ? "Searching..." : "Test discovery"}
               </Text>
             </Pressable>
             <Pressable
@@ -162,6 +209,9 @@ export default function HomeScreen({ navigation }) {
             </Text>
             {errorMessage ? (
               <Text className="mt-3 text-sm leading-5 text-red-600">{errorMessage}</Text>
+            ) : null}
+            {isGeneratingPrompt ? (
+              <Text className="mt-3 text-sm leading-5 text-slate-700">Generating follow-up...</Text>
             ) : null}
             {discoverySummary ? (
               <View className="mt-3 rounded-xl bg-mist px-3 py-3">
@@ -201,6 +251,28 @@ export default function HomeScreen({ navigation }) {
                     ))}
                   </View>
                 ) : null}
+              </View>
+            ) : null}
+            {refinementPrompt ? (
+              <View className="mt-3 rounded-xl border border-line bg-white px-3 py-3">
+                <Text className="text-sm font-medium text-slate-800">Follow-up question</Text>
+                <Text className="mt-2 text-sm leading-5 text-slate-800">{refinementPrompt.prompt}</Text>
+                {refinementPrompt.helperText ? (
+                  <Text className="mt-2 text-sm leading-5 text-slate-600">
+                    {refinementPrompt.helperText}
+                  </Text>
+                ) : null}
+                <TextInput
+                  value={followUpNotes}
+                  onChangeText={setFollowUpNotes}
+                  placeholder={refinementPrompt.followUpPlaceholder}
+                  multiline
+                  textAlignVertical="top"
+                  className="mt-3 min-h-[92px] rounded-2xl border border-line bg-mist px-4 py-3 text-base text-ink"
+                />
+                <Text className="mt-2 text-sm leading-5 text-slate-600">
+                  Refine timing: {refinementPrompt.timingMs}ms
+                </Text>
               </View>
             ) : null}
           </View>
