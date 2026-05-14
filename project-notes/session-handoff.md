@@ -42,10 +42,19 @@
   - tiny preview capped at 3 normalized preview results
   - refinement prompt and local follow-up notes box
   - minimal `Show focused picks` button that renders focused-pick metadata rows capped at 6
+  - plain focused-pick detail navigation from a result row
 - Search endpoint calls, JSON/HTML response guarding, API base URL checks, and result normalization now live in `src/search/searchApi.js`.
 - The temporary search phase/state orchestration now lives in `src/search/useMobileSearchController.js`; HomeScreen mostly renders the scaffold UI around that hook.
 - The hook path was manually verified in Expo Go by the user after a local Android Metro export/bundle check.
-- The lighter Home search/refine/results scaffold has passed a local Android Metro export/bundle check, but still needs a manual Expo Go verification pass.
+- The lighter Home search/refine/results scaffold has passed a local Android Metro export/bundle check and was manually verified in Expo Go by the user.
+- The temporary preview and focused-pick row rendering helpers now live in `src/search/SearchResultRows.jsx`.
+- The plain focused-pick detail screen now lives in `src/screens/SearchResultDetailScreen.jsx` and uses only normalized finalize metadata already on device.
+- The extracted result-row module and plain focused-pick detail screen were manually verified in Expo Go by the user:
+  - search
+  - focused picks render
+  - tapping a focused-pick row opens `SearchResultDetailScreen`
+  - Back returns to Home with results still visible
+- The temporary progress/status section now lives in `src/search/SearchProgressStatus.jsx`.
 - Discovery-only backend access has been verified in Expo Go against the local backend using a LAN API base URL.
 - Tiny preview rendering has been verified in Expo Go.
 - Refinement prompt rendering has been verified in Expo Go.
@@ -77,8 +86,7 @@
 - Do not start by copying the whole old hook back into mobile.
 
 ## Next step
-- Verify the reshaped Home search/refine/results scaffold manually in Expo Go.
-- Continue building mobile search in bounded vertical slices against `src/search/useMobileSearchController.js`, likely by extracting result-row UI into a dedicated module or adding the next non-rich result detail slice.
+- Continue building mobile search in bounded vertical slices against `src/search/useMobileSearchController.js`; the next safe structure slice is probably the refine section or a tiny detail metadata helper if that screen grows.
 - Keep result count capped at 6 and do not add images, modal/details, enrichment, analytics, or retry yet.
 - `EXPO_PUBLIC_API_BASE_URL` must point to the backend API, not the public frontend site.
 - If using the deployed backend, set `EXPO_PUBLIC_API_BASE_URL` to the active Render backend URL and restart Expo with `npx expo start --clear --lan`.

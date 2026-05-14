@@ -7,6 +7,7 @@ import AffiliateDisclosureScreen from "../screens/AffiliateDisclosureScreen";
 import ContactScreen from "../screens/ContactScreen";
 import HomeScreen from "../screens/HomeScreen";
 import PrivacyScreen from "../screens/PrivacyScreen";
+import SearchResultDetailScreen from "../screens/SearchResultDetailScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -49,6 +50,11 @@ export default function RootNavigator() {
           <Stack.Screen name="About" component={AboutScreen} />
           <Stack.Screen name="Contact" component={ContactScreen} />
           <Stack.Screen name="Privacy" component={PrivacyScreen} />
+          <Stack.Screen
+            name="SearchResultDetail"
+            component={SearchResultDetailScreen}
+            options={{ title: "Focused Pick" }}
+          />
           <Stack.Screen
             name="AffiliateDisclosure"
             component={AffiliateDisclosureScreen}
