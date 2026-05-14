@@ -39,6 +39,9 @@ Thumbs.db
 .env.*
 .env*.local
 
+# local assistant settings
+.claude/settings.local.json
+
 # test / coverage
 coverage/
 
