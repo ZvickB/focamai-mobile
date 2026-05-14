@@ -42,13 +42,14 @@
   - tiny preview capped at 3 normalized preview results
   - refinement prompt and local follow-up notes box
   - minimal `Show focused picks` button that renders final result metadata rows capped at 6
+- Search endpoint calls, JSON/HTML response guarding, API base URL checks, and result normalization now live in `src/search/searchApi.js`.
 - Discovery-only backend access has been verified in Expo Go against the local backend using a LAN API base URL.
 - Tiny preview rendering has been verified in Expo Go.
 - Refinement prompt rendering has been verified in Expo Go.
 - Minimal finalize rendering has been verified in Expo Go and is ahead of the previous unstable Phase 3/debug-harness attempt.
 - Lightweight final-result metadata rows are implemented, but still need a manual Expo Go verification pass after the latest row styling change.
 - No guided search logic is active.
-- No API helper is active; the discovery request is intentionally local to `HomeScreen.jsx` for this first verified slice.
+- A thin mobile search API helper is active, but no full controller/hook is active yet.
 - No analytics helper is active.
 - No TanStack Query provider is active.
 
@@ -72,8 +73,8 @@
 - Do not start by copying the whole old hook back into mobile.
 
 ## Next step
-- Verify the lightweight final-result metadata rows in Expo Go.
-- Then extract the temporary endpoint calls into a small mobile search data/controller layer.
+- Verify the extracted search API helper path and lightweight final-result metadata rows in Expo Go.
+- Then add a tiny mobile search controller hook around `src/search/searchApi.js` if the next UI slice needs cleaner phase/state handling.
 - Keep result count capped at 6 and do not add images, modal/details, enrichment, analytics, or retry yet.
 - `EXPO_PUBLIC_API_BASE_URL` must point to the backend API, not the public frontend site.
 - If using the deployed backend, set `EXPO_PUBLIC_API_BASE_URL` to the active Render backend URL and restart Expo with `npx expo start --clear --lan`.

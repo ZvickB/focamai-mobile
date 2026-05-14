@@ -41,11 +41,11 @@
   - The same screen also calls `GET /api/search/refine` in parallel and renders the follow-up prompt plus local notes.
   - The same screen can call `POST /api/search/finalize` with minimal guided payload and render only final result count/titles capped at 6.
   - The same screen now renders lightweight final-result metadata rows with rank, title, source/provider, price, rating, and review count, still capped at 6.
+  - `src/search/searchApi.js` now owns the temporary search endpoint calls, JSON/HTML response guard, API base URL check, and preview/final result normalization.
 - Removed from active mobile code:
   - guided search hook
   - result presentation helpers
   - search progress context
-  - API helper
   - analytics helper
   - copied shared search-input helper
   - finalize/debug investigation notes
@@ -78,7 +78,8 @@
 - Mobile does not need to copy the web UI/UX 1:1; preserve product behavior and trust principles, then design the native experience intentionally.
 
 ## Recommended next step
-- Extract the temporary endpoint calls into a small mobile search data/controller layer that preserves the web request contracts without porting `useGuidedSearch` wholesale.
+- Verify the extracted search API helper path in Expo Go.
+- Then add a tiny mobile search controller hook around `src/search/searchApi.js` if the next UI slice needs cleaner phase/state handling.
 - Keep result count capped at 6 and do not add images, modal/details, enrichment, analytics, or retry yet.
 - `EXPO_PUBLIC_API_BASE_URL` must point to the backend API, not the public frontend site.
 - Do not fall back to `https://focamai.com` for mobile API requests; that returns frontend HTML for unknown API paths.

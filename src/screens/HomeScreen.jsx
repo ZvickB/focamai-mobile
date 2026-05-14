@@ -1,10 +1,16 @@
 import { useState } from "react";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import {
+  discoverProducts,
+  finalizeSearch,
+  getApiBaseUrl,
+  getRefinementPrompt,
+  normalizeFinalResults,
+  normalizePreviewResults,
+} from "../search/searchApi";
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || "";
-const FINAL_RESULT_LIMIT = 6;
-const PREVIEW_RESULT_LIMIT = 3;
+const apiBaseUrl = getApiBaseUrl();
 
 function formatRatingLabel(rating) {
   if (rating === null || rating === undefined || rating === "") {
@@ -20,103 +26,6 @@ function formatReviewCountLabel(reviewCount) {
   }
 
   return `${reviewCount} reviews`;
-}
-
-async function readJsonResponse(response, requestStartedAt, fallbackErrorMessage) {
-  const rawBody = await response.text();
-  const contentType = response.headers?.get?.("content-type") || "";
-  let payload = {};
-
-  if (rawBody) {
-    try {
-      payload = JSON.parse(rawBody);
-    } catch {
-      const bodyPreview = rawBody.trim().slice(0, 120);
-      const receivedHtml = contentType.includes("text/html") || /^<!doctype html/i.test(bodyPreview);
-
-      throw new Error(
-        receivedHtml
-          ? "The server returned HTML instead of JSON. Check EXPO_PUBLIC_API_BASE_URL."
-          : "The server returned an invalid response.",
-      );
-    }
-  }
-
-  if (!response.ok) {
-    throw new Error(payload.error || fallbackErrorMessage);
-  }
-
-  return {
-    ...payload,
-    clientTimingMs: Date.now() - requestStartedAt,
-  };
-}
-
-async function fetchDiscoveryResults(query) {
-  const requestStartedAt = Date.now();
-  const response = await fetch(
-    `${API_BASE_URL}/api/search/rainforest-discover?query=${encodeURIComponent(query)}`,
-  );
-
-  return readJsonResponse(response, requestStartedAt, "Discovery request failed.");
-}
-
-async function fetchRefinementPrompt(query) {
-  const requestStartedAt = Date.now();
-  const response = await fetch(`${API_BASE_URL}/api/search/refine?query=${encodeURIComponent(query)}`);
-
-  return readJsonResponse(response, requestStartedAt, "Refinement request failed.");
-}
-
-async function finalizeSearch({ discoveryToken, followUpNotes, query }) {
-  const requestStartedAt = Date.now();
-  const normalizedNotes = followUpNotes.trim();
-  const response = await fetch(`${API_BASE_URL}/api/search/finalize`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      discoveryToken,
-      excludedCandidateIds: [],
-      followUpNotes: normalizedNotes,
-      query,
-      rejectionFeedback: "",
-      requestMode: normalizedNotes ? "guided_refined" : "guided_empty_notes",
-      retryCount: 0,
-    }),
-  });
-
-  return readJsonResponse(response, requestStartedAt, "Finalize request failed.");
-}
-
-function normalizePreviewResults(results) {
-  if (!Array.isArray(results)) {
-    return [];
-  }
-
-  return results.slice(0, PREVIEW_RESULT_LIMIT).map((item, index) => ({
-    id: String(item?.id || item?.asin || `preview-${index}`),
-    price: item?.price || "Price not shown",
-    provider: item?.subtitle || item?.source || item?.provider || "Unknown source",
-    rating: item?.rating ?? null,
-    title: item?.title || "Untitled product",
-  }));
-}
-
-function normalizeFinalResults(results) {
-  if (!Array.isArray(results)) {
-    return [];
-  }
-
-  return results.slice(0, FINAL_RESULT_LIMIT).map((item, index) => ({
-    id: String(item?.id || item?.asin || `final-${index}`),
-    price: item?.price || "Price not shown",
-    provider: item?.subtitle || item?.source || item?.provider || "Unknown source",
-    rating: item?.rating ?? null,
-    reviewCount: item?.reviewCount ?? item?.reviews ?? null,
-    title: item?.title || "Untitled product",
-  }));
 }
 
 export default function HomeScreen({ navigation }) {
@@ -151,13 +60,9 @@ export default function HomeScreen({ navigation }) {
     setRefinementPrompt(null);
 
     try {
-      if (!API_BASE_URL) {
-        throw new Error("Set EXPO_PUBLIC_API_BASE_URL to the backend API URL, then restart Expo.");
-      }
-
       const [discoveryResult, refinementResult] = await Promise.allSettled([
-        fetchDiscoveryResults(normalizedQuery),
-        fetchRefinementPrompt(normalizedQuery),
+        discoverProducts({ query: normalizedQuery }),
+        getRefinementPrompt({ query: normalizedQuery }),
       ]);
 
       if (discoveryResult.status !== "fulfilled") {
@@ -286,7 +191,7 @@ export default function HomeScreen({ navigation }) {
               Backend wiring: discovery, refine, and finalize scaffold
             </Text>
             <Text className="mt-1 text-sm leading-5 text-slate-700">
-              API base: {API_BASE_URL || "not set"}
+              API base: {apiBaseUrl || "not set"}
             </Text>
             {errorMessage ? (
               <Text className="mt-3 text-sm leading-5 text-red-600">{errorMessage}</Text>
