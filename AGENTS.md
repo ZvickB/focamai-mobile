@@ -38,7 +38,8 @@ Read this file first at the start of every chat in `mobile/`.
 - If the mobile app intentionally diverges from the web app, call that out clearly and record it in mobile notes.
 - Keep the backend unchanged unless the user explicitly asks to work outside `mobile/`.
 - Keep changes scoped. Finish one phase or one clear migration slice before starting another.
-- Prefer copying stable logic and rewriting only the UI/platform layer that truly needs React Native primitives.
+- Prefer copying small stable pure logic and rewriting the UI/platform layer that truly needs React Native primitives.
+- Do not copy large web controllers wholesale. Use them as behavior/request references and rebuild mobile-native data/controller layers in bounded vertical slices.
 - Keep implemented behavior and planned migration work separate.
 - If a web note and the mobile roadmap conflict, treat the web note as product truth and the roadmap as the implementation plan unless the user explicitly chooses otherwise.
 
@@ -63,6 +64,7 @@ Read this file first at the start of every chat in `mobile/`.
 - AsyncStorage replaces `localStorage`; treat persistence as async.
 - `scrollIntoView`, DOM layout assumptions, hover states, and direct `window` access must be rethought rather than copied.
 - On the clean-slate restart branch, do not directly port the whole guided-search logic layer first. Rebuild search in small verified slices per `project-notes/restart-strategy.md`.
+- After the core endpoint calls are proven, move at a practical middle pace: bounded vertical slices around a thin mobile search data/controller layer, not endless tiny endpoint tests and not a naive web-hook copy.
 - Treat screen composition, layout, keyboard handling, safe areas, modal/sheet behavior, and navigation as native-first work.
 
 ## Notes update rules

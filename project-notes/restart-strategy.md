@@ -34,6 +34,20 @@
 - After the endpoint flow is proven, mobile UI/UX may intentionally diverge from the web layout while preserving the product behavior and trust principles.
 - Every rebuild step needs a small on-device checkpoint before adding the next moving part.
 
+## Middle-path strategy
+- The restart does not mean rebuilding forever in tiny endpoint-only steps.
+- Once discovery, refinement, and finalize are individually proven, move in bounded vertical slices.
+- Use the web app as the behavior contract and request-shape reference, not as code to copy wholesale.
+- Build a small mobile-native search data/controller layer around the backend phases:
+  - discovery
+  - refinement
+  - finalize
+  - enrichment polling later
+  - query-quality suggestion later
+  - retry advice later
+- Each bounded slice should include enough UI to verify the user journey on device, but should still defer unrelated layers.
+- Add lightweight mobile phase/debug events when the controller becomes non-trivial so failures identify the phase that broke instead of becoming another opaque mobile port.
+
 ## Rebuild order
 1. Verify the clean shell
    - Launch in Expo Go.
@@ -78,10 +92,36 @@
    - Marketplace preference handling
    - Deep links or external links
 
+## Recommended implementation path
+1. Prove backend endpoint flow with the temporary scaffold.
+   - Keep the UI plain.
+   - Verify request/response behavior and safe React Native rendering first.
+
+2. Extract a thin mobile search data layer from the scaffold.
+   - Move endpoint calls, response reading, shape guards, and normalization out of `HomeScreen.jsx`.
+   - Keep the data layer small and mobile-specific.
+   - Do not copy the full web guided-search hook back in one piece.
+   - Preserve the web request contracts, especially `query`, `amazonDomain`, `discoveryToken`, follow-up notes, and shortlist/result caps.
+
+3. Build native UI slices against that data layer.
+   - The native UI direction has already been thought through in `project-notes/mobile-ui-ux-direction.md`.
+   - Use that doc for the intended mobile patterns: first-run onboarding, native search/refine flow, ranked result rows, product detail stack screen, retailer-agnostic copy, and mobile-specific divergence from web.
+
+4. Wire each UI slice as it is built.
+   - Do not design the whole polished UI first and connect everything at the end.
+   - Wire search/refine, finalize, results rows, product detail, enrichment, query-quality suggestion, and retry advice one slice at a time.
+
+5. Add support layers after the core flow is stable.
+   - Persistence
+   - Analytics
+   - Saved/history/profile surfaces if the product later needs them
+   - Richer compare or marketplace preference behavior
+
 ## Checkpoint rule
 - Add only one meaningful moving part at a time.
 - Verify each step in Expo Go on the actual target device before layering on the next step.
 - If something crashes, stop at that layer and simplify the render/output until the failure point is obvious.
+- A "meaningful moving part" can be a bounded vertical slice after the core endpoints are proven; it does not have to mean one tiny endpoint forever.
 
 ## Practical debugging rule
 - First prove the request returns.

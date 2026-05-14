@@ -5,7 +5,7 @@
 This document is the working plan for porting the Focama web app (`../web`) to React Native using Expo.
 Read it in order. Each phase has a clear goal, a file-by-file task list, and callouts for the hard parts.
 
-**Current restart note:** on branch `restart/mobile-clean-slate`, this roadmap is a broad reference, not the active step-by-step instruction for rebuilding search. Read `project-notes/restart-strategy.md` first. The earlier attempt tried to port too much of Phase 3 at once; future work should rebuild one verified slice at a time.
+**Current restart note:** on branch `restart/mobile-clean-slate`, this roadmap is a broad reference, not the active step-by-step instruction for rebuilding search. Read `project-notes/restart-strategy.md` first. The earlier attempt tried to port too much of Phase 3 at once. Future work should use the web app as the behavior/request contract, then rebuild mobile through bounded vertical slices around a small mobile-native search data/controller layer.
 
 **Backend stays unchanged.** The staged search endpoints serve both apps when mobile reconnects to search.
 All migration work is frontend-only.
@@ -31,11 +31,13 @@ All migration work is frontend-only.
 ## What Ports Cleanly vs What Gets Rewritten
 
 ### Ports with minor adaptation (~same code)
-- `useGuidedSearch.js` — all state and API logic is pure JS; `fetch` works in RN
 - `resultPresentation.js` — pure transformation functions, no DOM
-- `analytics.js` — same logic; swap `localStorage` and `window` checks
 - `SearchProgressContext.jsx` — context pattern is identical
 - `validateSearchInput` (shared module) — pure JS, zero changes
+
+### Use as reference, do not copy wholesale
+- `useGuidedSearch.js` — use it to understand phase order, request shapes, stale-response rules, and debug expectations. Do not port it directly as the mobile controller.
+- `analytics.js` — keep the event intent as reference, but re-add mobile analytics only after the core flow is stable because persistence and app lifecycle differ from web.
 
 ### Gets rewritten but maps 1:1
 - Every JSX component — HTML → RN primitives (`View`, `Text`, `Pressable`, `Image`, `TextInput`, `ScrollView`)
@@ -66,7 +68,7 @@ web/src/                                    mobile/src/
   pages/AffiliateDisclosurePage    →          screens/AffiliateDisclosureScreen.jsx
   components/home/HomeExperience   →          screens/HomeScreen.jsx (merged)
   components/home/HomeShared       →          components/home/HomeShared.jsx
-  components/home/useGuidedSearch  →          components/home/useGuidedSearch.js (ported)
+  components/home/useGuidedSearch  →          mobile search data/controller layer (reference only, not copied wholesale)
   components/home/resultPresentation→         components/home/resultPresentation.js (copied)
   components/ProductCard.jsx       →          components/ProductCard.jsx (rewritten)
   components/SiteLayout.jsx        →          navigation/RootNavigator.jsx (absorbed)
@@ -145,17 +147,36 @@ web/src/                                    mobile/src/
 
 ---
 
-## Phase 3 — Port the Logic Layer
+## Phase 3 — Rebuild the Mobile Search Data Layer
 
-**Goal:** `useGuidedSearch` runs in the mobile app and can make real API calls.
+**Goal:** the mobile app has a small native search data/controller layer that can make the core staged API calls and preserve the web request contracts.
 
 This phase is intentionally superseded by `project-notes/restart-strategy.md` for the clean-slate restart. Do not copy the full web hook into mobile in one pass. Rebuild discovery, refinement, finalize, enrichment, analytics, and rendering as separate verified slices.
 
-The older checklist below is kept as reference for dependencies and RN replacements, not as the current execution plan.
+The older checklist below has been retired as an execution plan. Use it only as dependency/background context for RN replacements.
 
 ### Tasks
 
-1. Copy `web/src/lib/analytics.js` → `src/lib/analytics.js`, then adapt:
+1. Extract endpoint calls from the temporary scaffold into a small mobile data layer:
+   - `discover({ query, amazonDomain })`
+   - `refine({ query })`
+   - `finalize({ query, amazonDomain, discoveryToken, followUpNotes })`
+   - later `pollEnrichment({ token, query, amazonDomain })`
+   - later `getQueryQuality({ token, query, amazonDomain })`
+   - later `getRetryAdvice(...)`
+
+2. Keep the first controller small and mobile-specific:
+   - preserve required fields such as `query`, `amazonDomain`, and `discoveryToken`
+   - keep shortlist/results capped at 6
+   - ignore stale responses when a newer search starts
+   - expose simple phase/status state for the native UI
+   - add lightweight phase debug events once more than one async phase is active
+
+3. Copy `web/src/components/home/resultPresentation.js` only when result badges/presentation are needed.
+
+4. Copy `web/shared/search-input.js` into `src/shared/search-input.js` when the polished input flow needs shared validation.
+
+5. Add analytics only after the core flow is stable. When re-added, use the web analytics event intent as reference, but adapt storage/lifecycle for React Native:
    - Remove all `typeof window === 'undefined'` guards — RN has no `window`, always assume non-browser
    - Replace `window.localStorage.getItem/setItem` → `AsyncStorage.getItem/setItem` (make async — see note below)
    - `crypto.randomUUID()` → `Crypto.randomUUID()` from `expo-crypto`
@@ -165,27 +186,15 @@ The older checklist below is kept as reference for dependencies and RN replaceme
    **Note on async session ID:** `getOrCreateAnalyticsSessionId` becomes async because AsyncStorage is async.
    Use a module-level cache variable so it only hits storage once per app session.
 
-2. Copy `web/src/components/home/resultPresentation.js` → `src/components/home/resultPresentation.js` — **no changes needed**.
+6. Copy `web/src/contexts/SearchProgressContext.jsx` only if the mobile app actually needs the same cross-screen progress context.
 
-3. Copy `web/shared/search-input.js` → `src/shared/search-input.js` (or reference as a shared workspace dep — see Phase 9 note).
-
-4. Copy `web/src/components/home/useGuidedSearch.js` → `src/components/home/useGuidedSearch.js`, then adapt:
-   - Replace `window.setTimeout` → `setTimeout`, `window.clearTimeout` → `clearTimeout`
-   - Replace `performance.now()` → `Date.now()` (returns ms, matches usage)
-   - Remove `window.location` references (timing panel is dev-only anyway)
-   - Remove `window.__FOCAMAI_DISABLE_*__` flags — replace with `__DEV__` where appropriate
-   - API base URL: prefix all fetch paths (`/api/search/...`) with `Constants.expoConfig.extra.apiBaseUrl`
-   - The `response.headers?.get?.('server-timing')` call works — RN's fetch exposes headers
-
-5. Copy `web/src/contexts/SearchProgressContext.jsx` → `src/contexts/SearchProgressContext.jsx` — **no changes needed** (pure React context, no DOM).
-
-6. Wire `QueryClientProvider` into `RootNavigator.jsx`.
+7. Re-add TanStack Query/`QueryClientProvider` only if the mobile data layer needs it. Do not bring it back only because the web app uses it.
 
 ### Test this phase
-Write a quick test button in `HomeScreen` that calls `beginGuidedSearch` with a hardcoded query and `console.log`s the result. Confirm discovery and finalize return data before building any UI.
+Use the temporary Home scaffold to run the core journey with a hardcoded or typed query. Confirm discovery, refinement, and finalize return expected summaries before building richer UI.
 
 ### Checkpoint
-- Hook returns results on a real device/simulator with a hardcoded query.
+- Mobile data/controller layer returns capped results on a real device/simulator and the phase that failed is obvious when something breaks.
 
 ---
 
@@ -395,6 +404,8 @@ The `shared/search-input.js` module is already shared between web frontend and b
 ## Working Convention for This Migration
 
 - **Read from `../web/src/`**, write to `./src/`
+- Move in bounded vertical slices: small enough to debug, large enough to prove a real user journey.
+- Do not copy the full web `useGuidedSearch` hook into mobile. Use it as the behavior/request reference.
 - One phase at a time — don't start Phase 5 until Phase 4's checkpoint passes
 - Test on both iOS simulator and Android emulator at each checkpoint
 - When in doubt about a RN API, check Expo docs first (they document what's available in managed workflow)

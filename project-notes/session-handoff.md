@@ -20,6 +20,7 @@
 - Backend stays shared with web, and the current mobile shell has only a discovery-only backend test path.
 - Product and flow decisions remain anchored in `../web/project-notes/`.
 - Rebuild the mobile app gradually and avoid reintroducing the old all-at-once debug harness.
+- Use the happy middle from `restart-strategy.md`: after discovery/refine/finalize are proven, build bounded vertical slices around a small mobile-native search data/controller layer.
 - The current Home UI is only a functional verification scaffold to prove endpoints and React Native rendering safety.
 - The final mobile UI/UX can deliberately differ from the web app after the data path is proven; preserve product behavior and trust principles, not the exact web layout.
 - Mobile UI/UX is expected to be redesigned after endpoint flow is proven; do not treat the web UI as the target layout, only as the product behavior reference.
@@ -40,11 +41,12 @@
   - discovery response summary with candidate count, preview count, source, timing, and token status
   - tiny preview capped at 3 normalized preview results
   - refinement prompt and local follow-up notes box
-  - minimal `Show focused picks` button that renders final result count/titles capped at 6
+  - minimal `Show focused picks` button that renders final result metadata rows capped at 6
 - Discovery-only backend access has been verified in Expo Go against the local backend using a LAN API base URL.
 - Tiny preview rendering has been verified in Expo Go.
 - Refinement prompt rendering has been verified in Expo Go.
 - Minimal finalize rendering has been verified in Expo Go and is ahead of the previous unstable Phase 3/debug-harness attempt.
+- Lightweight final-result metadata rows are implemented, but still need a manual Expo Go verification pass after the latest row styling change.
 - No guided search logic is active.
 - No API helper is active; the discovery request is intentionally local to `HomeScreen.jsx` for this first verified slice.
 - No analytics helper is active.
@@ -61,6 +63,7 @@
 - Reintroduce behavior in thin vertical slices.
 - Treat the current UI as temporary scaffolding until the endpoint flow is verified.
 - Once the data path is stable, design the mobile-native UX intentionally instead of copying the web screens 1:1.
+- Preserve web backend contracts and phase order, but do not port the web `useGuidedSearch` implementation as the mobile controller.
 - Prefer the current web backend flow when search is rebuilt:
   - discovery
   - refinement
@@ -69,8 +72,8 @@
 - Do not start by copying the whole old hook back into mobile.
 
 ## Next step
-- Commit the finalize checkpoint if it has not already been committed.
-- Then add lightweight final-result metadata rows.
+- Verify the lightweight final-result metadata rows in Expo Go.
+- Then extract the temporary endpoint calls into a small mobile search data/controller layer.
 - Keep result count capped at 6 and do not add images, modal/details, enrichment, analytics, or retry yet.
 - `EXPO_PUBLIC_API_BASE_URL` must point to the backend API, not the public frontend site.
 - If using the deployed backend, set `EXPO_PUBLIC_API_BASE_URL` to the active Render backend URL and restart Expo with `npx expo start --clear --lan`.

@@ -296,7 +296,10 @@
 
 ## Near-Term Recommendation
 - Finish endpoint verification first.
-- Then build a fresh mobile search/refine/results prototype around this direction.
+- Then extract a thin mobile search data layer from the temporary scaffold.
+- Then build fresh native UI slices against that data layer.
+- This UI direction has already been thought through here; future implementation should use this doc instead of treating the mobile UX as a blank slate.
+- Wire each UI slice as it is built rather than designing the whole polished UI first and connecting everything at the end.
 - Start with no bottom tab bar.
 - Start with no user-facing history/profile/saved/compare.
 - Make the first polished UI slice:

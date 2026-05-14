@@ -6,6 +6,22 @@ const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || "";
 const FINAL_RESULT_LIMIT = 6;
 const PREVIEW_RESULT_LIMIT = 3;
 
+function formatRatingLabel(rating) {
+  if (rating === null || rating === undefined || rating === "") {
+    return "Rating not shown";
+  }
+
+  return `${rating} rating`;
+}
+
+function formatReviewCountLabel(reviewCount) {
+  if (reviewCount === null || reviewCount === undefined || reviewCount === "") {
+    return "Reviews not shown";
+  }
+
+  return `${reviewCount} reviews`;
+}
+
 async function readJsonResponse(response, requestStartedAt, fallbackErrorMessage) {
   const rawBody = await response.text();
   const contentType = response.headers?.get?.("content-type") || "";
@@ -360,16 +376,27 @@ export default function HomeScreen({ navigation }) {
                   Final results: {finalResults.length}
                 </Text>
                 {finalResults.map((item, index) => (
-                  <View key={item.id} className="mt-3 rounded-xl border border-line bg-mist px-3 py-3">
-                    <Text className="text-sm font-semibold text-slate-900">
-                      {index + 1}. {item.title}
-                    </Text>
-                    <Text className="mt-1 text-sm leading-5 text-slate-700">
-                      {item.provider} | {item.price}
-                    </Text>
-                    <Text className="mt-1 text-sm leading-5 text-slate-700">
-                      Rating: {item.rating ?? "not shown"} | Reviews: {item.reviewCount ?? "not shown"}
-                    </Text>
+                  <View key={item.id} className="mt-3 rounded-2xl border border-line bg-mist px-3 py-3">
+                    <View className="flex-row gap-3">
+                      <View className="h-8 w-8 items-center justify-center rounded-full bg-accent">
+                        <Text className="text-sm font-semibold text-white">{index + 1}</Text>
+                      </View>
+                      <View className="flex-1">
+                        <Text className="text-sm font-semibold leading-5 text-slate-900">
+                          {item.title}
+                        </Text>
+                        <Text className="mt-1 text-sm leading-5 text-slate-700">{item.provider}</Text>
+                      </View>
+                    </View>
+                    <View className="mt-3 flex-row flex-wrap gap-2">
+                      {[item.price, formatRatingLabel(item.rating), formatReviewCountLabel(item.reviewCount)].map(
+                        (label) => (
+                          <View key={label} className="rounded-full border border-line bg-white px-3 py-1">
+                            <Text className="text-xs font-medium text-slate-700">{label}</Text>
+                          </View>
+                        ),
+                      )}
+                    </View>
                   </View>
                 ))}
               </View>

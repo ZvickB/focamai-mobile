@@ -25,6 +25,7 @@
 - The current Home UI is a functional verification scaffold, not the intended final mobile UX.
 - Current work is proving endpoint flow and native rendering safety first; final mobile UI/UX can deliberately diverge from the web layout after the data path is stable.
 - Mobile UI/UX is expected to be redesigned after endpoint flow is proven; do not treat the web UI as the target layout, only as the product behavior reference.
+- The intended rebuild path is a happy middle: use web as the behavior/request contract, then build a small mobile-native search data/controller layer and bounded vertical UI slices instead of copying the full web hook or staying in tiny endpoint-test mode forever.
 - Web/product truth still lives in `../web/project-notes/`.
 
 ## Current implementation reality
@@ -39,6 +40,7 @@
   - The same screen now renders a tiny preview capped at 3 normalized items from `previewResults`.
   - The same screen also calls `GET /api/search/refine` in parallel and renders the follow-up prompt plus local notes.
   - The same screen can call `POST /api/search/finalize` with minimal guided payload and render only final result count/titles capped at 6.
+  - The same screen now renders lightweight final-result metadata rows with rank, title, source/provider, price, rating, and review count, still capped at 6.
 - Removed from active mobile code:
   - guided search hook
   - result presentation helpers
@@ -76,11 +78,8 @@
 - Mobile does not need to copy the web UI/UX 1:1; preserve product behavior and trust principles, then design the native experience intentionally.
 
 ## Recommended next step
-- Commit the finalize checkpoint if it has not already been committed.
-- Then add the next UI slice, likely lightweight final-result metadata rows:
-  - keep result count capped at 6
-  - add only safe metadata fields first, such as price/provider/rating
-  - do not add images, modal/details, enrichment, analytics, or retry yet
+- Extract the temporary endpoint calls into a small mobile search data/controller layer that preserves the web request contracts without porting `useGuidedSearch` wholesale.
+- Keep result count capped at 6 and do not add images, modal/details, enrichment, analytics, or retry yet.
 - `EXPO_PUBLIC_API_BASE_URL` must point to the backend API, not the public frontend site.
 - Do not fall back to `https://focamai.com` for mobile API requests; that returns frontend HTML for unknown API paths.
 - If using the deployed backend, set `EXPO_PUBLIC_API_BASE_URL` to the active Render backend URL and restart Expo with `--clear`.
