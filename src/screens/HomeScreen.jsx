@@ -1,14 +1,7 @@
-import { useRef, useState } from "react";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import {
-  discoverProducts,
-  finalizeSearch,
-  getApiBaseUrl,
-  getRefinementPrompt,
-  normalizeFinalResults,
-  normalizePreviewResults,
-} from "../search/searchApi";
+import { getApiBaseUrl } from "../search/searchApi";
+import { useMobileSearchController } from "../search/useMobileSearchController";
 
 const apiBaseUrl = getApiBaseUrl();
 
@@ -28,169 +21,114 @@ function formatReviewCountLabel(reviewCount) {
   return `${reviewCount} reviews`;
 }
 
+function StatusLine({ label, value }) {
+  return (
+    <View className="flex-row justify-between gap-4 border-b border-line py-2">
+      <Text className="text-sm text-slate-600">{label}</Text>
+      <Text className="shrink text-right text-sm font-medium text-slate-900">{value}</Text>
+    </View>
+  );
+}
+
+function PreviewRow({ item, index }) {
+  return (
+    <View className="border-b border-line py-3">
+      <Text className="text-sm font-semibold leading-5 text-slate-900">
+        {index + 1}. {item.title}
+      </Text>
+      <Text className="mt-1 text-sm leading-5 text-slate-700">
+        {item.provider} | {item.price}
+      </Text>
+      <Text className="mt-1 text-sm leading-5 text-slate-600">
+        Rating: {item.rating ?? "not shown"}
+      </Text>
+    </View>
+  );
+}
+
+function FinalResultRow({ item, index }) {
+  return (
+    <View className="border-b border-line py-4">
+      <View className="flex-row gap-3">
+        <View className="h-8 w-8 items-center justify-center rounded-full bg-accent">
+          <Text className="text-sm font-semibold text-white">{index + 1}</Text>
+        </View>
+        <View className="flex-1">
+          <Text className="text-sm font-semibold leading-5 text-slate-900">{item.title}</Text>
+          <Text className="mt-1 text-sm leading-5 text-slate-700">{item.provider}</Text>
+        </View>
+      </View>
+      <View className="mt-3 flex-row flex-wrap gap-2">
+        {[item.price, formatRatingLabel(item.rating), formatReviewCountLabel(item.reviewCount)].map(
+          (label) => (
+            <View key={label} className="rounded-full border border-line bg-white px-3 py-1">
+              <Text className="text-xs font-medium text-slate-700">{label}</Text>
+            </View>
+          ),
+        )}
+      </View>
+    </View>
+  );
+}
+
 export default function HomeScreen({ navigation }) {
-  const searchRequestIdRef = useRef(0);
-  const [productQuery, setProductQuery] = useState("");
-  const [discoverySummary, setDiscoverySummary] = useState(null);
-  const [errorMessage, setErrorMessage] = useState("");
-  const [finalResults, setFinalResults] = useState([]);
-  const [followUpNotes, setFollowUpNotes] = useState("");
-  const [isDiscovering, setIsDiscovering] = useState(false);
-  const [isFinalizing, setIsFinalizing] = useState(false);
-  const [isGeneratingPrompt, setIsGeneratingPrompt] = useState(false);
-  const [refinementPrompt, setRefinementPrompt] = useState(null);
-  const previewItems = Array.isArray(discoverySummary?.previewItems)
-    ? discoverySummary.previewItems
-    : [];
-
-  function handleDiscoverySearch() {
-    const normalizedQuery = productQuery.trim();
-
-    if (!normalizedQuery) {
-      setErrorMessage("Enter a product query first.");
-      setDiscoverySummary(null);
-      return;
-    }
-
-    const requestId = searchRequestIdRef.current + 1;
-    searchRequestIdRef.current = requestId;
-
-    setIsDiscovering(true);
-    setIsGeneratingPrompt(true);
-    setErrorMessage("");
-    setDiscoverySummary(null);
-    setFinalResults([]);
-    setFollowUpNotes("");
-    setRefinementPrompt(null);
-
-    discoverProducts({ query: normalizedQuery })
-      .then((discoveryPayload) => {
-        if (searchRequestIdRef.current !== requestId) {
-          return;
-        }
-
-        const candidates = Array.isArray(discoveryPayload.candidatePool?.candidates)
-          ? discoveryPayload.candidatePool.candidates
-          : [];
-        const previewResults = Array.isArray(discoveryPayload.previewResults)
-          ? discoveryPayload.previewResults
-          : [];
-
-        setDiscoverySummary({
-          candidateCount: candidates.length,
-          discoveryToken: discoveryPayload.discoveryToken || "",
-          previewCount: previewResults.length,
-          previewItems: normalizePreviewResults(previewResults),
-          query: normalizedQuery,
-          source: discoveryPayload.source || "unknown",
-          timingMs: discoveryPayload.clientTimingMs,
-        });
-      })
-      .catch((error) => {
-        if (searchRequestIdRef.current !== requestId) {
-          return;
-        }
-
-        setErrorMessage(error instanceof Error ? error.message : "Unable to run discovery.");
-      })
-      .finally(() => {
-        if (searchRequestIdRef.current === requestId) {
-          setIsDiscovering(false);
-        }
-      });
-
-    getRefinementPrompt({ query: normalizedQuery })
-      .then((refinementPayload) => {
-        if (searchRequestIdRef.current !== requestId) {
-          return;
-        }
-
-        setRefinementPrompt({
-          followUpPlaceholder:
-            refinementPayload.followUpPlaceholder ||
-            "Add budget, size, must-haves, dealbreakers, or how you plan to use it.",
-          helperText: refinementPayload.helperText || "",
-          prompt: refinementPayload.prompt || "What should we optimize for?",
-          timingMs: refinementPayload.clientTimingMs,
-        });
-      })
-      .catch(() => {
-        if (searchRequestIdRef.current !== requestId) {
-          return;
-        }
-
-        setErrorMessage("The follow-up question did not load yet.");
-      })
-      .finally(() => {
-        if (searchRequestIdRef.current === requestId) {
-          setIsGeneratingPrompt(false);
-        }
-      });
-  }
-
-  async function handleFinalizeSearch() {
-    if (!discoverySummary?.discoveryToken || !discoverySummary?.query || isFinalizing) {
-      return;
-    }
-
-    setIsFinalizing(true);
-    setErrorMessage("");
-    setFinalResults([]);
-
-    try {
-      const payload = await finalizeSearch({
-        discoveryToken: discoverySummary.discoveryToken,
-        followUpNotes,
-        query: discoverySummary.query,
-      });
-
-      setFinalResults(normalizeFinalResults(payload.results));
-    } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Unable to finalize results.");
-    } finally {
-      setIsFinalizing(false);
-    }
-  }
+  const {
+    canFinalize,
+    discoverySummary,
+    errorMessage,
+    finalResults,
+    finalizeFocusedPicks,
+    followUpNotes,
+    hasStartedSearch,
+    isDiscovering,
+    isFinalizing,
+    isGeneratingPrompt,
+    previewItems,
+    productQuery,
+    refinementPrompt,
+    setFollowUpNotes,
+    setProductQuery,
+    startDiscoverySearch,
+  } = useMobileSearchController();
 
   return (
     <SafeAreaView edges={["bottom"]} className="flex-1 bg-mist">
       <ScrollView
         className="flex-1"
-        contentContainerStyle={{ paddingHorizontal: 20, paddingVertical: 24, gap: 16 }}
+        contentContainerStyle={{ paddingHorizontal: 20, paddingVertical: 24, gap: 18 }}
         keyboardShouldPersistTaps="handled"
       >
-        <View className="rounded-[28px] border border-line bg-white px-5 py-6 shadow-sm">
-          <Text className="text-center text-[12px] font-medium uppercase tracking-[2px] text-accent">
+        <View>
+          <Text className="text-[12px] font-medium uppercase tracking-[2px] text-accent">
             Focama Mobile
           </Text>
-          <Text className="mt-3 text-center text-3xl font-semibold text-ink">Clean Mobile Start</Text>
-          <Text className="mt-3 text-center text-base leading-6 text-slate-600">
-            A small Expo shell is ready. The old guided-search/debug logic has been removed so the
-            mobile rebuild can start from a calmer baseline.
+          <Text className="mt-2 text-3xl font-semibold text-ink">Find focused options</Text>
+          <Text className="mt-3 text-base leading-6 text-slate-600">
+            Search once, add a little context, then ask for a short list. This is still the plain
+            verification flow while the mobile data path settles.
           </Text>
+        </View>
 
-          <View className="mt-5">
-            <Text className="mb-2 text-sm font-medium text-slate-800">Product query</Text>
-            <TextInput
-              value={productQuery}
-              onChangeText={setProductQuery}
-              onSubmitEditing={handleDiscoverySearch}
-              placeholder="Example: travel stroller"
-              returnKeyType="search"
-              className="rounded-2xl border border-line bg-mist px-4 py-3 text-base text-ink"
-            />
-          </View>
-
-          <View className="mt-5 flex-row flex-wrap gap-3">
+        <View className="rounded-2xl border border-line bg-white px-4 py-4">
+          <Text className="text-sm font-medium text-slate-800">What are you shopping for?</Text>
+          <TextInput
+            value={productQuery}
+            onChangeText={setProductQuery}
+            onSubmitEditing={startDiscoverySearch}
+            placeholder="Example: travel stroller"
+            returnKeyType="search"
+            className="mt-3 rounded-2xl border border-line bg-mist px-4 py-3 text-base text-ink"
+          />
+          <View className="mt-4 flex-row gap-3">
             <Pressable
               disabled={isDiscovering}
-              onPress={handleDiscoverySearch}
-              className={`rounded-2xl px-4 py-3 ${
+              onPress={startDiscoverySearch}
+              className={`flex-1 rounded-2xl px-4 py-3 ${
                 isDiscovering ? "bg-slate-300" : "bg-accent"
               }`}
             >
-              <Text className="text-sm font-semibold text-white">
-                {isDiscovering ? "Searching..." : "Test discovery"}
+              <Text className="text-center text-sm font-semibold text-white">
+                {isDiscovering ? "Searching..." : "Search"}
               </Text>
             </Pressable>
             <Pressable
@@ -200,133 +138,98 @@ export default function HomeScreen({ navigation }) {
               <Text className="text-sm font-semibold text-slate-800">About</Text>
             </Pressable>
           </View>
+        </View>
 
-          <View className="mt-5 rounded-2xl border border-line bg-white px-4 py-4">
-            <Text className="text-sm font-medium text-slate-800">Status snapshot</Text>
-            <Text className="mt-2 text-sm leading-5 text-slate-700">
-              Draft query: {productQuery || "none"}
-            </Text>
-            <Text className="mt-1 text-sm leading-5 text-slate-700">
-              Backend wiring: discovery, refine, and finalize scaffold
-            </Text>
-            <Text className="mt-1 text-sm leading-5 text-slate-700">
-              API base: {apiBaseUrl || "not set"}
-            </Text>
-            {errorMessage ? (
-              <Text className="mt-3 text-sm leading-5 text-red-600">{errorMessage}</Text>
-            ) : null}
-            {isGeneratingPrompt ? (
-              <Text className="mt-3 text-sm leading-5 text-slate-700">Generating follow-up...</Text>
-            ) : null}
-            {isFinalizing ? (
-              <Text className="mt-3 text-sm leading-5 text-slate-700">Finalizing focused picks...</Text>
-            ) : null}
+        <View className="rounded-2xl border border-line bg-white px-4 py-4">
+          <Text className="text-sm font-semibold text-slate-900">Progress</Text>
+          <View className="mt-2">
+            <StatusLine label="Draft query" value={productQuery || "none"} />
+            <StatusLine label="Backend" value="discovery, refine, finalize" />
+            <StatusLine label="API base" value={apiBaseUrl ? "configured" : "not set"} />
             {discoverySummary ? (
-              <View className="mt-3 rounded-xl bg-mist px-3 py-3">
-                <Text className="text-sm font-medium text-slate-800">
-                  Discovery returned for "{discoverySummary.query}"
-                </Text>
-                <Text className="mt-2 text-sm leading-5 text-slate-700">
-                  Candidates: {discoverySummary.candidateCount}
-                </Text>
-                <Text className="mt-1 text-sm leading-5 text-slate-700">
-                  Preview results: {discoverySummary.previewCount}
-                </Text>
-                <Text className="mt-1 text-sm leading-5 text-slate-700">
-                  Source: {discoverySummary.source}
-                </Text>
-                <Text className="mt-1 text-sm leading-5 text-slate-700">
-                  Client timing: {discoverySummary.timingMs}ms
-                </Text>
-                <Text className="mt-1 text-sm leading-5 text-slate-700">
-                  Token: {discoverySummary.discoveryToken ? "received" : "missing"}
-                </Text>
-                {previewItems.length > 0 ? (
-                  <View className="mt-3">
-                    <Text className="text-sm font-medium text-slate-800">Tiny preview</Text>
-                    {previewItems.map((item, index) => (
-                      <View key={item.id} className="mt-2 rounded-xl border border-line bg-white px-3 py-3">
-                        <Text className="text-sm font-semibold text-slate-900">
-                          {index + 1}. {item.title}
-                        </Text>
-                        <Text className="mt-1 text-sm leading-5 text-slate-700">
-                          {item.provider} | {item.price}
-                        </Text>
-                        <Text className="mt-1 text-sm leading-5 text-slate-700">
-                          Rating: {item.rating ?? "not shown"}
-                        </Text>
-                      </View>
-                    ))}
-                  </View>
-                ) : null}
-              </View>
+              <>
+                <StatusLine label="Candidates" value={String(discoverySummary.candidateCount)} />
+                <StatusLine label="Preview results" value={String(discoverySummary.previewCount)} />
+                <StatusLine label="Source" value={discoverySummary.source} />
+                <StatusLine label="Discovery timing" value={`${discoverySummary.timingMs}ms`} />
+                <StatusLine
+                  label="Discovery token"
+                  value={discoverySummary.discoveryToken ? "received" : "missing"}
+                />
+              </>
             ) : null}
             {refinementPrompt ? (
-              <View className="mt-3 rounded-xl border border-line bg-white px-3 py-3">
-                <Text className="text-sm font-medium text-slate-800">Follow-up question</Text>
-                <Text className="mt-2 text-sm leading-5 text-slate-800">{refinementPrompt.prompt}</Text>
-                {refinementPrompt.helperText ? (
-                  <Text className="mt-2 text-sm leading-5 text-slate-600">
-                    {refinementPrompt.helperText}
-                  </Text>
-                ) : null}
-                <TextInput
-                  value={followUpNotes}
-                  onChangeText={setFollowUpNotes}
-                  placeholder={refinementPrompt.followUpPlaceholder}
-                  multiline
-                  textAlignVertical="top"
-                  className="mt-3 min-h-[92px] rounded-2xl border border-line bg-mist px-4 py-3 text-base text-ink"
-                />
-                <Text className="mt-2 text-sm leading-5 text-slate-600">
-                  Refine timing: {refinementPrompt.timingMs}ms
-                </Text>
-                <Pressable
-                  disabled={isFinalizing || !discoverySummary?.discoveryToken}
-                  onPress={handleFinalizeSearch}
-                  className={`mt-3 rounded-2xl px-4 py-3 ${
-                    isFinalizing || !discoverySummary?.discoveryToken ? "bg-slate-300" : "bg-slate-800"
-                  }`}
-                >
-                  <Text className="text-center text-sm font-semibold text-white">
-                    {isFinalizing ? "Finalizing..." : "Show focused picks"}
-                  </Text>
-                </Pressable>
-              </View>
-            ) : null}
-            {finalResults.length > 0 ? (
-              <View className="mt-3 rounded-xl border border-line bg-white px-3 py-3">
-                <Text className="text-sm font-medium text-slate-800">
-                  Final results: {finalResults.length}
-                </Text>
-                {finalResults.map((item, index) => (
-                  <View key={item.id} className="mt-3 rounded-2xl border border-line bg-mist px-3 py-3">
-                    <View className="flex-row gap-3">
-                      <View className="h-8 w-8 items-center justify-center rounded-full bg-accent">
-                        <Text className="text-sm font-semibold text-white">{index + 1}</Text>
-                      </View>
-                      <View className="flex-1">
-                        <Text className="text-sm font-semibold leading-5 text-slate-900">
-                          {item.title}
-                        </Text>
-                        <Text className="mt-1 text-sm leading-5 text-slate-700">{item.provider}</Text>
-                      </View>
-                    </View>
-                    <View className="mt-3 flex-row flex-wrap gap-2">
-                      {[item.price, formatRatingLabel(item.rating), formatReviewCountLabel(item.reviewCount)].map(
-                        (label) => (
-                          <View key={label} className="rounded-full border border-line bg-white px-3 py-1">
-                            <Text className="text-xs font-medium text-slate-700">{label}</Text>
-                          </View>
-                        ),
-                      )}
-                    </View>
-                  </View>
-                ))}
-              </View>
+              <StatusLine label="Refine timing" value={`${refinementPrompt.timingMs}ms`} />
             ) : null}
           </View>
+          {errorMessage ? (
+            <Text className="mt-3 text-sm leading-5 text-red-600">{errorMessage}</Text>
+          ) : null}
+          {isGeneratingPrompt ? (
+            <Text className="mt-3 text-sm leading-5 text-slate-700">Generating follow-up...</Text>
+          ) : null}
+          {isFinalizing ? (
+            <Text className="mt-3 text-sm leading-5 text-slate-700">Finalizing focused picks...</Text>
+          ) : null}
+          {!hasStartedSearch ? (
+            <Text className="mt-3 text-sm leading-5 text-slate-600">
+              Start with a simple product query to test the mobile search path.
+            </Text>
+          ) : null}
         </View>
+
+        {previewItems.length > 0 ? (
+          <View className="rounded-2xl border border-line bg-white px-4 py-4">
+            <Text className="text-sm font-semibold text-slate-900">Tiny preview</Text>
+            <View className="mt-1">
+              {previewItems.map((item, index) => (
+                <PreviewRow key={item.id} item={item} index={index} />
+              ))}
+            </View>
+          </View>
+        ) : null}
+
+        {refinementPrompt ? (
+          <View className="rounded-2xl border border-line bg-white px-4 py-4">
+            <Text className="text-sm font-semibold text-slate-900">Refine</Text>
+            <Text className="mt-2 text-sm leading-5 text-slate-800">{refinementPrompt.prompt}</Text>
+            {refinementPrompt.helperText ? (
+              <Text className="mt-2 text-sm leading-5 text-slate-600">
+                {refinementPrompt.helperText}
+              </Text>
+            ) : null}
+            <TextInput
+              value={followUpNotes}
+              onChangeText={setFollowUpNotes}
+              placeholder={refinementPrompt.followUpPlaceholder}
+              multiline
+              textAlignVertical="top"
+              className="mt-3 min-h-[96px] rounded-2xl border border-line bg-mist px-4 py-3 text-base text-ink"
+            />
+            <Pressable
+              disabled={!canFinalize}
+              onPress={finalizeFocusedPicks}
+              className={`mt-3 rounded-2xl px-4 py-3 ${canFinalize ? "bg-slate-800" : "bg-slate-300"}`}
+            >
+              <Text className="text-center text-sm font-semibold text-white">
+                {isFinalizing ? "Finalizing..." : "Show focused picks"}
+              </Text>
+            </Pressable>
+          </View>
+        ) : null}
+
+        {finalResults.length > 0 ? (
+          <View className="rounded-2xl border border-line bg-white px-4 py-4">
+            <Text className="text-sm font-semibold text-slate-900">
+              Focused picks ({finalResults.length})
+            </Text>
+            <View className="mt-1">
+              {finalResults.map((item, index) => (
+                <FinalResultRow key={item.id} item={item} index={index} />
+              ))}
+            </View>
+          </View>
+        ) : null}
       </ScrollView>
     </SafeAreaView>
   );

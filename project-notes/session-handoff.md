@@ -17,11 +17,11 @@
 - This branch is the mobile clean-slate restart: `restart/mobile-clean-slate`.
 - Read `restart-strategy.md` before rebuilding search behavior; it captures why the earlier mobile path got tangled and how to proceed safely.
 - Mobile is intentionally back to basic scaffolding and basic UI.
-- Backend stays shared with web, and the current mobile shell has only a discovery-only backend test path.
+- Backend stays shared with web, and the current mobile shell has a small discovery/refine/finalize scaffold path.
 - Product and flow decisions remain anchored in `../web/project-notes/`.
 - Rebuild the mobile app gradually and avoid reintroducing the old all-at-once debug harness.
 - Use the happy middle from `restart-strategy.md`: after discovery/refine/finalize are proven, build bounded vertical slices around a small mobile-native search data/controller layer.
-- The current Home UI is only a functional verification scaffold to prove endpoints and React Native rendering safety.
+- The current Home UI is a plain search/refine/results scaffold to prove endpoints and React Native rendering safety before richer UX work.
 - The final mobile UI/UX can deliberately differ from the web app after the data path is proven; preserve product behavior and trust principles, not the exact web layout.
 - Mobile UI/UX is expected to be redesigned after endpoint flow is proven; do not treat the web UI as the target layout, only as the product behavior reference.
 
@@ -35,22 +35,25 @@
   - Affiliate Disclosure
 - Home currently has:
   - simple product query input
-  - active `Test discovery` button
+  - active search button
   - About navigation button
-  - small status snapshot
+  - small progress snapshot
   - discovery response summary with candidate count, preview count, source, timing, and token status
   - tiny preview capped at 3 normalized preview results
   - refinement prompt and local follow-up notes box
-  - minimal `Show focused picks` button that renders final result metadata rows capped at 6
+  - minimal `Show focused picks` button that renders focused-pick metadata rows capped at 6
 - Search endpoint calls, JSON/HTML response guarding, API base URL checks, and result normalization now live in `src/search/searchApi.js`.
+- The temporary search phase/state orchestration now lives in `src/search/useMobileSearchController.js`; HomeScreen mostly renders the scaffold UI around that hook.
+- The hook path was manually verified in Expo Go by the user after a local Android Metro export/bundle check.
+- The lighter Home search/refine/results scaffold has passed a local Android Metro export/bundle check, but still needs a manual Expo Go verification pass.
 - Discovery-only backend access has been verified in Expo Go against the local backend using a LAN API base URL.
 - Tiny preview rendering has been verified in Expo Go.
 - Refinement prompt rendering has been verified in Expo Go.
 - Minimal finalize rendering has been verified in Expo Go and is ahead of the previous unstable Phase 3/debug-harness attempt.
-- Lightweight final-result metadata rows are implemented, but still need a manual Expo Go verification pass after the latest row styling change.
+- Lightweight final-result metadata rows are implemented and now sit under a plainer focused-picks section.
 - Discovery and refinement requests launch together and now update the UI independently; a slow follow-up should no longer delay discovery summary/preview rendering.
-- No guided search logic is active.
-- A thin mobile search API helper is active, but no full controller/hook is active yet.
+- No full guided search logic is active.
+- A thin mobile search API helper and tiny mobile controller hook are active, but enrichment, analytics, retry, persistence, and polished result UI are still deferred.
 - No analytics helper is active.
 - No TanStack Query provider is active.
 
@@ -74,8 +77,8 @@
 - Do not start by copying the whole old hook back into mobile.
 
 ## Next step
-- Verify the extracted search API helper path, independent discovery/refine rendering, and lightweight final-result metadata rows in Expo Go.
-- Then add a tiny mobile search controller hook around `src/search/searchApi.js` if the next UI slice needs cleaner phase/state handling.
+- Verify the reshaped Home search/refine/results scaffold manually in Expo Go.
+- Continue building mobile search in bounded vertical slices against `src/search/useMobileSearchController.js`, likely by extracting result-row UI into a dedicated module or adding the next non-rich result detail slice.
 - Keep result count capped at 6 and do not add images, modal/details, enrichment, analytics, or retry yet.
 - `EXPO_PUBLIC_API_BASE_URL` must point to the backend API, not the public frontend site.
 - If using the deployed backend, set `EXPO_PUBLIC_API_BASE_URL` to the active Render backend URL and restart Expo with `npx expo start --clear --lan`.
