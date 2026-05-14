@@ -38,10 +38,15 @@ Non-negotiable. Same rules as the web app.
 ## Run Commands
 ```bash
 npx expo start              # Start Metro bundler (scan QR with Expo Go)
+npx expo start --lan        # Normal physical-device workflow for Expo Go
+npx expo start --clear --lan # Use after env/package/import changes or stale Metro errors
 npx expo start --android    # Open directly in Android emulator
 npx expo start --ios        # Open directly in iOS simulator (Mac only)
 # EAS build/submit comes later after app behavior is stable.
 ```
+
+When giving Zvi a run command, say explicitly whether to use normal `npx expo start --lan` or cache-clearing `npx expo start --clear --lan`.
+Use the normal command for ordinary UI/code edits. Use `--clear` after `.env` changes, dependency changes, moved imports/files, or stale red transform errors.
 
 ## Tech Stack
 - **Framework:** Expo (managed workflow)
