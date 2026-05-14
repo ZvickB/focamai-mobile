@@ -48,6 +48,7 @@
 - Refinement prompt rendering has been verified in Expo Go.
 - Minimal finalize rendering has been verified in Expo Go and is ahead of the previous unstable Phase 3/debug-harness attempt.
 - Lightweight final-result metadata rows are implemented, but still need a manual Expo Go verification pass after the latest row styling change.
+- Discovery and refinement requests launch together and now update the UI independently; a slow follow-up should no longer delay discovery summary/preview rendering.
 - No guided search logic is active.
 - A thin mobile search API helper is active, but no full controller/hook is active yet.
 - No analytics helper is active.
@@ -73,7 +74,7 @@
 - Do not start by copying the whole old hook back into mobile.
 
 ## Next step
-- Verify the extracted search API helper path and lightweight final-result metadata rows in Expo Go.
+- Verify the extracted search API helper path, independent discovery/refine rendering, and lightweight final-result metadata rows in Expo Go.
 - Then add a tiny mobile search controller hook around `src/search/searchApi.js` if the next UI slice needs cleaner phase/state handling.
 - Keep result count capped at 6 and do not add images, modal/details, enrichment, analytics, or retry yet.
 - `EXPO_PUBLIC_API_BASE_URL` must point to the backend API, not the public frontend site.

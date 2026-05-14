@@ -21,6 +21,7 @@
 - The tiny capped preview has also been verified in Expo Go.
 - The refinement prompt slice has also been verified in Expo Go.
 - The minimal finalize slice has also been verified in Expo Go and is ahead of the previous unstable Phase 3/debug-harness attempt.
+- Discovery and refinement requests are still launched together, but the UI now updates each one independently so a slow follow-up question does not block discovery rendering.
 - The mobile app still does not run the full guided flow: no enrichment, real product cards, analytics, persistence, retry, or modal/details are active.
 - The current Home UI is a functional verification scaffold, not the intended final mobile UX.
 - Current work is proving endpoint flow and native rendering safety first; final mobile UI/UX can deliberately diverge from the web layout after the data path is stable.
@@ -78,7 +79,7 @@
 - Mobile does not need to copy the web UI/UX 1:1; preserve product behavior and trust principles, then design the native experience intentionally.
 
 ## Recommended next step
-- Verify the extracted search API helper path in Expo Go.
+- Verify the extracted search API helper path and independent discovery/refine rendering in Expo Go.
 - Then add a tiny mobile search controller hook around `src/search/searchApi.js` if the next UI slice needs cleaner phase/state handling.
 - Keep result count capped at 6 and do not add images, modal/details, enrichment, analytics, or retry yet.
 - `EXPO_PUBLIC_API_BASE_URL` must point to the backend API, not the public frontend site.

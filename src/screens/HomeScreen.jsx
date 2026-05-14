@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
@@ -29,6 +29,7 @@ function formatReviewCountLabel(reviewCount) {
 }
 
 export default function HomeScreen({ navigation }) {
+  const searchRequestIdRef = useRef(0);
   const [productQuery, setProductQuery] = useState("");
   const [discoverySummary, setDiscoverySummary] = useState(null);
   const [errorMessage, setErrorMessage] = useState("");
@@ -42,7 +43,7 @@ export default function HomeScreen({ navigation }) {
     ? discoverySummary.previewItems
     : [];
 
-  async function handleDiscoverySearch() {
+  function handleDiscoverySearch() {
     const normalizedQuery = productQuery.trim();
 
     if (!normalizedQuery) {
@@ -50,6 +51,9 @@ export default function HomeScreen({ navigation }) {
       setDiscoverySummary(null);
       return;
     }
+
+    const requestId = searchRequestIdRef.current + 1;
+    searchRequestIdRef.current = requestId;
 
     setIsDiscovering(true);
     setIsGeneratingPrompt(true);
@@ -59,36 +63,47 @@ export default function HomeScreen({ navigation }) {
     setFollowUpNotes("");
     setRefinementPrompt(null);
 
-    try {
-      const [discoveryResult, refinementResult] = await Promise.allSettled([
-        discoverProducts({ query: normalizedQuery }),
-        getRefinementPrompt({ query: normalizedQuery }),
-      ]);
+    discoverProducts({ query: normalizedQuery })
+      .then((discoveryPayload) => {
+        if (searchRequestIdRef.current !== requestId) {
+          return;
+        }
 
-      if (discoveryResult.status !== "fulfilled") {
-        throw discoveryResult.reason;
-      }
+        const candidates = Array.isArray(discoveryPayload.candidatePool?.candidates)
+          ? discoveryPayload.candidatePool.candidates
+          : [];
+        const previewResults = Array.isArray(discoveryPayload.previewResults)
+          ? discoveryPayload.previewResults
+          : [];
 
-      const discoveryPayload = discoveryResult.value;
-      const candidates = Array.isArray(discoveryPayload.candidatePool?.candidates)
-        ? discoveryPayload.candidatePool.candidates
-        : [];
-      const previewResults = Array.isArray(discoveryPayload.previewResults)
-        ? discoveryPayload.previewResults
-        : [];
+        setDiscoverySummary({
+          candidateCount: candidates.length,
+          discoveryToken: discoveryPayload.discoveryToken || "",
+          previewCount: previewResults.length,
+          previewItems: normalizePreviewResults(previewResults),
+          query: normalizedQuery,
+          source: discoveryPayload.source || "unknown",
+          timingMs: discoveryPayload.clientTimingMs,
+        });
+      })
+      .catch((error) => {
+        if (searchRequestIdRef.current !== requestId) {
+          return;
+        }
 
-      setDiscoverySummary({
-        candidateCount: candidates.length,
-        discoveryToken: discoveryPayload.discoveryToken || "",
-        previewCount: previewResults.length,
-        previewItems: normalizePreviewResults(previewResults),
-        query: normalizedQuery,
-        source: discoveryPayload.source || "unknown",
-        timingMs: discoveryPayload.clientTimingMs,
+        setErrorMessage(error instanceof Error ? error.message : "Unable to run discovery.");
+      })
+      .finally(() => {
+        if (searchRequestIdRef.current === requestId) {
+          setIsDiscovering(false);
+        }
       });
 
-      if (refinementResult.status === "fulfilled") {
-        const refinementPayload = refinementResult.value;
+    getRefinementPrompt({ query: normalizedQuery })
+      .then((refinementPayload) => {
+        if (searchRequestIdRef.current !== requestId) {
+          return;
+        }
 
         setRefinementPrompt({
           followUpPlaceholder:
@@ -98,15 +113,19 @@ export default function HomeScreen({ navigation }) {
           prompt: refinementPayload.prompt || "What should we optimize for?",
           timingMs: refinementPayload.clientTimingMs,
         });
-      } else {
-        setErrorMessage("Discovery worked, but the follow-up question did not load yet.");
-      }
-    } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Unable to run discovery.");
-    } finally {
-      setIsDiscovering(false);
-      setIsGeneratingPrompt(false);
-    }
+      })
+      .catch(() => {
+        if (searchRequestIdRef.current !== requestId) {
+          return;
+        }
+
+        setErrorMessage("The follow-up question did not load yet.");
+      })
+      .finally(() => {
+        if (searchRequestIdRef.current === requestId) {
+          setIsGeneratingPrompt(false);
+        }
+      });
   }
 
   async function handleFinalizeSearch() {
@@ -164,14 +183,14 @@ export default function HomeScreen({ navigation }) {
 
           <View className="mt-5 flex-row flex-wrap gap-3">
             <Pressable
-              disabled={isDiscovering || isGeneratingPrompt}
+              disabled={isDiscovering}
               onPress={handleDiscoverySearch}
               className={`rounded-2xl px-4 py-3 ${
-                isDiscovering || isGeneratingPrompt ? "bg-slate-300" : "bg-accent"
+                isDiscovering ? "bg-slate-300" : "bg-accent"
               }`}
             >
               <Text className="text-sm font-semibold text-white">
-                {isDiscovering || isGeneratingPrompt ? "Searching..." : "Test discovery"}
+                {isDiscovering ? "Searching..." : "Test discovery"}
               </Text>
             </Pressable>
             <Pressable
