@@ -1,22 +1,9 @@
 import { ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-
-function detailValue(value, fallback) {
-  if (value === null || value === undefined || value === "") {
-    return fallback;
-  }
-
-  return String(value);
-}
-
-function DetailLine({ label, value }) {
-  return (
-    <View className="border-b border-line py-3">
-      <Text className="text-xs font-medium uppercase tracking-[1.4px] text-slate-500">{label}</Text>
-      <Text className="mt-1 text-base leading-6 text-slate-900">{value}</Text>
-    </View>
-  );
-}
+import {
+  detailValue,
+  SearchResultDetailMetadata,
+} from "../search/SearchResultDetailMetadata";
 
 export default function SearchResultDetailScreen({ route }) {
   const item = route.params?.item || {};
@@ -40,12 +27,7 @@ export default function SearchResultDetailScreen({ route }) {
           </Text>
         </View>
 
-        <View className="rounded-2xl border border-line bg-white px-4 py-2">
-          <DetailLine label="Source" value={detailValue(item.provider, "Unknown source")} />
-          <DetailLine label="Price" value={detailValue(item.price, "Price not shown")} />
-          <DetailLine label="Rating" value={detailValue(item.rating, "Rating not shown")} />
-          <DetailLine label="Reviews" value={detailValue(item.reviewCount, "Reviews not shown")} />
-        </View>
+        <SearchResultDetailMetadata item={item} />
       </ScrollView>
     </SafeAreaView>
   );

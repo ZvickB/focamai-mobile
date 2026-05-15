@@ -36,6 +36,7 @@
 - The hook path and lighter Home scaffold have passed local Android Metro export/bundle checks with `npx expo export --platform android`.
 - The refine section is now extracted into a small presentational component; behavior is unchanged and still uses the controller state/handlers.
 - The plain focused-pick detail screen is implemented and manually verified in Expo Go.
+- The detail screen metadata rows are now extracted into a tiny helper component; the screen still shows only existing normalized metadata.
 - Current work is proving endpoint flow and native rendering safety first; final mobile UI/UX can deliberately diverge from the web layout after the data path is stable.
 - Mobile UI/UX is expected to be redesigned after endpoint flow is proven; do not treat the web UI as the target layout, only as the product behavior reference.
 - The intended rebuild path is a happy middle: use web as the behavior/request contract, then build a small mobile-native search data/controller layer and bounded vertical UI slices instead of copying the full web hook or staying in tiny endpoint-test mode forever.
@@ -60,6 +61,7 @@
   - Home composes progress, preview, refine, and focused-pick sections instead of owning every presentation detail inline.
   - `src/search/SearchResultRows.jsx` owns the temporary preview and focused-pick row rendering helpers so HomeScreen owns less presentation detail.
   - `src/screens/SearchResultDetailScreen.jsx` shows a non-rich detail view for a focused pick using only the normalized result fields already returned by finalize.
+  - `src/search/SearchResultDetailMetadata.jsx` owns the temporary detail metadata rows and fallback formatting.
   - `src/navigation/RootNavigator.jsx` includes the `SearchResultDetail` stack route.
   - `src/search/searchApi.js` now owns the temporary search endpoint calls, JSON/HTML response guard, API base URL check, and preview/final result normalization.
 - Removed from active mobile code:
@@ -98,7 +100,7 @@
 - Mobile does not need to copy the web UI/UX 1:1; preserve product behavior and trust principles, then design the native experience intentionally.
 
 ## Recommended next step
-- Next mobile search work should build against the tiny controller hook in bounded vertical slices, likely by adding a tiny detail metadata helper if that screen grows or by extracting another temporary Home section only if it reduces inline presentation safely.
+- Next mobile search work should build against the tiny controller hook in bounded vertical slices, likely by extracting another temporary Home section only if it reduces inline presentation safely.
 - Keep result count capped at 6 and do not add images, modal/details, enrichment, analytics, or retry yet.
 - `EXPO_PUBLIC_API_BASE_URL` must point to the backend API, not the public frontend site.
 - Do not fall back to `https://focamai.com` for mobile API requests; that returns frontend HTML for unknown API paths.

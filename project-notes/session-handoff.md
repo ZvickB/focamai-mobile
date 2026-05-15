@@ -49,6 +49,7 @@
 - The lighter Home search/refine/results scaffold has passed a local Android Metro export/bundle check and was manually verified in Expo Go by the user.
 - The temporary preview and focused-pick row rendering helpers now live in `src/search/SearchResultRows.jsx`.
 - The plain focused-pick detail screen now lives in `src/screens/SearchResultDetailScreen.jsx` and uses only normalized finalize metadata already on device.
+- The temporary focused-pick detail metadata rows now live in `src/search/SearchResultDetailMetadata.jsx`.
 - The extracted result-row module and plain focused-pick detail screen were manually verified in Expo Go by the user:
   - search
   - focused picks render
@@ -87,7 +88,7 @@
 - Do not start by copying the whole old hook back into mobile.
 
 ## Next step
-- Continue building mobile search in bounded vertical slices against `src/search/useMobileSearchController.js`; the next safe structure slice is probably a tiny detail metadata helper if that screen grows or another small Home section extraction if it stays behavior-neutral.
+- Continue building mobile search in bounded vertical slices against `src/search/useMobileSearchController.js`; the next safe structure slice is probably another small Home section extraction if it stays behavior-neutral.
 - Keep result count capped at 6 and do not add images, modal/details, enrichment, analytics, or retry yet.
 - `EXPO_PUBLIC_API_BASE_URL` must point to the backend API, not the public frontend site.
 - If using the deployed backend, set `EXPO_PUBLIC_API_BASE_URL` to the active Render backend URL and restart Expo with `npx expo start --clear --lan`.
