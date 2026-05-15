@@ -485,8 +485,9 @@ export function useMobileSearchController() {
       });
   }
 
-  async function finalizeFocusedPicks() {
+  async function finalizeFocusedPicks({ followUpNotesOverride } = {}) {
     const session = activeSearchSessionRef.current;
+    const notesForRequest = followUpNotesOverride ?? followUpNotes;
 
     if (finalizingRequestIdRef.current) {
       return;
@@ -531,7 +532,7 @@ export function useMobileSearchController() {
     }));
     updatePhaseEvent(
       buildPhaseEvent({
-        detail: followUpNotes.trim() ? "Sending refined shortlist request" : "Sending shortlist request",
+        detail: notesForRequest.trim() ? "Sending refined shortlist request" : "Sending shortlist request",
         phase: "finalize",
         requestId,
         status: "running",
@@ -543,7 +544,7 @@ export function useMobileSearchController() {
       const payload = await finalizeSearch({
         amazonDomain: session.amazonDomain,
         discoveryToken: session.discoveryToken,
-        followUpNotes,
+        followUpNotes: notesForRequest,
         query: session.submittedQuery,
       });
 

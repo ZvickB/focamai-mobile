@@ -37,7 +37,7 @@ export default function SettingsScreen({ navigation }) {
     setSelectedAmazonDomain(domain);
     await saveAmazonDomainPreference(domain);
     await saveAmazonMarketplacePromptSeen();
-    navigation.navigate("Home", { selectedAmazonDomain: domain });
+    navigation.navigate("Search", { selectedAmazonDomain: domain });
   }
 
   return (

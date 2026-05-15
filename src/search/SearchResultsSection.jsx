@@ -34,7 +34,7 @@ export function SearchResultsSection({ finalResults, onOpenResult, previewItems 
           <Text className="text-xs font-semibold uppercase text-slate-500">
             Focused picks ({finalResults.length}/6)
           </Text>
-          <View className="mt-1">
+          <View className="mt-3 gap-3">
             {finalResults.map((item, index) => (
               <FocusedPickRow
                 key={item.id}

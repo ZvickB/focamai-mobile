@@ -5,10 +5,18 @@ import {
   SearchResultDetailMetadata,
   SearchResultDetailSnapshot,
 } from "../search/SearchResultDetailMetadata";
+import { useSearchFlow } from "../search/SearchFlowContext";
 
 export default function SearchResultDetailScreen({ route }) {
-  const item = route.params?.item || {};
-  const rank = route.params?.rank;
+  const { finalResults } = useSearchFlow();
+  const candidateId = route.params?.candidateId;
+  const routeItem = route.params?.item;
+  const routeRank = route.params?.rank;
+  const matchedIndex = candidateId
+    ? finalResults.findIndex((result) => String(result.id) === String(candidateId))
+    : -1;
+  const item = matchedIndex >= 0 ? finalResults[matchedIndex] : routeItem || {};
+  const rank = routeRank || (matchedIndex >= 0 ? matchedIndex + 1 : undefined);
 
   return (
     <SafeAreaView edges={["bottom"]} className="flex-1 bg-mist">
@@ -24,7 +32,7 @@ export default function SearchResultDetailScreen({ route }) {
             {detailValue(item.title, "Untitled product")}
           </Text>
           <Text className="mt-3 text-base leading-6 text-slate-600">
-            A closer look at the finalized shortlist metadata already on device.
+            A focused view of this pick, using the finalized shortlist details already on device.
           </Text>
         </View>
 
