@@ -52,9 +52,11 @@ Use the normal command for ordinary UI/code edits. Use `--clear` after `.env` ch
 - **Framework:** Expo (managed workflow)
 - **Navigation:** React Navigation v7
 - **Styling:** NativeWind v4 (Tailwind class syntax)
+- **Fonts:** Manrope via `expo-font` and `@expo-google-fonts/manrope`, loaded in `App.js` before rendering.
 - **Animations:** React Native Reanimated
-- **Currently removed during clean-slate reset:** TanStack Query, Expo Constants, Expo Crypto, Expo Linking, Expo Dev Client, lucide-react-native
+- **Currently removed during clean-slate reset:** Expo Constants, Expo Crypto, Expo Linking, Expo Dev Client, lucide-react-native
 - **Re-added narrowly:** AsyncStorage is active only for the saved marketplace-domain preference.
+- **Re-added narrowly:** TanStack Query is installed and provided at the app root, but existing search logic has not been migrated to queries.
 - **Re-add later only when the rebuild slice needs them.**
 
 ## Key Directories

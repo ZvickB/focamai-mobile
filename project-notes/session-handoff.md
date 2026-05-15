@@ -22,51 +22,48 @@
 **What not to do:**
 - Do not copy the 1552-line web `useGuidedSearch.js` wholesale. That's what broke `main`. The lesson was not "don't build complex things" — it was "don't port complexity before the foundation is proven."
 - Do not assume all web data-path features are done. Add missing product behavior in bounded slices when the mobile UX needs it.
-- Do not add analytics, persistence, or marketplace preferences yet.
+- Do not add analytics, broader persistence, or new marketplace behavior yet.
 
 ## Current mobile reality
 - Current app root runs `RootNavigator.jsx` inside `SafeAreaProvider`.
 - Current screens:
-  - Home
+  - Search
+  - Follow-up
+  - Results
+  - SearchResultDetail
+  - Home compatibility route that currently renders Search
   - About
   - Contact
   - Privacy
   - Affiliate Disclosure
-- Home currently has:
-  - simple product query input
-  - active search button
-  - Settings navigation button
-  - first-run Amazon store prompt when no saved store/prompt state exists
-  - temporary horizontal Amazon store selector
-  - small progress snapshot
-  - lightweight phase events for `discover`, `refine`, and `finalize`
-  - discovery response summary with candidate count, preview count, source, timing, and token status
-  - combined results checkpoint with tiny preview capped at 3 normalized preview results
-  - refinement prompt and local follow-up notes box
-  - minimal `Show focused picks` button that renders focused-pick metadata rows capped at 6
-  - temporary retry feedback box intended to appear after focused picks with a `Try again` button and 2-retry cap
-  - plain focused-pick detail navigation from a result row
-  - detail screen at-a-glance snapshot using only already-normalized metadata
+- The provider-backed search flow is now split across Search, Follow-up, and Results:
+  - `SearchScreen` has the product query input, active search button, Settings navigation, first-run Amazon store prompt, and search status summary.
+  - `FollowUpScreen` has the refinement prompt, follow-up notes input, `Show focused picks` action, and `Skip - show results` action.
+  - `ResultsScreen` has the combined results checkpoint, tiny preview capped at 3 normalized preview results, focused-pick metadata rows capped at 6, retry feedback box, and focused-pick detail navigation.
+  - `SearchResultDetailScreen` remains the focused-pick detail destination using already-normalized rank, title, source/provider, price, rating, review count, explanation, caveat, and feature-note metadata; it now receives `candidateId` and rank from Results and looks up the current item from the shared search flow, with a legacy route-item fallback.
+- Focused picks on the Results screen now use mobile-native tappable cards built from the same normalized on-device fields; discovery preview rows, controller state ownership, backend request shapes, retry behavior, enrichment polling, and `candidateId` detail lookup are unchanged.
 - Search endpoint calls, JSON/HTML response guarding, API base URL checks, and result normalization now live in `src/search/searchApi.js`.
-- The temporary search phase/state orchestration now lives in `src/search/useMobileSearchController.js`; HomeScreen mostly renders the scaffold UI around that hook.
+- The temporary search phase/state orchestration now lives in `src/search/useMobileSearchController.js`; `SearchFlowProvider` exposes one shared hook instance to the Search, Follow-up, and Results route screens.
 - The hook path was manually verified in Expo Go by the user after a local Android Metro export/bundle check.
 - The lighter Home search/refine/results scaffold has passed a local Android Metro export/bundle check and was manually verified in Expo Go by the user.
 - The temporary preview and focused-pick row rendering helpers now live in `src/search/SearchResultRows.jsx`.
 - Preview and focused-pick rendering now sit behind `src/search/SearchResultsSection.jsx`, which owns the current focused results slice.
 - The plain focused-pick detail screen now lives in `src/screens/SearchResultDetailScreen.jsx` and uses only normalized finalize metadata already on device.
-- The temporary focused-pick detail snapshot and metadata rows now live in `src/search/SearchResultDetailMetadata.jsx`.
+- The focused-pick detail snapshot, metadata rows, explanation/caveat fallback sections, and feature-note rendering now live in `src/search/SearchResultDetailMetadata.jsx`.
 - The extracted result-row module and plain focused-pick detail screen were manually verified in Expo Go by the user:
   - search
   - focused picks render
   - tapping a focused-pick row opens `SearchResultDetailScreen`
-  - Back returns to Home with results still visible
-- The temporary product query input, search button, and About button presentation now live in `src/search/SearchEntrySection.jsx`.
-- The temporary progress/status section now lives in `src/search/SearchProgressStatus.jsx`.
+  - Back returned to the search flow with results still visible in the earlier one-screen scaffold
+- The temporary product query input, search button, and Settings button presentation now live in `src/search/SearchEntrySection.jsx`.
+- Search flow state is now provided by `src/search/SearchFlowContext.jsx`; `SearchFlowProvider` currently only calls the existing `useMobileSearchController()` hook, and the split search screens read that state with `useSearchFlow()`.
+- The split-screen search flow passed `node --check src/search/useMobileSearchController.js` and `npx expo export --platform android --output-dir .expo-export-check`; `.expo-export-check` was removed afterward. Manual Expo Go verification is still pending.
+- The user-facing search status summary and expandable diagnostics now live in `src/search/SearchProgressStatus.jsx`.
 - The temporary refine prompt, notes input, and finalize button presentation now live in `src/search/SearchRefineSection.jsx`.
 - The focused results slice keeps backend contracts unchanged, keeps final rows capped at 6, improves the plain list with clearer metadata labels and tap affordance, and still uses the existing detail navigation.
 - The latest focused results slice passed a local JSX parser check and `npx expo export --platform android --output-dir .expo-export-check`; `.expo-export-check` was removed afterward.
 - The controller now exposes in-memory phase events for `discover`, `refine`, and `finalize`; the Progress panel renders them as running/complete/failed with small timing/count details.
-- Phase events are diagnostic UI only. There is still no analytics, persistence, query-quality suggestion flow, web-style retry-advice flow, or copied web hook.
+- Phase events are diagnostic UI only and sit behind the search status Details reveal. There is still no analytics, persistence, query-quality suggestion flow, web-style retry-advice flow, or copied web hook.
 - The latest phase-event slice passed a local JSX parser check and `npx expo export --platform android --output-dir .expo-export-check`; `.expo-export-check` was removed afterward.
 - Phase-event construction, replacement, and display formatting now live in `src/search/searchPhaseEvents.js`; this was a behavior-preserving controller readability cleanup.
 - The latest controller cleanup passed a local JSX/parser check and `npx expo export --platform android --output-dir .expo-export-check`; `.expo-export-check` was removed afterward.
@@ -78,9 +75,9 @@
 - The controller session-hardening slice passed local parser checks and `npx expo export --platform android --output-dir .expo-export-check`; `.expo-export-check` was removed afterward.
 - The detail-content slice adds a rank-aware at-a-glance snapshot to `SearchResultDetailScreen` while still using only title, source/provider, price, rating, review count, and rank.
 - The latest detail-content slice passed a local JSX parser check and `npx expo export --platform android --output-dir .expo-export-check`; `.expo-export-check` was removed afterward.
-- Mobile now has a temporary explicit Amazon store selector:
+- Mobile now has a temporary explicit Amazon store preference flow:
   - `src/search/amazonMarketplaces.js` mirrors the supported marketplace domain list from the web shared helper
-  - `SearchEntrySection.jsx` renders a plain horizontal country-code selector
+  - `SearchEntrySection.jsx` keeps the Search screen focused on query entry and Settings navigation; the inline marketplace selector has moved out of the main search surface
   - `discoverProducts` sends `amazonDomain` on `GET /api/search/rainforest-discover`
   - discovery stores the requested/resolved `amazonDomain` on the active search session
   - `AsyncStorage` stores the selected domain under `focamai_marketplace` and reloads it on app startup
@@ -91,8 +88,14 @@
   - changing the store while a search is active clears marketplace-scoped results, cancels stale in-flight responses, keeps the typed query, and asks the user to search again
   - this is not the full web marketplace behavior yet: no geolocation and no automatic active-search restart when the store changes
 - The explicit marketplace-domain slice passed `node --check` for touched JS files and `npx expo export --platform android --output-dir .expo-export-check`; `.expo-export-check` was removed afterward. Manual Expo Go verification is still pending.
+- The Home focus cleanup removed the temporary inline Amazon store selector from `SearchEntrySection.jsx`; store preference changes now live in Settings, while the first-run store prompt still appears before searching when needed.
+- The latest Home focus cleanup had no touched `.js` files for `node --check`; `index.js` still passed `node --check`, and `npx expo export --platform android --output-dir .expo-export-check` passed; `.expo-export-check` was removed afterward.
+- The Home status cleanup made `SearchProgressStatus.jsx` default to a plain user-facing state message and moved API base, token, timing, candidate counts, and phase events into an expandable Diagnostics section.
+- The latest Home status cleanup had no newly touched `.js` files for `node --check`; `index.js` and the already-modified `App.js` both passed `node --check`, and `npx expo export --platform android --output-dir .expo-export-check` passed; `.expo-export-check` was removed afterward.
 - Enrichment polling is guarded by request id and a 30 second timeout, records an `enrich` phase event, and merges `fit_reason`, `caveat`, and `feature_bullets` into focused picks by candidate id.
-- Focused-pick rows can show a one-line `fit_reason` preview, and `SearchResultDetailScreen` can show `Why this pick` and `Worth knowing` rows when enrichment data arrives.
+- Focused-pick rows can show a one-line `fit_reason` preview, and `SearchResultDetailScreen` now shows `Why this pick`, `Worth knowing`, and feature-note sections with calm fallback copy when enrichment data is absent.
+- The focused-pick detail destination is now a more complete mobile-native destination using only normalized focused-pick fields already passed through navigation: rank, title, source/provider, price, rating, review count, `fit_reason`, `caveat`, and `feature_bullets`.
+- The latest focused-pick detail slice had no touched `.js` files for `node --check`; `index.js` still passed `node --check`, and `npx expo export --platform android --output-dir .expo-export-check` passed; `.expo-export-check` was removed afterward.
 - The enrichment/domain slice passed `npx expo export --platform android --output-dir .expo-export-check`; `.expo-export-check` was removed afterward.
 - Temporary same-session retry with feedback exists in code:
   - `src/search/searchApi.js` sends retry finalize requests with `requestMode: "guided_retry"`, feedback, retry count, and excluded current focused-pick IDs
@@ -110,11 +113,12 @@
 - No full guided search logic is active.
 - A thin mobile search API helper and mobile controller hook are active, but analytics, persistence, and polished result UI are still deferred.
 - No analytics helper is active.
-- No TanStack Query provider is active.
+- TanStack Query is installed and `App.js` wraps the app in `QueryClientProvider`, but no existing search code has been migrated to queries.
+- Manrope is loaded with `expo-font` before the app tree renders; `Text`/`TextInput` default to Manrope and NativeWind has Manrope font-family aliases for future styling work.
 - The scaffold has enough component extraction for now. Future work should move in bounded vertical slices that are larger than one-card cleanup but still avoid broad ports.
-- Settings now exists and should be used for secondary preferences, app info, and legal/support links when doing so keeps Home focused on search.
+- Settings now exists and should be used for secondary preferences, app info, and legal/support links when doing so keeps Search focused on search.
 - Prefer next slices that are user-visible native UI work:
-  - real product cards
+  - richer image/CTA-capable product cards when normalized data and affiliate behavior are ready
   - polished search/refine/results flow
   - tighter result/detail UX after retry is smoke-verified in Expo Go
 
