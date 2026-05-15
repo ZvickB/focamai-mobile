@@ -8,6 +8,28 @@ import {
 } from "./searchApi";
 import { buildPhaseEvent, replacePhaseEvent } from "./searchPhaseEvents";
 
+const DEFAULT_AMAZON_DOMAIN = "amazon.com";
+
+function createSearchSession({ requestId, submittedQuery }) {
+  return {
+    amazonDomain: DEFAULT_AMAZON_DOMAIN,
+    candidateCount: 0,
+    discoveryToken: "",
+    phases: {
+      discover: "running",
+      finalize: "idle",
+      refine: "running",
+    },
+    previewCount: 0,
+    requestId,
+    submittedQuery,
+  };
+}
+
+function hasRunningPhase(session) {
+  return Object.values(session?.phases || {}).some((status) => status === "running");
+}
+
 function buildDiscoverySummary(discoveryPayload, query) {
   const candidates = Array.isArray(discoveryPayload.candidatePool?.candidates)
     ? discoveryPayload.candidatePool.candidates
@@ -39,7 +61,10 @@ function buildRefinementPrompt(refinementPayload) {
 }
 
 export function useMobileSearchController() {
+  const activeSearchSessionRef = useRef(null);
+  const finalizingRequestIdRef = useRef(null);
   const searchRequestIdRef = useRef(0);
+  const [activeSearchSession, setActiveSearchSession] = useState(null);
   const [productQuery, setProductQuery] = useState("");
   const [discoverySummary, setDiscoverySummary] = useState(null);
   const [errorMessage, setErrorMessage] = useState("");
@@ -55,6 +80,26 @@ export function useMobileSearchController() {
     setPhaseEvents((currentEvents) => replacePhaseEvent(currentEvents, nextEvent));
   }
 
+  function setSession(nextSession) {
+    activeSearchSessionRef.current = nextSession;
+    setActiveSearchSession(nextSession);
+  }
+
+  function updateSessionForRequest(requestId, updateSession) {
+    if (activeSearchSessionRef.current?.requestId !== requestId) {
+      return false;
+    }
+
+    const nextSession = updateSession(activeSearchSessionRef.current);
+    setSession(nextSession);
+
+    return true;
+  }
+
+  function isActiveRequest(requestId) {
+    return activeSearchSessionRef.current?.requestId === requestId;
+  }
+
   function startDiscoverySearch() {
     const normalizedQuery = productQuery.trim();
 
@@ -66,14 +111,35 @@ export function useMobileSearchController() {
 
     const requestId = searchRequestIdRef.current + 1;
     searchRequestIdRef.current = requestId;
+    const previousSession = activeSearchSessionRef.current;
+    const previousSessionWasRunning =
+      Boolean(previousSession) && (hasRunningPhase(previousSession) || finalizingRequestIdRef.current);
+    finalizingRequestIdRef.current = null;
 
+    const nextSession = createSearchSession({
+      requestId,
+      submittedQuery: normalizedQuery,
+    });
+
+    setSession(nextSession);
     setIsDiscovering(true);
     setIsGeneratingPrompt(true);
+    setIsFinalizing(false);
     setErrorMessage("");
     setDiscoverySummary(null);
     setFinalResults([]);
     setFollowUpNotes("");
     setPhaseEvents([
+      ...(previousSessionWasRunning
+        ? [
+            buildPhaseEvent({
+              detail: "Previous in-flight responses will be ignored",
+              phase: "session",
+              requestId: previousSession.requestId,
+              status: "stale",
+            }),
+          ]
+        : []),
       buildPhaseEvent({
         detail: "Starting discovery request",
         phase: "discover",
@@ -91,13 +157,47 @@ export function useMobileSearchController() {
 
     discoverProducts({ query: normalizedQuery })
       .then((discoveryPayload) => {
-        if (searchRequestIdRef.current !== requestId) {
+        if (!isActiveRequest(requestId)) {
           return;
         }
 
         const nextSummary = buildDiscoverySummary(discoveryPayload, normalizedQuery);
 
         setDiscoverySummary(nextSummary);
+        if (!nextSummary.discoveryToken) {
+          updateSessionForRequest(requestId, (currentSession) => ({
+            ...currentSession,
+            candidateCount: nextSummary.candidateCount,
+            discoveryToken: "",
+            phases: {
+              ...currentSession.phases,
+              discover: "failed",
+            },
+            previewCount: nextSummary.previewCount,
+          }));
+          setErrorMessage("This search session expired before it could be finalized. Start the search again.");
+          updatePhaseEvent(
+            buildPhaseEvent({
+              detail: "Discovery returned no session token",
+              phase: "discover",
+              requestId,
+              status: "failed",
+              timingMs: nextSummary.timingMs,
+            }),
+          );
+          return;
+        }
+
+        updateSessionForRequest(requestId, (currentSession) => ({
+          ...currentSession,
+          candidateCount: nextSummary.candidateCount,
+          discoveryToken: nextSummary.discoveryToken,
+          phases: {
+            ...currentSession.phases,
+            discover: "complete",
+          },
+          previewCount: nextSummary.previewCount,
+        }));
         updatePhaseEvent(
           buildPhaseEvent({
             detail: `${nextSummary.candidateCount} candidates, ${nextSummary.previewCount} preview results`,
@@ -109,10 +209,17 @@ export function useMobileSearchController() {
         );
       })
       .catch((error) => {
-        if (searchRequestIdRef.current !== requestId) {
+        if (!isActiveRequest(requestId)) {
           return;
         }
 
+        updateSessionForRequest(requestId, (currentSession) => ({
+          ...currentSession,
+          phases: {
+            ...currentSession.phases,
+            discover: "failed",
+          },
+        }));
         setErrorMessage(error instanceof Error ? error.message : "Unable to run discovery.");
         updatePhaseEvent(
           buildPhaseEvent({
@@ -124,20 +231,27 @@ export function useMobileSearchController() {
         );
       })
       .finally(() => {
-        if (searchRequestIdRef.current === requestId) {
+        if (isActiveRequest(requestId)) {
           setIsDiscovering(false);
         }
       });
 
     getRefinementPrompt({ query: normalizedQuery })
       .then((refinementPayload) => {
-        if (searchRequestIdRef.current !== requestId) {
+        if (!isActiveRequest(requestId)) {
           return;
         }
 
         const nextPrompt = buildRefinementPrompt(refinementPayload);
 
         setRefinementPrompt(nextPrompt);
+        updateSessionForRequest(requestId, (currentSession) => ({
+          ...currentSession,
+          phases: {
+            ...currentSession.phases,
+            refine: "complete",
+          },
+        }));
         updatePhaseEvent(
           buildPhaseEvent({
             detail: "Follow-up prompt ready",
@@ -149,10 +263,17 @@ export function useMobileSearchController() {
         );
       })
       .catch(() => {
-        if (searchRequestIdRef.current !== requestId) {
+        if (!isActiveRequest(requestId)) {
           return;
         }
 
+        updateSessionForRequest(requestId, (currentSession) => ({
+          ...currentSession,
+          phases: {
+            ...currentSession.phases,
+            refine: "failed",
+          },
+        }));
         setErrorMessage("The follow-up question did not load yet.");
         updatePhaseEvent(
           buildPhaseEvent({
@@ -164,22 +285,56 @@ export function useMobileSearchController() {
         );
       })
       .finally(() => {
-        if (searchRequestIdRef.current === requestId) {
+        if (isActiveRequest(requestId)) {
           setIsGeneratingPrompt(false);
         }
       });
   }
 
   async function finalizeFocusedPicks() {
-    if (!discoverySummary?.discoveryToken || !discoverySummary?.query || isFinalizing) {
+    const session = activeSearchSessionRef.current;
+
+    if (finalizingRequestIdRef.current) {
       return;
     }
 
-    const requestId = searchRequestIdRef.current;
+    if (!session?.discoveryToken || !session?.submittedQuery) {
+      const requestId = session?.requestId || searchRequestIdRef.current;
+
+      setErrorMessage("This search session expired. Start the search again before showing focused picks.");
+      if (requestId) {
+        updateSessionForRequest(requestId, (currentSession) => ({
+          ...currentSession,
+          phases: {
+            ...currentSession.phases,
+            finalize: "failed",
+          },
+        }));
+        updatePhaseEvent(
+          buildPhaseEvent({
+            detail: "Finalize blocked because the discovery token is missing",
+            phase: "finalize",
+            requestId,
+            status: "failed",
+          }),
+        );
+      }
+      return;
+    }
+
+    const requestId = session.requestId;
+    finalizingRequestIdRef.current = requestId;
 
     setIsFinalizing(true);
     setErrorMessage("");
     setFinalResults([]);
+    updateSessionForRequest(requestId, (currentSession) => ({
+      ...currentSession,
+      phases: {
+        ...currentSession.phases,
+        finalize: "running",
+      },
+    }));
     updatePhaseEvent(
       buildPhaseEvent({
         detail: followUpNotes.trim() ? "Sending refined shortlist request" : "Sending shortlist request",
@@ -191,13 +346,25 @@ export function useMobileSearchController() {
 
     try {
       const payload = await finalizeSearch({
-        discoveryToken: discoverySummary.discoveryToken,
+        discoveryToken: session.discoveryToken,
         followUpNotes,
-        query: discoverySummary.query,
+        query: session.submittedQuery,
       });
+
+      if (!isActiveRequest(requestId) || finalizingRequestIdRef.current !== requestId) {
+        return;
+      }
+
       const nextFinalResults = normalizeFinalResults(payload.results);
 
       setFinalResults(nextFinalResults);
+      updateSessionForRequest(requestId, (currentSession) => ({
+        ...currentSession,
+        phases: {
+          ...currentSession.phases,
+          finalize: "complete",
+        },
+      }));
       updatePhaseEvent(
         buildPhaseEvent({
           detail: `${nextFinalResults.length} focused picks`,
@@ -208,6 +375,17 @@ export function useMobileSearchController() {
         }),
       );
     } catch (error) {
+      if (!isActiveRequest(requestId) || finalizingRequestIdRef.current !== requestId) {
+        return;
+      }
+
+      updateSessionForRequest(requestId, (currentSession) => ({
+        ...currentSession,
+        phases: {
+          ...currentSession.phases,
+          finalize: "failed",
+        },
+      }));
       setErrorMessage(error instanceof Error ? error.message : "Unable to finalize results.");
       updatePhaseEvent(
         buildPhaseEvent({
@@ -218,17 +396,24 @@ export function useMobileSearchController() {
         }),
       );
     } finally {
-      setIsFinalizing(false);
+      if (isActiveRequest(requestId) && finalizingRequestIdRef.current === requestId) {
+        finalizingRequestIdRef.current = null;
+        setIsFinalizing(false);
+      }
     }
   }
 
   const previewItems = Array.isArray(discoverySummary?.previewItems)
     ? discoverySummary.previewItems
     : [];
-  const canFinalize = Boolean(discoverySummary?.discoveryToken) && !isFinalizing;
-  const hasStartedSearch = Boolean(discoverySummary || refinementPrompt || isDiscovering || isGeneratingPrompt);
+  const canFinalize =
+    Boolean(activeSearchSession?.discoveryToken && discoverySummary?.discoveryToken) && !isFinalizing;
+  const hasStartedSearch = Boolean(
+    activeSearchSession || discoverySummary || refinementPrompt || isDiscovering || isGeneratingPrompt,
+  );
 
   return {
+    activeSearchSession,
     canFinalize,
     discoverySummary,
     errorMessage,

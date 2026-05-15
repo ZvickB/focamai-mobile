@@ -68,6 +68,12 @@
 - The latest phase-event slice passed a local JSX parser check and `npx expo export --platform android --output-dir .expo-export-check`; `.expo-export-check` was removed afterward.
 - Phase-event construction, replacement, and display formatting now live in `src/search/searchPhaseEvents.js`; this was a behavior-preserving controller readability cleanup.
 - The latest controller cleanup passed a local JSX/parser check and `npx expo export --platform android --output-dir .expo-export-check`; `.expo-export-check` was removed afterward.
+- The controller session-hardening slice is now implemented in `src/search/useMobileSearchController.js`:
+  - the hook tracks an explicit active search session with request id, submitted query, temporary default `amazon.com` domain placeholder, discovery token, candidate count, preview count, and phase statuses
+  - discovery, refinement, and finalize ignore stale responses when a newer search has started
+  - finalize snapshots the active session before sending, blocks overlapping finalize calls, ignores stale finalize completions, and treats missing discovery tokens as expired-session errors
+  - starting a newer search can add a lightweight `Session` stale phase event for in-flight older work
+- The controller session-hardening slice passed local parser checks and `npx expo export --platform android --output-dir .expo-export-check`; `.expo-export-check` was removed afterward.
 - The detail-content slice adds a rank-aware at-a-glance snapshot to `SearchResultDetailScreen` while still using only title, source/provider, price, rating, review count, and rank.
 - The latest detail-content slice passed a local JSX parser check and `npx expo export --platform android --output-dir .expo-export-check`; `.expo-export-check` was removed afterward.
 - Discovery-only backend access has been verified in Expo Go against the local backend using a LAN API base URL.
@@ -107,7 +113,8 @@
 ## Next step
 - Continue building mobile search in bounded vertical slices against `src/search/useMobileSearchController.js`.
 - Do not keep doing micro-extractions unless they directly support a real mobile UX/data slice.
-- A strong next step is a native UX pass around result/refine ordering after Expo Go verification confirms phase events and the detail snapshot render clearly.
+- A strong next step is Expo Go verification of the controller hardening path, especially overlap behavior: start a search, quickly start another, then confirm older discovery/refine/finalize responses do not replace the newer session.
+- After that verification, a native UX pass around result/refine ordering is still a good next slice.
 - Keep result count capped at 6 and do not add images, modal/details, enrichment, analytics, or retry yet.
 - `EXPO_PUBLIC_API_BASE_URL` must point to the backend API, not the public frontend site.
 - If using the deployed backend, set `EXPO_PUBLIC_API_BASE_URL` to the active Render backend URL and restart Expo with `npx expo start --clear --lan`.

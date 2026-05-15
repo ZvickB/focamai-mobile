@@ -4,6 +4,7 @@ const PHASE_LABELS = {
   discover: "Discover",
   finalize: "Finalize",
   refine: "Refine",
+  session: "Session",
 };
 
 export function buildPhaseEvent({ detail = "", phase, requestId, status, timingMs = null }) {

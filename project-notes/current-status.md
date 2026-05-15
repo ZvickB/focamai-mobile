@@ -40,6 +40,11 @@
 - A tiny controller cleanup now keeps phase-event construction, replacement, and display formatting in `src/search/searchPhaseEvents.js`.
 - The controller cleanup is behavior-preserving and does not change request payloads, result caps, UI ordering, or backend contracts.
 - The latest controller cleanup passed a local JSX/parser check and `npx expo export --platform android --output-dir .expo-export-check`; the temporary export directory was removed afterward.
+- A controller session-hardening slice now adds an explicit active search session in `src/search/useMobileSearchController.js` with request id, submitted query, temporary default `amazon.com` domain placeholder, discovery token, candidate/preview counts, and phase statuses.
+- Discovery, refinement, and finalize now use the active session/ref guards so stale responses from older searches cannot replace newer session state.
+- Finalize now snapshots the active session before sending, blocks overlapping finalize calls with a ref guard, ignores stale finalize completions, and treats a missing discovery token as an expired-session path.
+- The phase-event helper now labels a lightweight `Session` stale event when a new search supersedes in-flight work; events remain diagnostic only.
+- The controller session-hardening slice passed local parser checks and `npx expo export --platform android --output-dir .expo-export-check`; the temporary export directory was removed afterward.
 - A small detail-content slice now adds a rank-aware at-a-glance snapshot to `SearchResultDetailScreen`.
 - The detail-content slice still uses only already-normalized metadata already passed through navigation: title, source/provider, price, rating, review count, and rank.
 - The latest detail-content slice passed a local JSX parser check and `npx expo export --platform android --output-dir .expo-export-check`; the temporary export directory was removed afterward.
@@ -79,6 +84,7 @@
   - `src/search/SearchResultRows.jsx` owns the temporary preview and focused-pick row rendering helpers so HomeScreen owns less presentation detail.
   - `src/search/SearchResultsSection.jsx` owns the current focused results slice by rendering discovery preview and focused picks in one checkpoint using existing normalized fields and detail navigation.
   - `src/search/useMobileSearchController.js` exposes a small `phaseEvents` array for the current in-memory search path.
+  - `src/search/useMobileSearchController.js` also owns the active in-memory search session and stale-response guards for discovery, refinement, and finalize.
   - `src/search/searchPhaseEvents.js` owns tiny helpers for creating/replacing/displaying phase-event state.
   - `src/search/SearchProgressStatus.jsx` renders those phase events inside the existing progress scaffold.
   - `src/screens/SearchResultDetailScreen.jsx` shows a non-rich detail view for a focused pick using only the normalized result fields already returned by finalize.
