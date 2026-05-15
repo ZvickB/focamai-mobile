@@ -38,6 +38,7 @@
   - active search button
   - About navigation button
   - small progress snapshot
+  - lightweight phase events for `discover`, `refine`, and `finalize`
   - discovery response summary with candidate count, preview count, source, timing, and token status
   - combined results checkpoint with tiny preview capped at 3 normalized preview results
   - refinement prompt and local follow-up notes box
@@ -61,6 +62,9 @@
 - The temporary refine prompt, notes input, and finalize button presentation now live in `src/search/SearchRefineSection.jsx`.
 - The focused results slice keeps backend contracts unchanged, keeps final rows capped at 6, improves the plain list with clearer metadata labels and tap affordance, and still uses the existing detail navigation.
 - The latest focused results slice passed a local JSX parser check and `npx expo export --platform android --output-dir .expo-export-check`; `.expo-export-check` was removed afterward.
+- The controller now exposes in-memory phase events for `discover`, `refine`, and `finalize`; the Progress panel renders them as running/complete/failed with small timing/count details.
+- Phase events are diagnostic UI only. There is still no analytics, persistence, retry, enrichment, or copied web hook.
+- The latest phase-event slice passed a local JSX parser check and `npx expo export --platform android --output-dir .expo-export-check`; `.expo-export-check` was removed afterward.
 - Discovery-only backend access has been verified in Expo Go against the local backend using a LAN API base URL.
 - Tiny preview rendering has been verified in Expo Go.
 - Refinement prompt rendering has been verified in Expo Go.
@@ -73,8 +77,8 @@
 - No TanStack Query provider is active.
 - The scaffold has enough component extraction for now. Future work should move in bounded vertical slices that are larger than one-card cleanup but still avoid broad ports.
 - Prefer next slices that are user-visible or improve diagnosis of the current search path:
-  - focused results slice that owns preview + focused picks and improves the plain list using existing normalized fields/navigation
-  - lightweight controller phase/debug events for `discover`, `refine`, and `finalize`
+  - detail-content slice that adds only already-normalized metadata to the existing detail screen
+  - small native UX pass around result/refine ordering after Expo Go verification confirms phase events render clearly
 
 ## What was removed
 - Phase 3 guided-search hook and debug harness behavior.
@@ -98,7 +102,7 @@
 ## Next step
 - Continue building mobile search in bounded vertical slices against `src/search/useMobileSearchController.js`.
 - Do not keep doing micro-extractions unless they directly support a real mobile UX/data slice.
-- A strong next step is lightweight controller phase/debug events for `discover`, `refine`, and `finalize`, or a small detail-content slice that uses only already-normalized metadata.
+- A strong next step is a small detail-content slice that uses only already-normalized metadata, or a native UX pass around result/refine ordering after Expo Go verification.
 - Keep result count capped at 6 and do not add images, modal/details, enrichment, analytics, or retry yet.
 - `EXPO_PUBLIC_API_BASE_URL` must point to the backend API, not the public frontend site.
 - If using the deployed backend, set `EXPO_PUBLIC_API_BASE_URL` to the active Render backend URL and restart Expo with `npx expo start --clear --lan`.

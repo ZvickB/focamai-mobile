@@ -12,12 +12,51 @@ function StatusLine({ label, value }) {
   );
 }
 
+function formatPhaseName(phase) {
+  if (phase === "discover") {
+    return "Discover";
+  }
+
+  if (phase === "refine") {
+    return "Refine";
+  }
+
+  if (phase === "finalize") {
+    return "Finalize";
+  }
+
+  return phase;
+}
+
+function formatPhaseStatus(event) {
+  const timing = event.timingMs === null || event.timingMs === undefined ? "" : ` - ${event.timingMs}ms`;
+
+  return `${event.status}${timing}`;
+}
+
+function PhaseEventLine({ event }) {
+  return (
+    <View className="border-b border-line py-2">
+      <View className="flex-row justify-between gap-4">
+        <Text className="text-sm font-medium text-slate-900">{formatPhaseName(event.phase)}</Text>
+        <Text className="text-right text-sm font-medium text-slate-700">
+          {formatPhaseStatus(event)}
+        </Text>
+      </View>
+      {event.detail ? (
+        <Text className="mt-1 text-sm leading-5 text-slate-600">{event.detail}</Text>
+      ) : null}
+    </View>
+  );
+}
+
 export function SearchProgressStatus({
   discoverySummary,
   errorMessage,
   hasStartedSearch,
   isFinalizing,
   isGeneratingPrompt,
+  phaseEvents = [],
   productQuery,
   refinementPrompt,
 }) {
@@ -44,6 +83,16 @@ export function SearchProgressStatus({
           <StatusLine label="Refine timing" value={`${refinementPrompt.timingMs}ms`} />
         ) : null}
       </View>
+      {phaseEvents.length > 0 ? (
+        <View className="mt-4">
+          <Text className="text-xs font-semibold uppercase text-slate-500">Phase events</Text>
+          <View className="mt-1">
+            {phaseEvents.map((event) => (
+              <PhaseEventLine key={event.id} event={event} />
+            ))}
+          </View>
+        </View>
+      ) : null}
       {errorMessage ? (
         <Text className="mt-3 text-sm leading-5 text-red-600">{errorMessage}</Text>
       ) : null}

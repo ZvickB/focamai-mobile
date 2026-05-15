@@ -16,6 +16,7 @@
   - a tiny capped preview of the first few discovery preview results
   - a refinement prompt and local follow-up notes box
   - a combined results checkpoint that owns discovery preview and focused-pick rows together
+  - lightweight phase events for `discover`, `refine`, and `finalize` in the existing Progress panel
   - lightweight focused-pick metadata rows capped at 6
   - a plain focused-pick detail screen that shows existing metadata only
 - The backend remains shared with the web app, and mobile now has a minimal discovery/refine/finalize request path.
@@ -33,6 +34,9 @@
 - A focused results slice now owns preview and focused-pick rendering together in `src/search/SearchResultsSection.jsx`.
 - The focused results slice keeps backend contracts unchanged, keeps the shortlist capped at 6, uses only existing normalized fields, and still navigates to the existing plain detail screen.
 - The latest focused results slice passed a local JSX parser check and `npx expo export --platform android --output-dir .expo-export-check`; the temporary export directory was removed afterward.
+- A lightweight controller phase-event slice now records `discover`, `refine`, and `finalize` as running/complete/failed with small timing/count details.
+- Phase events are local in-memory controller state only; there is still no analytics, persistence, retry, enrichment, or copied web hook.
+- The latest phase-event slice passed a local JSX parser check and `npx expo export --platform android --output-dir .expo-export-check`; the temporary export directory was removed afterward.
 - Discovery and refinement requests are still launched together, but the UI now updates each one independently so a slow follow-up question does not block discovery rendering.
 - The mobile app still does not run the full guided flow: no enrichment, real product cards, analytics, persistence, retry, or modal/details are active.
 - The current Home UI is now a slightly cleaner search/refine/results scaffold, not the intended final mobile UX.
@@ -68,6 +72,8 @@
   - Home composes entry, progress, preview, refine, and focused-pick sections instead of owning every presentation detail inline.
   - `src/search/SearchResultRows.jsx` owns the temporary preview and focused-pick row rendering helpers so HomeScreen owns less presentation detail.
   - `src/search/SearchResultsSection.jsx` owns the current focused results slice by rendering discovery preview and focused picks in one checkpoint using existing normalized fields and detail navigation.
+  - `src/search/useMobileSearchController.js` exposes a small `phaseEvents` array for the current in-memory search path.
+  - `src/search/SearchProgressStatus.jsx` renders those phase events inside the existing progress scaffold.
   - `src/screens/SearchResultDetailScreen.jsx` shows a non-rich detail view for a focused pick using only the normalized result fields already returned by finalize.
   - `src/search/SearchResultDetailMetadata.jsx` owns the temporary detail metadata rows and fallback formatting.
   - `src/navigation/RootNavigator.jsx` includes the `SearchResultDetail` stack route.
@@ -109,8 +115,8 @@
 
 ## Recommended next step
 - Continue with bounded vertical slices rather than extraction-only cleanup.
-- A good next slice is lightweight controller phase/debug events so future failures identify `discover`, `refine`, or `finalize`.
-- Another acceptable slice is a detail-content slice that adds only already-normalized metadata to the existing detail screen.
+- A good next slice is a detail-content slice that adds only already-normalized metadata to the existing detail screen.
+- Another acceptable slice is a small native UX pass around result/refine ordering after Expo Go verification confirms the new phase events render clearly.
 - Avoid broad ports and avoid endless scaffold-only cleanup. Each next slice should be user-visible or improve diagnosis of the current search path.
 - Keep result count capped at 6 and do not add images, modal/details, enrichment, analytics, or retry yet.
 - `EXPO_PUBLIC_API_BASE_URL` must point to the backend API, not the public frontend site.

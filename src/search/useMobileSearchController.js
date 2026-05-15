@@ -37,6 +37,22 @@ function buildRefinementPrompt(refinementPayload) {
   };
 }
 
+function buildPhaseEvent({ detail = "", phase, requestId, status, timingMs = null }) {
+  return {
+    detail,
+    id: `${requestId}-${phase}`,
+    phase,
+    status,
+    timingMs,
+  };
+}
+
+function replacePhaseEvent(events, nextEvent) {
+  const remainingEvents = events.filter((event) => event.id !== nextEvent.id);
+
+  return [...remainingEvents, nextEvent].slice(-6);
+}
+
 export function useMobileSearchController() {
   const searchRequestIdRef = useRef(0);
   const [productQuery, setProductQuery] = useState("");
@@ -47,7 +63,12 @@ export function useMobileSearchController() {
   const [isDiscovering, setIsDiscovering] = useState(false);
   const [isFinalizing, setIsFinalizing] = useState(false);
   const [isGeneratingPrompt, setIsGeneratingPrompt] = useState(false);
+  const [phaseEvents, setPhaseEvents] = useState([]);
   const [refinementPrompt, setRefinementPrompt] = useState(null);
+
+  function updatePhaseEvent(nextEvent) {
+    setPhaseEvents((currentEvents) => replacePhaseEvent(currentEvents, nextEvent));
+  }
 
   function startDiscoverySearch() {
     const normalizedQuery = productQuery.trim();
@@ -67,6 +88,20 @@ export function useMobileSearchController() {
     setDiscoverySummary(null);
     setFinalResults([]);
     setFollowUpNotes("");
+    setPhaseEvents([
+      buildPhaseEvent({
+        detail: "Starting discovery request",
+        phase: "discover",
+        requestId,
+        status: "running",
+      }),
+      buildPhaseEvent({
+        detail: "Starting follow-up prompt request",
+        phase: "refine",
+        requestId,
+        status: "running",
+      }),
+    ]);
     setRefinementPrompt(null);
 
     discoverProducts({ query: normalizedQuery })
@@ -75,7 +110,18 @@ export function useMobileSearchController() {
           return;
         }
 
-        setDiscoverySummary(buildDiscoverySummary(discoveryPayload, normalizedQuery));
+        const nextSummary = buildDiscoverySummary(discoveryPayload, normalizedQuery);
+
+        setDiscoverySummary(nextSummary);
+        updatePhaseEvent(
+          buildPhaseEvent({
+            detail: `${nextSummary.candidateCount} candidates, ${nextSummary.previewCount} preview results`,
+            phase: "discover",
+            requestId,
+            status: "complete",
+            timingMs: nextSummary.timingMs,
+          }),
+        );
       })
       .catch((error) => {
         if (searchRequestIdRef.current !== requestId) {
@@ -83,6 +129,14 @@ export function useMobileSearchController() {
         }
 
         setErrorMessage(error instanceof Error ? error.message : "Unable to run discovery.");
+        updatePhaseEvent(
+          buildPhaseEvent({
+            detail: "Discovery request failed",
+            phase: "discover",
+            requestId,
+            status: "failed",
+          }),
+        );
       })
       .finally(() => {
         if (searchRequestIdRef.current === requestId) {
@@ -96,7 +150,18 @@ export function useMobileSearchController() {
           return;
         }
 
-        setRefinementPrompt(buildRefinementPrompt(refinementPayload));
+        const nextPrompt = buildRefinementPrompt(refinementPayload);
+
+        setRefinementPrompt(nextPrompt);
+        updatePhaseEvent(
+          buildPhaseEvent({
+            detail: "Follow-up prompt ready",
+            phase: "refine",
+            requestId,
+            status: "complete",
+            timingMs: nextPrompt.timingMs,
+          }),
+        );
       })
       .catch(() => {
         if (searchRequestIdRef.current !== requestId) {
@@ -104,6 +169,14 @@ export function useMobileSearchController() {
         }
 
         setErrorMessage("The follow-up question did not load yet.");
+        updatePhaseEvent(
+          buildPhaseEvent({
+            detail: "Follow-up prompt request failed",
+            phase: "refine",
+            requestId,
+            status: "failed",
+          }),
+        );
       })
       .finally(() => {
         if (searchRequestIdRef.current === requestId) {
@@ -117,9 +190,19 @@ export function useMobileSearchController() {
       return;
     }
 
+    const requestId = searchRequestIdRef.current;
+
     setIsFinalizing(true);
     setErrorMessage("");
     setFinalResults([]);
+    updatePhaseEvent(
+      buildPhaseEvent({
+        detail: followUpNotes.trim() ? "Sending refined shortlist request" : "Sending shortlist request",
+        phase: "finalize",
+        requestId,
+        status: "running",
+      }),
+    );
 
     try {
       const payload = await finalizeSearch({
@@ -127,10 +210,28 @@ export function useMobileSearchController() {
         followUpNotes,
         query: discoverySummary.query,
       });
+      const nextFinalResults = normalizeFinalResults(payload.results);
 
-      setFinalResults(normalizeFinalResults(payload.results));
+      setFinalResults(nextFinalResults);
+      updatePhaseEvent(
+        buildPhaseEvent({
+          detail: `${nextFinalResults.length} focused picks`,
+          phase: "finalize",
+          requestId,
+          status: "complete",
+          timingMs: payload.clientTimingMs,
+        }),
+      );
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Unable to finalize results.");
+      updatePhaseEvent(
+        buildPhaseEvent({
+          detail: "Finalize request failed",
+          phase: "finalize",
+          requestId,
+          status: "failed",
+        }),
+      );
     } finally {
       setIsFinalizing(false);
     }
@@ -153,6 +254,7 @@ export function useMobileSearchController() {
     isFinalizing,
     isGeneratingPrompt,
     hasStartedSearch,
+    phaseEvents,
     previewItems,
     productQuery,
     refinementPrompt,

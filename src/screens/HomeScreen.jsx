@@ -18,6 +18,7 @@ export default function HomeScreen({ navigation }) {
     isDiscovering,
     isFinalizing,
     isGeneratingPrompt,
+    phaseEvents,
     previewItems,
     productQuery,
     refinementPrompt,
@@ -58,6 +59,7 @@ export default function HomeScreen({ navigation }) {
           hasStartedSearch={hasStartedSearch}
           isFinalizing={isFinalizing}
           isGeneratingPrompt={isGeneratingPrompt}
+          phaseEvents={phaseEvents}
           productQuery={productQuery}
           refinementPrompt={refinementPrompt}
         />
@@ -81,7 +83,6 @@ export default function HomeScreen({ navigation }) {
           refinementPrompt={refinementPrompt}
           setFollowUpNotes={setFollowUpNotes}
         />
-
       </ScrollView>
     </SafeAreaView>
   );
