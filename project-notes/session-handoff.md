@@ -68,6 +68,10 @@
 - A thin mobile search API helper and tiny mobile controller hook are active, but enrichment, analytics, retry, persistence, and polished result UI are still deferred.
 - No analytics helper is active.
 - No TanStack Query provider is active.
+- The scaffold has enough component extraction for now. Future work should move in bounded vertical slices that are larger than one-card cleanup but still avoid broad ports.
+- Prefer next slices that are user-visible or improve diagnosis of the current search path:
+  - focused results slice that owns preview + focused picks and improves the plain list using existing normalized fields/navigation
+  - lightweight controller phase/debug events for `discover`, `refine`, and `finalize`
 
 ## What was removed
 - Phase 3 guided-search hook and debug harness behavior.
@@ -89,7 +93,9 @@
 - Do not start by copying the whole old hook back into mobile.
 
 ## Next step
-- Continue building mobile search in bounded vertical slices against `src/search/useMobileSearchController.js`; the next safe structure slice is probably another small Home section extraction if it stays behavior-neutral.
+- Continue building mobile search in bounded vertical slices against `src/search/useMobileSearchController.js`.
+- Do not keep doing micro-extractions unless they directly support a real mobile UX/data slice.
+- A strong next step is a focused results slice: own preview + focused picks together, improve the plain list slightly, and keep backend contracts/normalized fields unchanged.
 - Keep result count capped at 6 and do not add images, modal/details, enrichment, analytics, or retry yet.
 - `EXPO_PUBLIC_API_BASE_URL` must point to the backend API, not the public frontend site.
 - If using the deployed backend, set `EXPO_PUBLIC_API_BASE_URL` to the active Render backend URL and restart Expo with `npx expo start --clear --lan`.

@@ -38,6 +38,7 @@
 - The refine section is now extracted into a small presentational component; behavior is unchanged and still uses the controller state/handlers.
 - The plain focused-pick detail screen is implemented and manually verified in Expo Go.
 - The detail screen metadata rows are now extracted into a tiny helper component; the screen still shows only existing normalized metadata.
+- The temporary scaffold has enough component extraction for now. Do not keep doing micro-extractions unless they directly support a real mobile UX/data slice.
 - Current work is proving endpoint flow and native rendering safety first; final mobile UI/UX can deliberately diverge from the web layout after the data path is stable.
 - Mobile UI/UX is expected to be redesigned after endpoint flow is proven; do not treat the web UI as the target layout, only as the product behavior reference.
 - The intended rebuild path is a happy middle: use web as the behavior/request contract, then build a small mobile-native search data/controller layer and bounded vertical UI slices instead of copying the full web hook or staying in tiny endpoint-test mode forever.
@@ -102,7 +103,10 @@
 - Mobile does not need to copy the web UI/UX 1:1; preserve product behavior and trust principles, then design the native experience intentionally.
 
 ## Recommended next step
-- Next mobile search work should build against the tiny controller hook in bounded vertical slices, likely by extracting another temporary Home section only if it reduces inline presentation safely.
+- Shift from tiny component extractions to bounded vertical slices.
+- A good next slice is a focused results slice: own preview + focused picks together, make the plain list slightly more useful, and keep using only existing normalized fields/navigation.
+- Another acceptable slice is lightweight controller phase/debug events so future failures identify `discover`, `refine`, or `finalize`.
+- Avoid broad ports and avoid endless scaffold-only cleanup. Each next slice should be user-visible or improve diagnosis of the current search path.
 - Keep result count capped at 6 and do not add images, modal/details, enrichment, analytics, or retry yet.
 - `EXPO_PUBLIC_API_BASE_URL` must point to the backend API, not the public frontend site.
 - Do not fall back to `https://focamai.com` for mobile API requests; that returns frontend HTML for unknown API paths.
