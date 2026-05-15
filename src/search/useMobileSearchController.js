@@ -6,6 +6,7 @@ import {
   normalizeFinalResults,
   normalizePreviewResults,
 } from "./searchApi";
+import { buildPhaseEvent, replacePhaseEvent } from "./searchPhaseEvents";
 
 function buildDiscoverySummary(discoveryPayload, query) {
   const candidates = Array.isArray(discoveryPayload.candidatePool?.candidates)
@@ -35,22 +36,6 @@ function buildRefinementPrompt(refinementPayload) {
     prompt: refinementPayload.prompt || "What should we optimize for?",
     timingMs: refinementPayload.clientTimingMs,
   };
-}
-
-function buildPhaseEvent({ detail = "", phase, requestId, status, timingMs = null }) {
-  return {
-    detail,
-    id: `${requestId}-${phase}`,
-    phase,
-    status,
-    timingMs,
-  };
-}
-
-function replacePhaseEvent(events, nextEvent) {
-  const remainingEvents = events.filter((event) => event.id !== nextEvent.id);
-
-  return [...remainingEvents, nextEvent].slice(-6);
 }
 
 export function useMobileSearchController() {

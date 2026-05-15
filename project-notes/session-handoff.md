@@ -66,6 +66,8 @@
 - The controller now exposes in-memory phase events for `discover`, `refine`, and `finalize`; the Progress panel renders them as running/complete/failed with small timing/count details.
 - Phase events are diagnostic UI only. There is still no analytics, persistence, retry, enrichment, or copied web hook.
 - The latest phase-event slice passed a local JSX parser check and `npx expo export --platform android --output-dir .expo-export-check`; `.expo-export-check` was removed afterward.
+- Phase-event construction, replacement, and display formatting now live in `src/search/searchPhaseEvents.js`; this was a behavior-preserving controller readability cleanup.
+- The latest controller cleanup passed a local JSX/parser check and `npx expo export --platform android --output-dir .expo-export-check`; `.expo-export-check` was removed afterward.
 - The detail-content slice adds a rank-aware at-a-glance snapshot to `SearchResultDetailScreen` while still using only title, source/provider, price, rating, review count, and rank.
 - The latest detail-content slice passed a local JSX parser check and `npx expo export --platform android --output-dir .expo-export-check`; `.expo-export-check` was removed afterward.
 - Discovery-only backend access has been verified in Expo Go against the local backend using a LAN API base URL.
@@ -81,7 +83,7 @@
 - The scaffold has enough component extraction for now. Future work should move in bounded vertical slices that are larger than one-card cleanup but still avoid broad ports.
 - Prefer next slices that are user-visible or improve diagnosis of the current search path:
   - small native UX pass around result/refine ordering after Expo Go verification confirms phase events and detail snapshot render clearly
-  - tiny controller cleanup if the search/refine/finalize phase state starts to get hard to scan
+  - narrow controller-state guard if Expo Go verification exposes stale finalize or overlapping-search behavior
 
 ## What was removed
 - Phase 3 guided-search hook and debug harness behavior.

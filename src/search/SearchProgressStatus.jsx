@@ -1,5 +1,6 @@
 import { Text, View } from "react-native";
 import { getApiBaseUrl } from "./searchApi";
+import { formatPhaseName, formatPhaseStatus } from "./searchPhaseEvents";
 
 const apiBaseUrl = getApiBaseUrl();
 
@@ -10,28 +11,6 @@ function StatusLine({ label, value }) {
       <Text className="shrink text-right text-sm font-medium text-slate-900">{value}</Text>
     </View>
   );
-}
-
-function formatPhaseName(phase) {
-  if (phase === "discover") {
-    return "Discover";
-  }
-
-  if (phase === "refine") {
-    return "Refine";
-  }
-
-  if (phase === "finalize") {
-    return "Finalize";
-  }
-
-  return phase;
-}
-
-function formatPhaseStatus(event) {
-  const timing = event.timingMs === null || event.timingMs === undefined ? "" : ` - ${event.timingMs}ms`;
-
-  return `${event.status}${timing}`;
 }
 
 function PhaseEventLine({ event }) {

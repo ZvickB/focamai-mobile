@@ -37,6 +37,9 @@
 - A lightweight controller phase-event slice now records `discover`, `refine`, and `finalize` as running/complete/failed with small timing/count details.
 - Phase events are local in-memory controller state only; there is still no analytics, persistence, retry, enrichment, or copied web hook.
 - The latest phase-event slice passed a local JSX parser check and `npx expo export --platform android --output-dir .expo-export-check`; the temporary export directory was removed afterward.
+- A tiny controller cleanup now keeps phase-event construction, replacement, and display formatting in `src/search/searchPhaseEvents.js`.
+- The controller cleanup is behavior-preserving and does not change request payloads, result caps, UI ordering, or backend contracts.
+- The latest controller cleanup passed a local JSX/parser check and `npx expo export --platform android --output-dir .expo-export-check`; the temporary export directory was removed afterward.
 - A small detail-content slice now adds a rank-aware at-a-glance snapshot to `SearchResultDetailScreen`.
 - The detail-content slice still uses only already-normalized metadata already passed through navigation: title, source/provider, price, rating, review count, and rank.
 - The latest detail-content slice passed a local JSX parser check and `npx expo export --platform android --output-dir .expo-export-check`; the temporary export directory was removed afterward.
@@ -76,6 +79,7 @@
   - `src/search/SearchResultRows.jsx` owns the temporary preview and focused-pick row rendering helpers so HomeScreen owns less presentation detail.
   - `src/search/SearchResultsSection.jsx` owns the current focused results slice by rendering discovery preview and focused picks in one checkpoint using existing normalized fields and detail navigation.
   - `src/search/useMobileSearchController.js` exposes a small `phaseEvents` array for the current in-memory search path.
+  - `src/search/searchPhaseEvents.js` owns tiny helpers for creating/replacing/displaying phase-event state.
   - `src/search/SearchProgressStatus.jsx` renders those phase events inside the existing progress scaffold.
   - `src/screens/SearchResultDetailScreen.jsx` shows a non-rich detail view for a focused pick using only the normalized result fields already returned by finalize.
   - `src/search/SearchResultDetailMetadata.jsx` owns the temporary detail snapshot, metadata rows, and fallback formatting.
@@ -119,7 +123,7 @@
 ## Recommended next step
 - Continue with bounded vertical slices rather than extraction-only cleanup.
 - A good next slice is a small native UX pass around result/refine ordering after Expo Go verification confirms phase events and the detail snapshot render clearly.
-- Another acceptable slice is a tiny controller cleanup if the search/refine/finalize phase state starts to get hard to scan.
+- Another acceptable slice is a narrow controller-state guard if Expo Go verification exposes stale finalize or overlapping-search behavior.
 - Avoid broad ports and avoid endless scaffold-only cleanup. Each next slice should be user-visible or improve diagnosis of the current search path.
 - Keep result count capped at 6 and do not add images, modal/details, enrichment, analytics, or retry yet.
 - `EXPO_PUBLIC_API_BASE_URL` must point to the backend API, not the public frontend site.
