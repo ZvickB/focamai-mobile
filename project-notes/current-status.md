@@ -34,6 +34,7 @@
 - The current Home UI is now a slightly cleaner search/refine/results scaffold, not the intended final mobile UX.
 - A tiny mobile search controller hook now owns the scaffold's query, phase loading flags, discovery/refine orchestration, follow-up notes, and finalize result state around `src/search/searchApi.js`.
 - The hook path and lighter Home scaffold have passed local Android Metro export/bundle checks with `npx expo export --platform android`.
+- The search entry card is now extracted into a small presentational component; behavior is unchanged and still uses the controller state/handlers.
 - The refine section is now extracted into a small presentational component; behavior is unchanged and still uses the controller state/handlers.
 - The plain focused-pick detail screen is implemented and manually verified in Expo Go.
 - The detail screen metadata rows are now extracted into a tiny helper component; the screen still shows only existing normalized metadata.
@@ -52,13 +53,14 @@
 - Added during the restart rebuild:
   - `src/screens/HomeScreen.jsx` renders a plain mobile search/refine/results scaffold and delegates search phase/state handling to `src/search/useMobileSearchController.js`.
   - `src/search/useMobileSearchController.js` can call `GET /api/search/rainforest-discover` for one query and expose a small response summary.
+  - `src/search/SearchEntrySection.jsx` owns the temporary product query input, search button, and About button presentation.
   - `src/search/SearchProgressStatus.jsx` owns the temporary progress/status section so HomeScreen stays focused on screen composition.
   - `src/search/SearchRefineSection.jsx` owns the temporary refine prompt, notes input, and finalize button presentation.
   - The hook exposes a tiny preview capped at 3 normalized items from `previewResults`.
   - The hook also calls `GET /api/search/refine` in parallel and exposes the follow-up prompt plus local notes state.
   - The hook can call `POST /api/search/finalize` with minimal guided payload and expose final results capped at 6.
   - Home now renders lightweight final-result metadata rows with rank, title, source/provider, price, rating, and review count, still capped at 6.
-  - Home composes progress, preview, refine, and focused-pick sections instead of owning every presentation detail inline.
+  - Home composes entry, progress, preview, refine, and focused-pick sections instead of owning every presentation detail inline.
   - `src/search/SearchResultRows.jsx` owns the temporary preview and focused-pick row rendering helpers so HomeScreen owns less presentation detail.
   - `src/screens/SearchResultDetailScreen.jsx` shows a non-rich detail view for a focused pick using only the normalized result fields already returned by finalize.
   - `src/search/SearchResultDetailMetadata.jsx` owns the temporary detail metadata rows and fallback formatting.

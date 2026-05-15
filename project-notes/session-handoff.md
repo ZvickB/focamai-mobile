@@ -55,6 +55,7 @@
   - focused picks render
   - tapping a focused-pick row opens `SearchResultDetailScreen`
   - Back returns to Home with results still visible
+- The temporary product query input, search button, and About button presentation now live in `src/search/SearchEntrySection.jsx`.
 - The temporary progress/status section now lives in `src/search/SearchProgressStatus.jsx`.
 - The temporary refine prompt, notes input, and finalize button presentation now live in `src/search/SearchRefineSection.jsx`.
 - Discovery-only backend access has been verified in Expo Go against the local backend using a LAN API base URL.
