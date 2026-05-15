@@ -3,6 +3,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import {
   detailValue,
   SearchResultDetailMetadata,
+  SearchResultDetailSnapshot,
 } from "../search/SearchResultDetailMetadata";
 
 export default function SearchResultDetailScreen({ route }) {
@@ -23,11 +24,12 @@ export default function SearchResultDetailScreen({ route }) {
             {detailValue(item.title, "Untitled product")}
           </Text>
           <Text className="mt-3 text-base leading-6 text-slate-600">
-            This is a plain detail checkpoint using the finalized result metadata already on device.
+            A closer look at the finalized shortlist metadata already on device.
           </Text>
         </View>
 
-        <SearchResultDetailMetadata item={item} />
+        <SearchResultDetailSnapshot item={item} rank={rank} />
+        <SearchResultDetailMetadata item={item} rank={rank} />
       </ScrollView>
     </SafeAreaView>
   );

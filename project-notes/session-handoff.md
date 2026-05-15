@@ -44,6 +44,7 @@
   - refinement prompt and local follow-up notes box
   - minimal `Show focused picks` button that renders focused-pick metadata rows capped at 6
   - plain focused-pick detail navigation from a result row
+  - detail screen at-a-glance snapshot using only already-normalized metadata
 - Search endpoint calls, JSON/HTML response guarding, API base URL checks, and result normalization now live in `src/search/searchApi.js`.
 - The temporary search phase/state orchestration now lives in `src/search/useMobileSearchController.js`; HomeScreen mostly renders the scaffold UI around that hook.
 - The hook path was manually verified in Expo Go by the user after a local Android Metro export/bundle check.
@@ -51,7 +52,7 @@
 - The temporary preview and focused-pick row rendering helpers now live in `src/search/SearchResultRows.jsx`.
 - Preview and focused-pick rendering now sit behind `src/search/SearchResultsSection.jsx`, which owns the current focused results slice.
 - The plain focused-pick detail screen now lives in `src/screens/SearchResultDetailScreen.jsx` and uses only normalized finalize metadata already on device.
-- The temporary focused-pick detail metadata rows now live in `src/search/SearchResultDetailMetadata.jsx`.
+- The temporary focused-pick detail snapshot and metadata rows now live in `src/search/SearchResultDetailMetadata.jsx`.
 - The extracted result-row module and plain focused-pick detail screen were manually verified in Expo Go by the user:
   - search
   - focused picks render
@@ -65,6 +66,8 @@
 - The controller now exposes in-memory phase events for `discover`, `refine`, and `finalize`; the Progress panel renders them as running/complete/failed with small timing/count details.
 - Phase events are diagnostic UI only. There is still no analytics, persistence, retry, enrichment, or copied web hook.
 - The latest phase-event slice passed a local JSX parser check and `npx expo export --platform android --output-dir .expo-export-check`; `.expo-export-check` was removed afterward.
+- The detail-content slice adds a rank-aware at-a-glance snapshot to `SearchResultDetailScreen` while still using only title, source/provider, price, rating, review count, and rank.
+- The latest detail-content slice passed a local JSX parser check and `npx expo export --platform android --output-dir .expo-export-check`; `.expo-export-check` was removed afterward.
 - Discovery-only backend access has been verified in Expo Go against the local backend using a LAN API base URL.
 - Tiny preview rendering has been verified in Expo Go.
 - Refinement prompt rendering has been verified in Expo Go.
@@ -77,8 +80,8 @@
 - No TanStack Query provider is active.
 - The scaffold has enough component extraction for now. Future work should move in bounded vertical slices that are larger than one-card cleanup but still avoid broad ports.
 - Prefer next slices that are user-visible or improve diagnosis of the current search path:
-  - detail-content slice that adds only already-normalized metadata to the existing detail screen
-  - small native UX pass around result/refine ordering after Expo Go verification confirms phase events render clearly
+  - small native UX pass around result/refine ordering after Expo Go verification confirms phase events and detail snapshot render clearly
+  - tiny controller cleanup if the search/refine/finalize phase state starts to get hard to scan
 
 ## What was removed
 - Phase 3 guided-search hook and debug harness behavior.
@@ -102,7 +105,7 @@
 ## Next step
 - Continue building mobile search in bounded vertical slices against `src/search/useMobileSearchController.js`.
 - Do not keep doing micro-extractions unless they directly support a real mobile UX/data slice.
-- A strong next step is a small detail-content slice that uses only already-normalized metadata, or a native UX pass around result/refine ordering after Expo Go verification.
+- A strong next step is a native UX pass around result/refine ordering after Expo Go verification confirms phase events and the detail snapshot render clearly.
 - Keep result count capped at 6 and do not add images, modal/details, enrichment, analytics, or retry yet.
 - `EXPO_PUBLIC_API_BASE_URL` must point to the backend API, not the public frontend site.
 - If using the deployed backend, set `EXPO_PUBLIC_API_BASE_URL` to the active Render backend URL and restart Expo with `npx expo start --clear --lan`.

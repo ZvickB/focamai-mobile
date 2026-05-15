@@ -18,7 +18,7 @@
   - a combined results checkpoint that owns discovery preview and focused-pick rows together
   - lightweight phase events for `discover`, `refine`, and `finalize` in the existing Progress panel
   - lightweight focused-pick metadata rows capped at 6
-  - a plain focused-pick detail screen that shows existing metadata only
+  - a plain focused-pick detail screen with an at-a-glance metadata snapshot and existing metadata rows only
 - The backend remains shared with the web app, and mobile now has a minimal discovery/refine/finalize request path.
 - The discovery-only slice has been verified in Expo Go against the local backend using a LAN API base URL.
 - The tiny capped preview has also been verified in Expo Go.
@@ -37,6 +37,9 @@
 - A lightweight controller phase-event slice now records `discover`, `refine`, and `finalize` as running/complete/failed with small timing/count details.
 - Phase events are local in-memory controller state only; there is still no analytics, persistence, retry, enrichment, or copied web hook.
 - The latest phase-event slice passed a local JSX parser check and `npx expo export --platform android --output-dir .expo-export-check`; the temporary export directory was removed afterward.
+- A small detail-content slice now adds a rank-aware at-a-glance snapshot to `SearchResultDetailScreen`.
+- The detail-content slice still uses only already-normalized metadata already passed through navigation: title, source/provider, price, rating, review count, and rank.
+- The latest detail-content slice passed a local JSX parser check and `npx expo export --platform android --output-dir .expo-export-check`; the temporary export directory was removed afterward.
 - Discovery and refinement requests are still launched together, but the UI now updates each one independently so a slow follow-up question does not block discovery rendering.
 - The mobile app still does not run the full guided flow: no enrichment, real product cards, analytics, persistence, retry, or modal/details are active.
 - The current Home UI is now a slightly cleaner search/refine/results scaffold, not the intended final mobile UX.
@@ -75,7 +78,7 @@
   - `src/search/useMobileSearchController.js` exposes a small `phaseEvents` array for the current in-memory search path.
   - `src/search/SearchProgressStatus.jsx` renders those phase events inside the existing progress scaffold.
   - `src/screens/SearchResultDetailScreen.jsx` shows a non-rich detail view for a focused pick using only the normalized result fields already returned by finalize.
-  - `src/search/SearchResultDetailMetadata.jsx` owns the temporary detail metadata rows and fallback formatting.
+  - `src/search/SearchResultDetailMetadata.jsx` owns the temporary detail snapshot, metadata rows, and fallback formatting.
   - `src/navigation/RootNavigator.jsx` includes the `SearchResultDetail` stack route.
   - `src/search/searchApi.js` now owns the temporary search endpoint calls, JSON/HTML response guard, API base URL check, and preview/final result normalization.
 - Removed from active mobile code:
@@ -115,8 +118,8 @@
 
 ## Recommended next step
 - Continue with bounded vertical slices rather than extraction-only cleanup.
-- A good next slice is a detail-content slice that adds only already-normalized metadata to the existing detail screen.
-- Another acceptable slice is a small native UX pass around result/refine ordering after Expo Go verification confirms the new phase events render clearly.
+- A good next slice is a small native UX pass around result/refine ordering after Expo Go verification confirms phase events and the detail snapshot render clearly.
+- Another acceptable slice is a tiny controller cleanup if the search/refine/finalize phase state starts to get hard to scan.
 - Avoid broad ports and avoid endless scaffold-only cleanup. Each next slice should be user-visible or improve diagnosis of the current search path.
 - Keep result count capped at 6 and do not add images, modal/details, enrichment, analytics, or retry yet.
 - `EXPO_PUBLIC_API_BASE_URL` must point to the backend API, not the public frontend site.
