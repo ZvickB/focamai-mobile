@@ -26,5 +26,6 @@ export default {
       bundler: "metro",
       favicon: "./assets/favicon.png",
     },
+    plugins: ["expo-font"],
   },
 };

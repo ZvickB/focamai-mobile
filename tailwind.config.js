@@ -10,6 +10,13 @@ module.exports = {
         line: "#d8e0ea",
         accent: "#3d7ef0",
       },
+      fontFamily: {
+        sans: ["Manrope_400Regular"],
+        manrope: ["Manrope_400Regular"],
+        "manrope-medium": ["Manrope_500Medium"],
+        "manrope-semibold": ["Manrope_600SemiBold"],
+        "manrope-bold": ["Manrope_700Bold"],
+      },
     },
   },
   plugins: [],
