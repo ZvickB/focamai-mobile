@@ -39,7 +39,7 @@
   - About navigation button
   - small progress snapshot
   - discovery response summary with candidate count, preview count, source, timing, and token status
-  - tiny preview capped at 3 normalized preview results
+  - combined results checkpoint with tiny preview capped at 3 normalized preview results
   - refinement prompt and local follow-up notes box
   - minimal `Show focused picks` button that renders focused-pick metadata rows capped at 6
   - plain focused-pick detail navigation from a result row
@@ -48,6 +48,7 @@
 - The hook path was manually verified in Expo Go by the user after a local Android Metro export/bundle check.
 - The lighter Home search/refine/results scaffold has passed a local Android Metro export/bundle check and was manually verified in Expo Go by the user.
 - The temporary preview and focused-pick row rendering helpers now live in `src/search/SearchResultRows.jsx`.
+- Preview and focused-pick rendering now sit behind `src/search/SearchResultsSection.jsx`, which owns the current focused results slice.
 - The plain focused-pick detail screen now lives in `src/screens/SearchResultDetailScreen.jsx` and uses only normalized finalize metadata already on device.
 - The temporary focused-pick detail metadata rows now live in `src/search/SearchResultDetailMetadata.jsx`.
 - The extracted result-row module and plain focused-pick detail screen were manually verified in Expo Go by the user:
@@ -58,6 +59,8 @@
 - The temporary product query input, search button, and About button presentation now live in `src/search/SearchEntrySection.jsx`.
 - The temporary progress/status section now lives in `src/search/SearchProgressStatus.jsx`.
 - The temporary refine prompt, notes input, and finalize button presentation now live in `src/search/SearchRefineSection.jsx`.
+- The focused results slice keeps backend contracts unchanged, keeps final rows capped at 6, improves the plain list with clearer metadata labels and tap affordance, and still uses the existing detail navigation.
+- The latest focused results slice passed a local JSX parser check and `npx expo export --platform android --output-dir .expo-export-check`; `.expo-export-check` was removed afterward.
 - Discovery-only backend access has been verified in Expo Go against the local backend using a LAN API base URL.
 - Tiny preview rendering has been verified in Expo Go.
 - Refinement prompt rendering has been verified in Expo Go.
@@ -95,7 +98,7 @@
 ## Next step
 - Continue building mobile search in bounded vertical slices against `src/search/useMobileSearchController.js`.
 - Do not keep doing micro-extractions unless they directly support a real mobile UX/data slice.
-- A strong next step is a focused results slice: own preview + focused picks together, improve the plain list slightly, and keep backend contracts/normalized fields unchanged.
+- A strong next step is lightweight controller phase/debug events for `discover`, `refine`, and `finalize`, or a small detail-content slice that uses only already-normalized metadata.
 - Keep result count capped at 6 and do not add images, modal/details, enrichment, analytics, or retry yet.
 - `EXPO_PUBLIC_API_BASE_URL` must point to the backend API, not the public frontend site.
 - If using the deployed backend, set `EXPO_PUBLIC_API_BASE_URL` to the active Render backend URL and restart Expo with `npx expo start --clear --lan`.

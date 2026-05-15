@@ -3,7 +3,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { SearchEntrySection } from "../search/SearchEntrySection";
 import { SearchProgressStatus } from "../search/SearchProgressStatus";
 import { SearchRefineSection } from "../search/SearchRefineSection";
-import { FocusedPickRow, PreviewResultRow } from "../search/SearchResultRows";
+import { SearchResultsSection } from "../search/SearchResultsSection";
 import { useMobileSearchController } from "../search/useMobileSearchController";
 
 export default function HomeScreen({ navigation }) {
@@ -62,16 +62,16 @@ export default function HomeScreen({ navigation }) {
           refinementPrompt={refinementPrompt}
         />
 
-        {previewItems.length > 0 ? (
-          <View className="rounded-2xl border border-line bg-white px-4 py-4">
-            <Text className="text-sm font-semibold text-slate-900">Tiny preview</Text>
-            <View className="mt-1">
-              {previewItems.map((item, index) => (
-                <PreviewResultRow key={item.id} item={item} index={index} />
-              ))}
-            </View>
-          </View>
-        ) : null}
+        <SearchResultsSection
+          finalResults={finalResults}
+          onOpenResult={(item, index) =>
+            navigation.navigate("SearchResultDetail", {
+              item,
+              rank: index + 1,
+            })
+          }
+          previewItems={previewItems}
+        />
 
         <SearchRefineSection
           canFinalize={canFinalize}
@@ -82,28 +82,6 @@ export default function HomeScreen({ navigation }) {
           setFollowUpNotes={setFollowUpNotes}
         />
 
-        {finalResults.length > 0 ? (
-          <View className="rounded-2xl border border-line bg-white px-4 py-4">
-            <Text className="text-sm font-semibold text-slate-900">
-              Focused picks ({finalResults.length})
-            </Text>
-            <View className="mt-1">
-              {finalResults.map((item, index) => (
-                <FocusedPickRow
-                  key={item.id}
-                  item={item}
-                  index={index}
-                  onPress={() =>
-                    navigation.navigate("SearchResultDetail", {
-                      item,
-                      rank: index + 1,
-                    })
-                  }
-                />
-              ))}
-            </View>
-          </View>
-        ) : null}
       </ScrollView>
     </SafeAreaView>
   );
