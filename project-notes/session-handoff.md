@@ -55,6 +55,7 @@
   - tapping a focused-pick row opens `SearchResultDetailScreen`
   - Back returns to Home with results still visible
 - The temporary progress/status section now lives in `src/search/SearchProgressStatus.jsx`.
+- The temporary refine prompt, notes input, and finalize button presentation now live in `src/search/SearchRefineSection.jsx`.
 - Discovery-only backend access has been verified in Expo Go against the local backend using a LAN API base URL.
 - Tiny preview rendering has been verified in Expo Go.
 - Refinement prompt rendering has been verified in Expo Go.
@@ -86,7 +87,7 @@
 - Do not start by copying the whole old hook back into mobile.
 
 ## Next step
-- Continue building mobile search in bounded vertical slices against `src/search/useMobileSearchController.js`; the next safe structure slice is probably the refine section or a tiny detail metadata helper if that screen grows.
+- Continue building mobile search in bounded vertical slices against `src/search/useMobileSearchController.js`; the next safe structure slice is probably a tiny detail metadata helper if that screen grows or another small Home section extraction if it stays behavior-neutral.
 - Keep result count capped at 6 and do not add images, modal/details, enrichment, analytics, or retry yet.
 - `EXPO_PUBLIC_API_BASE_URL` must point to the backend API, not the public frontend site.
 - If using the deployed backend, set `EXPO_PUBLIC_API_BASE_URL` to the active Render backend URL and restart Expo with `npx expo start --clear --lan`.

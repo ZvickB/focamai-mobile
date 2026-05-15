@@ -34,6 +34,7 @@
 - The current Home UI is now a slightly cleaner search/refine/results scaffold, not the intended final mobile UX.
 - A tiny mobile search controller hook now owns the scaffold's query, phase loading flags, discovery/refine orchestration, follow-up notes, and finalize result state around `src/search/searchApi.js`.
 - The hook path and lighter Home scaffold have passed local Android Metro export/bundle checks with `npx expo export --platform android`.
+- The refine section is now extracted into a small presentational component; behavior is unchanged and still uses the controller state/handlers.
 - The plain focused-pick detail screen is implemented and manually verified in Expo Go.
 - Current work is proving endpoint flow and native rendering safety first; final mobile UI/UX can deliberately diverge from the web layout after the data path is stable.
 - Mobile UI/UX is expected to be redesigned after endpoint flow is proven; do not treat the web UI as the target layout, only as the product behavior reference.
@@ -51,11 +52,12 @@
   - `src/screens/HomeScreen.jsx` renders a plain mobile search/refine/results scaffold and delegates search phase/state handling to `src/search/useMobileSearchController.js`.
   - `src/search/useMobileSearchController.js` can call `GET /api/search/rainforest-discover` for one query and expose a small response summary.
   - `src/search/SearchProgressStatus.jsx` owns the temporary progress/status section so HomeScreen stays focused on screen composition.
+  - `src/search/SearchRefineSection.jsx` owns the temporary refine prompt, notes input, and finalize button presentation.
   - The hook exposes a tiny preview capped at 3 normalized items from `previewResults`.
   - The hook also calls `GET /api/search/refine` in parallel and exposes the follow-up prompt plus local notes state.
   - The hook can call `POST /api/search/finalize` with minimal guided payload and expose final results capped at 6.
   - Home now renders lightweight final-result metadata rows with rank, title, source/provider, price, rating, and review count, still capped at 6.
-  - Home exposes progress, preview, refine, and focused-pick sections instead of one debug-heavy status block.
+  - Home composes progress, preview, refine, and focused-pick sections instead of owning every presentation detail inline.
   - `src/search/SearchResultRows.jsx` owns the temporary preview and focused-pick row rendering helpers so HomeScreen owns less presentation detail.
   - `src/screens/SearchResultDetailScreen.jsx` shows a non-rich detail view for a focused pick using only the normalized result fields already returned by finalize.
   - `src/navigation/RootNavigator.jsx` includes the `SearchResultDetail` stack route.
@@ -96,7 +98,7 @@
 - Mobile does not need to copy the web UI/UX 1:1; preserve product behavior and trust principles, then design the native experience intentionally.
 
 ## Recommended next step
-- Next mobile search work should build against the tiny controller hook in bounded vertical slices, likely by extracting the refine section or adding a tiny detail metadata helper if those areas start to grow.
+- Next mobile search work should build against the tiny controller hook in bounded vertical slices, likely by adding a tiny detail metadata helper if that screen grows or by extracting another temporary Home section only if it reduces inline presentation safely.
 - Keep result count capped at 6 and do not add images, modal/details, enrichment, analytics, or retry yet.
 - `EXPO_PUBLIC_API_BASE_URL` must point to the backend API, not the public frontend site.
 - Do not fall back to `https://focamai.com` for mobile API requests; that returns frontend HTML for unknown API paths.
