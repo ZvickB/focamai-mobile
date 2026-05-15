@@ -7,16 +7,24 @@ import {
   normalizePreviewResults,
   pollEnrichment,
 } from "./searchApi";
+import {
+  DEFAULT_AMAZON_DOMAIN,
+  hasSeenAmazonMarketplacePrompt,
+  loadAmazonMarketplacePreference,
+  getAmazonMarketplaceLabel,
+  normalizeAmazonDomain,
+  saveAmazonMarketplacePromptSeen,
+  saveAmazonDomainPreference,
+} from "./amazonMarketplaces";
 import { buildPhaseEvent, replacePhaseEvent } from "./searchPhaseEvents";
 
-const DEFAULT_AMAZON_DOMAIN = "amazon.com";
 const ENRICHMENT_POLL_INTERVAL_MS = 1500;
 const ENRICHMENT_POLL_TIMEOUT_MS = 30000;
 const MAX_RETRY_COUNT = 2;
 
-function createSearchSession({ requestId, submittedQuery }) {
+function createSearchSession({ amazonDomain, requestId, submittedQuery }) {
   return {
-    amazonDomain: DEFAULT_AMAZON_DOMAIN,
+    amazonDomain,
     candidateCount: 0,
     discoveryToken: "",
     phases: {
@@ -43,6 +51,7 @@ function buildDiscoverySummary(discoveryPayload, query) {
     : [];
 
   return {
+    amazonDomain: discoveryPayload.amazonDomain || "",
     candidateCount: candidates.length,
     discoveryToken: discoveryPayload.discoveryToken || "",
     previewCount: previewResults.length,
@@ -106,8 +115,10 @@ export function useMobileSearchController() {
   const enrichmentPollTimerRef = useRef(null);
   const finalizingRequestIdRef = useRef(null);
   const searchRequestIdRef = useRef(0);
+  const selectedAmazonDomainTouchedRef = useRef(false);
   const [activeSearchSession, setActiveSearchSession] = useState(null);
   const [productQuery, setProductQuery] = useState("");
+  const [selectedAmazonDomain, setSelectedAmazonDomainState] = useState(DEFAULT_AMAZON_DOMAIN);
   const [discoverySummary, setDiscoverySummary] = useState(null);
   const [errorMessage, setErrorMessage] = useState("");
   const [finalResults, setFinalResults] = useState([]);
@@ -119,6 +130,7 @@ export function useMobileSearchController() {
   const [refinementPrompt, setRefinementPrompt] = useState(null);
   const [retryCount, setRetryCount] = useState(0);
   const [retryFeedback, setRetryFeedback] = useState("");
+  const [showMarketplacePrompt, setShowMarketplacePrompt] = useState(false);
 
   function updatePhaseEvent(nextEvent) {
     setPhaseEvents((currentEvents) => replacePhaseEvent(currentEvents, nextEvent));
@@ -252,8 +264,27 @@ export function useMobileSearchController() {
 
   useEffect(() => stopEnrichmentPolling, []);
 
+  useEffect(() => {
+    let isMounted = true;
+
+    Promise.all([
+      loadAmazonMarketplacePreference(),
+      hasSeenAmazonMarketplacePrompt(),
+    ]).then(([preference, hasSeenPrompt]) => {
+      if (isMounted && !selectedAmazonDomainTouchedRef.current) {
+        setSelectedAmazonDomainState(preference.domain);
+        setShowMarketplacePrompt(!preference.hasSavedPreference && !hasSeenPrompt);
+      }
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   function startDiscoverySearch() {
     const normalizedQuery = productQuery.trim();
+    const requestedAmazonDomain = normalizeAmazonDomain(selectedAmazonDomain) || DEFAULT_AMAZON_DOMAIN;
 
     if (!normalizedQuery) {
       setErrorMessage("Enter a product query first.");
@@ -270,6 +301,7 @@ export function useMobileSearchController() {
     stopEnrichmentPolling();
 
     const nextSession = createSearchSession({
+      amazonDomain: requestedAmazonDomain,
       requestId,
       submittedQuery: normalizedQuery,
     });
@@ -296,7 +328,7 @@ export function useMobileSearchController() {
           ]
         : []),
       buildPhaseEvent({
-        detail: "Starting discovery request",
+        detail: `Starting discovery request for ${requestedAmazonDomain}`,
         phase: "discover",
         requestId,
         status: "running",
@@ -310,16 +342,20 @@ export function useMobileSearchController() {
     ]);
     setRefinementPrompt(null);
 
-    discoverProducts({ query: normalizedQuery })
+    discoverProducts({ amazonDomain: requestedAmazonDomain, query: normalizedQuery })
       .then((discoveryPayload) => {
         if (!isActiveRequest(requestId)) {
           return;
         }
 
         const nextSummary = buildDiscoverySummary(discoveryPayload, normalizedQuery);
-        const nextAmazonDomain = discoveryPayload.amazonDomain || DEFAULT_AMAZON_DOMAIN;
+        const nextAmazonDomain =
+          normalizeAmazonDomain(discoveryPayload.amazonDomain) || requestedAmazonDomain;
 
-        setDiscoverySummary(nextSummary);
+        setDiscoverySummary({
+          ...nextSummary,
+          amazonDomain: nextAmazonDomain,
+        });
         if (!nextSummary.discoveryToken) {
           updateSessionForRequest(requestId, (currentSession) => ({
             ...currentSession,
@@ -358,7 +394,7 @@ export function useMobileSearchController() {
         }));
         updatePhaseEvent(
           buildPhaseEvent({
-            detail: `${nextSummary.candidateCount} candidates, ${nextSummary.previewCount} preview results`,
+            detail: `${nextSummary.candidateCount} candidates, ${nextSummary.previewCount} preview results on ${nextAmazonDomain}`,
             phase: "discover",
             requestId,
             status: "complete",
@@ -728,6 +764,71 @@ export function useMobileSearchController() {
     activeSearchSession || discoverySummary || refinementPrompt || isDiscovering || isGeneratingPrompt,
   );
 
+  function hasMarketplaceScopedSearchState() {
+    return Boolean(
+      activeSearchSessionRef.current ||
+        discoverySummary ||
+        refinementPrompt ||
+        finalResults.length > 0 ||
+        isDiscovering ||
+        isGeneratingPrompt ||
+        isFinalizing,
+    );
+  }
+
+  function resetSearchAfterMarketplaceChange(nextAmazonDomain) {
+    const previousSession = activeSearchSessionRef.current;
+    const resetRequestId = searchRequestIdRef.current + 1;
+
+    searchRequestIdRef.current = resetRequestId;
+    finalizingRequestIdRef.current = null;
+    stopEnrichmentPolling();
+    setSession(null);
+    setIsDiscovering(false);
+    setIsGeneratingPrompt(false);
+    setIsFinalizing(false);
+    setDiscoverySummary(null);
+    setFinalResults([]);
+    setFollowUpNotes("");
+    setRefinementPrompt(null);
+    setRetryCount(0);
+    setRetryFeedback("");
+    setErrorMessage(
+      `Amazon store changed to ${getAmazonMarketplaceLabel(nextAmazonDomain)}. Search again to use this store.`,
+    );
+    setPhaseEvents([
+      buildPhaseEvent({
+        detail: "Amazon store changed; previous marketplace-scoped responses will be ignored",
+        eventKey: "marketplace-changed",
+        phase: "session",
+        requestId: previousSession?.requestId || resetRequestId,
+        status: "stale",
+      }),
+    ]);
+  }
+
+  function setSelectedAmazonDomain(nextDomain) {
+    const normalizedDomain = normalizeAmazonDomain(nextDomain) || DEFAULT_AMAZON_DOMAIN;
+    const domainChanged = normalizedDomain !== selectedAmazonDomain;
+
+    selectedAmazonDomainTouchedRef.current = true;
+    setSelectedAmazonDomainState(normalizedDomain);
+    saveAmazonDomainPreference(normalizedDomain);
+    saveAmazonMarketplacePromptSeen();
+    setShowMarketplacePrompt(false);
+
+    if (domainChanged && hasMarketplaceScopedSearchState()) {
+      resetSearchAfterMarketplaceChange(normalizedDomain);
+    }
+  }
+
+  function confirmSelectedAmazonDomain() {
+    selectedAmazonDomainTouchedRef.current = true;
+    saveAmazonDomainPreference(selectedAmazonDomain);
+    saveAmazonMarketplacePromptSeen();
+    setShowMarketplacePrompt(false);
+  }
+
   return {
     activeSearchSession,
     canFinalize,
@@ -747,9 +848,13 @@ export function useMobileSearchController() {
     refinementPrompt,
     retryCount,
     retryFeedback,
+    selectedAmazonDomain,
+    showMarketplacePrompt,
+    confirmSelectedAmazonDomain,
     setFollowUpNotes,
     setProductQuery,
     setRetryFeedback,
+    setSelectedAmazonDomain,
     startDiscoverySearch,
     submitRetry,
   };

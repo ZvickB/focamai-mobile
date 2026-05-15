@@ -8,6 +8,7 @@ import ContactScreen from "../screens/ContactScreen";
 import HomeScreen from "../screens/HomeScreen";
 import PrivacyScreen from "../screens/PrivacyScreen";
 import SearchResultDetailScreen from "../screens/SearchResultDetailScreen";
+import SettingsScreen from "../screens/SettingsScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -50,6 +51,7 @@ export default function RootNavigator() {
           <Stack.Screen name="About" component={AboutScreen} />
           <Stack.Screen name="Contact" component={ContactScreen} />
           <Stack.Screen name="Privacy" component={PrivacyScreen} />
+          <Stack.Screen name="Settings" component={SettingsScreen} />
           <Stack.Screen
             name="SearchResultDetail"
             component={SearchResultDetailScreen}

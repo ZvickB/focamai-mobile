@@ -1,5 +1,7 @@
+import { useEffect } from "react";
 import { ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { MarketplacePromptSection } from "../search/MarketplacePromptSection";
 import { SearchEntrySection } from "../search/SearchEntrySection";
 import { SearchProgressStatus } from "../search/SearchProgressStatus";
 import { SearchRefineSection } from "../search/SearchRefineSection";
@@ -7,10 +9,11 @@ import { SearchRetrySection } from "../search/SearchRetrySection";
 import { SearchResultsSection } from "../search/SearchResultsSection";
 import { useMobileSearchController } from "../search/useMobileSearchController";
 
-export default function HomeScreen({ navigation }) {
+export default function HomeScreen({ navigation, route }) {
   const {
     canFinalize,
     canRetry,
+    confirmSelectedAmazonDomain,
     discoverySummary,
     errorMessage,
     finalResults,
@@ -26,12 +29,24 @@ export default function HomeScreen({ navigation }) {
     refinementPrompt,
     retryCount,
     retryFeedback,
+    selectedAmazonDomain,
+    showMarketplacePrompt,
     setFollowUpNotes,
     setProductQuery,
     setRetryFeedback,
+    setSelectedAmazonDomain,
     startDiscoverySearch,
     submitRetry,
   } = useMobileSearchController();
+
+  useEffect(() => {
+    const routeAmazonDomain = route?.params?.selectedAmazonDomain;
+
+    if (routeAmazonDomain) {
+      setSelectedAmazonDomain(routeAmazonDomain);
+      navigation.setParams({ selectedAmazonDomain: undefined });
+    }
+  }, [navigation, route?.params?.selectedAmazonDomain, setSelectedAmazonDomain]);
 
   return (
     <SafeAreaView edges={["bottom"]} className="flex-1 bg-mist">
@@ -51,11 +66,21 @@ export default function HomeScreen({ navigation }) {
           </Text>
         </View>
 
+        {showMarketplacePrompt ? (
+          <MarketplacePromptSection
+            confirmSelectedAmazonDomain={confirmSelectedAmazonDomain}
+            selectedAmazonDomain={selectedAmazonDomain}
+            setSelectedAmazonDomain={setSelectedAmazonDomain}
+          />
+        ) : null}
+
         <SearchEntrySection
           isDiscovering={isDiscovering}
-          onAboutPress={() => navigation.navigate("About")}
+          onSettingsPress={() => navigation.navigate("Settings")}
           productQuery={productQuery}
+          selectedAmazonDomain={selectedAmazonDomain}
           setProductQuery={setProductQuery}
+          setSelectedAmazonDomain={setSelectedAmazonDomain}
           startDiscoverySearch={startDiscoverySearch}
         />
 

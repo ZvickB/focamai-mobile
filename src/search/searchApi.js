@@ -42,13 +42,17 @@ async function readJsonResponse(response, requestStartedAt, fallbackErrorMessage
   };
 }
 
-export async function discoverProducts({ query }) {
+export async function discoverProducts({ amazonDomain, query }) {
   assertApiBaseUrl();
 
   const requestStartedAt = Date.now();
-  const response = await fetch(
-    `${API_BASE_URL}/api/search/rainforest-discover?query=${encodeURIComponent(query)}`,
-  );
+  const params = new URLSearchParams({ query });
+
+  if (amazonDomain) {
+    params.set("amazonDomain", amazonDomain);
+  }
+
+  const response = await fetch(`${API_BASE_URL}/api/search/rainforest-discover?${params.toString()}`);
 
   return readJsonResponse(response, requestStartedAt, "Discovery request failed.");
 }

@@ -1,4 +1,5 @@
 import { Text, View } from "react-native";
+import { getAmazonMarketplaceLabel } from "./amazonMarketplaces";
 import { getApiBaseUrl } from "./searchApi";
 import { formatPhaseName, formatPhaseStatus } from "./searchPhaseEvents";
 
@@ -50,6 +51,10 @@ export function SearchProgressStatus({
           <>
             <StatusLine label="Candidates" value={String(discoverySummary.candidateCount)} />
             <StatusLine label="Preview results" value={String(discoverySummary.previewCount)} />
+            <StatusLine
+              label="Amazon store"
+              value={getAmazonMarketplaceLabel(discoverySummary.amazonDomain)}
+            />
             <StatusLine label="Source" value={discoverySummary.source} />
             <StatusLine label="Discovery timing" value={`${discoverySummary.timingMs}ms`} />
             <StatusLine

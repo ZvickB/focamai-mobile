@@ -20,7 +20,7 @@ Read this file first at the start of every chat in `mobile/`.
 - Read `CLAUDE.md` for mobile stack decisions, run commands, and React Native gotchas.
 - Read `../web/project-notes/app_flow.md` for the canonical product behavior that mobile is translating.
 - Read `../web/project-notes/doc_briefs.md` for product intent, voice, and UX direction.
-- Read `../web/project-notes/finalize-strategy.md` before changing result explanation behavior, AI scope, or guided-flow expectations.
+- Read `../web/project-notes/app_flow.md` and `../web/project-notes/doc_briefs.md` before changing result explanation behavior, AI scope, or guided-flow expectations; the old `finalize-strategy.md` note no longer exists.
 
 ## Source of truth
 - `migration-roadmap.md`: canonical migration phases, file mapping, and checkpoints.

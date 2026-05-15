@@ -53,7 +53,8 @@ Use the normal command for ordinary UI/code edits. Use `--clear` after `.env` ch
 - **Navigation:** React Navigation v7
 - **Styling:** NativeWind v4 (Tailwind class syntax)
 - **Animations:** React Native Reanimated
-- **Currently removed during clean-slate reset:** TanStack Query, AsyncStorage, Expo Constants, Expo Crypto, Expo Linking, Expo Dev Client, lucide-react-native
+- **Currently removed during clean-slate reset:** TanStack Query, Expo Constants, Expo Crypto, Expo Linking, Expo Dev Client, lucide-react-native
+- **Re-added narrowly:** AsyncStorage is active only for the saved marketplace-domain preference.
 - **Re-add later only when the rebuild slice needs them.**
 
 ## Key Directories
