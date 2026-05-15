@@ -42,17 +42,34 @@
   - discovery
   - refinement
   - finalize
-  - enrichment polling later
+  - enrichment polling
+  - retry advice
   - query-quality suggestion later
-  - retry advice later
 - Each bounded slice should include enough UI to verify the user journey on device, but should still defer unrelated layers.
 - Add lightweight mobile phase/debug events when the controller becomes non-trivial so failures identify the phase that broke instead of becoming another opaque mobile port.
 - After the plain scaffold has been split into obvious components, stop doing extraction-only work unless it supports a real slice.
-- Prefer slices that are bigger than one card but smaller than a full web-flow port, such as:
-  - a focused results slice that owns preview + focused picks together and improves the plain list using existing normalized fields
-  - a detail-content slice that adds only already-normalized metadata
-  - lightweight controller phase/debug events for `discover`, `refine`, and `finalize`
-- Keep the deferred-feature line firm: no images, enrichment polling, analytics, persistence, retry, marketplace preferences, external links, rich cards, or full copied web hooks until the current mobile path has earned them.
+- Prefer slices that are bigger than one card but smaller than a full web-flow port.
+
+## Phase shift — foundation is proven, now tackle data-path complexity
+
+The core data path (discover → refine → finalize) and session hardening are verified working in Expo Go.
+The next phase is tackling the complex data-path features that were correctly deferred during the foundation-proving work.
+These are not "polish" — they are correctness and product-completeness items.
+
+**What to tackle now (in order):**
+
+1. **`amazonDomain` propagation** — currently hardcoded as `"amazon.com"` placeholder in the session. The discovery response includes the real domain. Thread it from discovery response into the session, and forward it through finalize and enrichment. Without this, finalize silently fails for non-US domains and enrichment uses the wrong scope.
+
+2. **Enrichment polling** — the backend returns raw finalize results; the web app then polls `/api/search/enrich` (or equivalent) to hydrate product data (images, prices, review counts). Mobile currently skips this entirely. Add enrichment polling as a slice on the controller after finalize completes.
+
+3. **Retry with feedback** — the "I want something different" loop is a core product behavior. Add the retry path to the controller: send retry feedback to finalize with the previous result exclusions and a retry count flag.
+
+**Still defer:**
+- Analytics (no user-facing impact, add after data path is complete)
+- Full native UI redesign (scaffold serves testing; design the real UX after the data path is stable)
+- Persistence, marketplace preferences, deep links
+
+**The rule that still applies:** do NOT copy the 1552-line web hook wholesale. The lesson from main was not "don't build complex things" — it was "don't port complexity before the foundation is proven." Foundation is proven now. Add each feature as a deliberate, bounded slice to the existing 435-line controller.
 
 ## Rebuild order
 1. Verify the clean shell

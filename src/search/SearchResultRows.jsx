@@ -58,6 +58,11 @@ export function FocusedPickRow({ item, index, onPress }) {
         </View>
         <View className="flex-1">
           <Text className="text-sm font-semibold leading-5 text-slate-900">{item.title}</Text>
+          {item.fit_reason ? (
+            <Text className="mt-1 text-sm leading-5 text-slate-700" numberOfLines={1}>
+              {item.fit_reason}
+            </Text>
+          ) : null}
           <Text className="mt-1 text-sm leading-5 text-slate-600">{item.provider}</Text>
         </View>
         <Text className="pt-1 text-lg leading-5 text-accent">{">"}</Text>

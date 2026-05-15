@@ -14,16 +14,15 @@
 7. `../../web/project-notes/doc_briefs.md`
 
 ## Current direction
-- This branch is the mobile clean-slate restart: `restart/mobile-clean-slate`.
-- Read `restart-strategy.md` before rebuilding search behavior; it captures why the earlier mobile path got tangled and how to proceed safely.
-- Mobile is intentionally back to basic scaffolding and basic UI.
-- Backend stays shared with web, and the current mobile shell has a small discovery/refine/finalize scaffold path.
-- Product and flow decisions remain anchored in `../web/project-notes/`.
-- Rebuild the mobile app gradually and avoid reintroducing the old all-at-once debug harness.
-- Use the happy middle from `restart-strategy.md`: after discovery/refine/finalize are proven, build bounded vertical slices around a small mobile-native search data/controller layer.
-- The current Home UI is a plain search/refine/results scaffold to prove endpoints and React Native rendering safety before richer UX work.
-- The final mobile UI/UX can deliberately differ from the web app after the data path is proven; preserve product behavior and trust principles, not the exact web layout.
-- Mobile UI/UX is expected to be redesigned after endpoint flow is proven; do not treat the web UI as the target layout, only as the product behavior reference.
+
+**The foundation/data-path phase is done in code.** Discovery, refinement, finalize, session hardening, stale-response guards, enrichment polling, and same-session retry with feedback are working in the mobile controller.
+
+**The next phase is native UI redesign.** Retry with feedback still needs a quick Expo Go smoke check from the device/emulator, but the data path has passed the local Android export check. Next work should build real product cards plus the full search/refine/results UX. Mobile UI/UX is expected to deliberately differ from the web layout — preserve product behavior and trust principles, not the exact web layout.
+
+**What not to do:**
+- Do not copy the 1552-line web `useGuidedSearch.js` wholesale. That's what broke `main`. The lesson was not "don't build complex things" — it was "don't port complexity before the foundation is proven."
+- Do not add more data-path features before the native UI redesign unless Expo Go retry verification exposes a correctness issue.
+- Do not add analytics, persistence, or marketplace preferences yet.
 
 ## Current mobile reality
 - Current app root runs `RootNavigator.jsx` inside `SafeAreaProvider`.
@@ -43,6 +42,7 @@
   - combined results checkpoint with tiny preview capped at 3 normalized preview results
   - refinement prompt and local follow-up notes box
   - minimal `Show focused picks` button that renders focused-pick metadata rows capped at 6
+  - retry feedback box after focused picks with a `Try again` button and 2-retry cap
   - plain focused-pick detail navigation from a result row
   - detail screen at-a-glance snapshot using only already-normalized metadata
 - Search endpoint calls, JSON/HTML response guarding, API base URL checks, and result normalization now live in `src/search/searchApi.js`.
@@ -76,6 +76,17 @@
 - The controller session-hardening slice passed local parser checks and `npx expo export --platform android --output-dir .expo-export-check`; `.expo-export-check` was removed afterward.
 - The detail-content slice adds a rank-aware at-a-glance snapshot to `SearchResultDetailScreen` while still using only title, source/provider, price, rating, review count, and rank.
 - The latest detail-content slice passed a local JSX parser check and `npx expo export --platform android --output-dir .expo-export-check`; `.expo-export-check` was removed afterward.
+- Discovery now stores the real `amazonDomain` returned by the backend on the active search session instead of leaving the temporary `"amazon.com"` placeholder in place.
+- Finalize now forwards the active session's Amazon domain, and post-finalize enrichment polling now calls `GET /api/search/enrich` with discovery token, submitted query, and session domain.
+- Enrichment polling is guarded by request id and a 30 second timeout, records an `enrich` phase event, and merges `fit_reason`, `caveat`, and `feature_bullets` into focused picks by candidate id.
+- Focused-pick rows can show a one-line `fit_reason` preview, and `SearchResultDetailScreen` can show `Why this pick` and `Worth knowing` rows when enrichment data arrives.
+- The enrichment/domain slice passed `npx expo export --platform android --output-dir .expo-export-check`; `.expo-export-check` was removed afterward.
+- Retry with feedback is implemented in code:
+  - `src/search/searchApi.js` sends retry finalize requests with `requestMode: "guided_retry"`, feedback, retry count, and excluded current focused-pick IDs
+  - `src/search/useMobileSearchController.js` keeps retry state, blocks overlapping finalize requests, reuses the current discovery session, stops enrichment polling before retry finalize, replaces the shortlist on success, and restarts enrichment polling when needed
+  - `src/search/SearchRetrySection.jsx` renders the temporary plain retry UI below focused results
+  - retry usage is capped at 2 and retry finalize attempts appear as separate phase events
+- The retry-with-feedback slice passed `npx expo export --platform android --output-dir .expo-export-check`; `.expo-export-check` was removed afterward. Manual Expo Go retry verification is still pending.
 - Discovery-only backend access has been verified in Expo Go against the local backend using a LAN API base URL.
 - Tiny preview rendering has been verified in Expo Go.
 - Refinement prompt rendering has been verified in Expo Go.
@@ -83,13 +94,14 @@
 - Lightweight final-result metadata rows are implemented and now sit under a plainer focused-picks section.
 - Discovery and refinement requests launch together and now update the UI independently; a slow follow-up should no longer delay discovery summary/preview rendering.
 - No full guided search logic is active.
-- A thin mobile search API helper and tiny mobile controller hook are active, but enrichment, analytics, retry, persistence, and polished result UI are still deferred.
+- A thin mobile search API helper and mobile controller hook are active, but analytics, persistence, and polished result UI are still deferred.
 - No analytics helper is active.
 - No TanStack Query provider is active.
 - The scaffold has enough component extraction for now. Future work should move in bounded vertical slices that are larger than one-card cleanup but still avoid broad ports.
-- Prefer next slices that are user-visible or improve diagnosis of the current search path:
-  - small native UX pass around result/refine ordering after Expo Go verification confirms phase events and detail snapshot render clearly
-  - narrow controller-state guard if Expo Go verification exposes stale finalize or overlapping-search behavior
+- Prefer next slices that are user-visible native UI work:
+  - real product cards
+  - polished search/refine/results flow
+  - tighter result/detail UX after retry is smoke-verified in Expo Go
 
 ## What was removed
 - Phase 3 guided-search hook and debug harness behavior.
@@ -113,9 +125,9 @@
 ## Next step
 - Continue building mobile search in bounded vertical slices against `src/search/useMobileSearchController.js`.
 - Do not keep doing micro-extractions unless they directly support a real mobile UX/data slice.
-- A strong next step is Expo Go verification of the controller hardening path, especially overlap behavior: start a search, quickly start another, then confirm older discovery/refine/finalize responses do not replace the newer session.
-- After that verification, a native UX pass around result/refine ordering is still a good next slice.
-- Keep result count capped at 6 and do not add images, modal/details, enrichment, analytics, or retry yet.
+- Next phase: native UI redesign with real product cards plus full search/refine/results UX.
+- Before starting redesign, smoke-test retry with feedback in Expo Go if possible.
+- Keep result count capped at 6 and do not add images, modal/details, analytics, or persistence yet.
 - `EXPO_PUBLIC_API_BASE_URL` must point to the backend API, not the public frontend site.
 - If using the deployed backend, set `EXPO_PUBLIC_API_BASE_URL` to the active Render backend URL and restart Expo with `npx expo start --clear --lan`.
 - If using the local backend from a physical device, use the computer's LAN IP, not `localhost`, because `localhost` on the phone means the phone itself.

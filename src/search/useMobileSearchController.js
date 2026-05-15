@@ -1,14 +1,18 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   discoverProducts,
   finalizeSearch,
   getRefinementPrompt,
   normalizeFinalResults,
   normalizePreviewResults,
+  pollEnrichment,
 } from "./searchApi";
 import { buildPhaseEvent, replacePhaseEvent } from "./searchPhaseEvents";
 
 const DEFAULT_AMAZON_DOMAIN = "amazon.com";
+const ENRICHMENT_POLL_INTERVAL_MS = 1500;
+const ENRICHMENT_POLL_TIMEOUT_MS = 30000;
+const MAX_RETRY_COUNT = 2;
 
 function createSearchSession({ requestId, submittedQuery }) {
   return {
@@ -60,8 +64,46 @@ function buildRefinementPrompt(refinementPayload) {
   };
 }
 
+function mergeEnrichmentIntoResults(currentResults, entries) {
+  if (!Array.isArray(currentResults) || !Array.isArray(entries) || entries.length === 0) {
+    return currentResults;
+  }
+
+  const entriesByCandidateId = new Map(
+    entries
+      .map((entry) => {
+        const candidateId = entry?.candidate_id || entry?.candidateId;
+
+        return candidateId ? [String(candidateId), entry] : null;
+      })
+      .filter(Boolean),
+  );
+
+  if (entriesByCandidateId.size === 0) {
+    return currentResults;
+  }
+
+  return currentResults.map((result) => {
+    const entry = entriesByCandidateId.get(String(result.id));
+
+    if (!entry) {
+      return result;
+    }
+
+    return {
+      ...result,
+      caveat: entry.caveat ?? result.caveat,
+      feature_bullets: Array.isArray(entry.feature_bullets)
+        ? entry.feature_bullets
+        : result.feature_bullets,
+      fit_reason: entry.fit_reason ?? result.fit_reason,
+    };
+  });
+}
+
 export function useMobileSearchController() {
   const activeSearchSessionRef = useRef(null);
+  const enrichmentPollTimerRef = useRef(null);
   const finalizingRequestIdRef = useRef(null);
   const searchRequestIdRef = useRef(0);
   const [activeSearchSession, setActiveSearchSession] = useState(null);
@@ -75,6 +117,8 @@ export function useMobileSearchController() {
   const [isGeneratingPrompt, setIsGeneratingPrompt] = useState(false);
   const [phaseEvents, setPhaseEvents] = useState([]);
   const [refinementPrompt, setRefinementPrompt] = useState(null);
+  const [retryCount, setRetryCount] = useState(0);
+  const [retryFeedback, setRetryFeedback] = useState("");
 
   function updatePhaseEvent(nextEvent) {
     setPhaseEvents((currentEvents) => replacePhaseEvent(currentEvents, nextEvent));
@@ -100,6 +144,114 @@ export function useMobileSearchController() {
     return activeSearchSessionRef.current?.requestId === requestId;
   }
 
+  function stopEnrichmentPolling() {
+    if (enrichmentPollTimerRef.current) {
+      clearTimeout(enrichmentPollTimerRef.current);
+      enrichmentPollTimerRef.current = null;
+    }
+  }
+
+  function startEnrichmentPolling({ amazonDomain, query, requestId, token }) {
+    const pollingStartedAt = Date.now();
+
+    updateSessionForRequest(requestId, (currentSession) => ({
+      ...currentSession,
+      phases: {
+        ...currentSession.phases,
+        enrich: "running",
+      },
+    }));
+    updatePhaseEvent(
+      buildPhaseEvent({
+        detail: "Checking for richer pick explanations",
+        phase: "enrich",
+        requestId,
+        status: "running",
+      }),
+    );
+
+    const scheduleNextPoll = () => {
+      stopEnrichmentPolling();
+
+      if (!isActiveRequest(requestId)) {
+        return;
+      }
+
+      const hasTimedOut = Date.now() - pollingStartedAt >= ENRICHMENT_POLL_TIMEOUT_MS;
+
+      if (hasTimedOut) {
+        updateSessionForRequest(requestId, (currentSession) => ({
+          ...currentSession,
+          phases: {
+            ...currentSession.phases,
+            enrich: "timeout",
+          },
+        }));
+        updatePhaseEvent(
+          buildPhaseEvent({
+            detail: "Enrichment was not ready yet",
+            phase: "enrich",
+            requestId,
+            status: "timeout",
+          }),
+        );
+        return;
+      }
+
+      enrichmentPollTimerRef.current = setTimeout(runPoll, ENRICHMENT_POLL_INTERVAL_MS);
+    };
+
+    const runPoll = async () => {
+      if (!isActiveRequest(requestId)) {
+        return;
+      }
+
+      try {
+        const payload = await pollEnrichment({
+          amazonDomain,
+          query,
+          token,
+        });
+
+        if (!isActiveRequest(requestId)) {
+          return;
+        }
+
+        const entries = Array.isArray(payload.entries) ? payload.entries : [];
+
+        if (payload.ready && entries.length > 0) {
+          setFinalResults((currentResults) => mergeEnrichmentIntoResults(currentResults, entries));
+          updateSessionForRequest(requestId, (currentSession) => ({
+            ...currentSession,
+            phases: {
+              ...currentSession.phases,
+              enrich: "complete",
+            },
+          }));
+          updatePhaseEvent(
+            buildPhaseEvent({
+              detail: `${entries.length} enriched picks ready`,
+              phase: "enrich",
+              requestId,
+              status: "complete",
+              timingMs: payload.clientTimingMs,
+            }),
+          );
+          stopEnrichmentPolling();
+          return;
+        }
+      } catch {
+        // Enrichment is best-effort; keep the shortlist usable if polling fails.
+      }
+
+      scheduleNextPoll();
+    };
+
+    scheduleNextPoll();
+  }
+
+  useEffect(() => stopEnrichmentPolling, []);
+
   function startDiscoverySearch() {
     const normalizedQuery = productQuery.trim();
 
@@ -115,6 +267,7 @@ export function useMobileSearchController() {
     const previousSessionWasRunning =
       Boolean(previousSession) && (hasRunningPhase(previousSession) || finalizingRequestIdRef.current);
     finalizingRequestIdRef.current = null;
+    stopEnrichmentPolling();
 
     const nextSession = createSearchSession({
       requestId,
@@ -129,6 +282,8 @@ export function useMobileSearchController() {
     setDiscoverySummary(null);
     setFinalResults([]);
     setFollowUpNotes("");
+    setRetryCount(0);
+    setRetryFeedback("");
     setPhaseEvents([
       ...(previousSessionWasRunning
         ? [
@@ -162,11 +317,13 @@ export function useMobileSearchController() {
         }
 
         const nextSummary = buildDiscoverySummary(discoveryPayload, normalizedQuery);
+        const nextAmazonDomain = discoveryPayload.amazonDomain || DEFAULT_AMAZON_DOMAIN;
 
         setDiscoverySummary(nextSummary);
         if (!nextSummary.discoveryToken) {
           updateSessionForRequest(requestId, (currentSession) => ({
             ...currentSession,
+            amazonDomain: nextAmazonDomain,
             candidateCount: nextSummary.candidateCount,
             discoveryToken: "",
             phases: {
@@ -190,6 +347,7 @@ export function useMobileSearchController() {
 
         updateSessionForRequest(requestId, (currentSession) => ({
           ...currentSession,
+          amazonDomain: nextAmazonDomain,
           candidateCount: nextSummary.candidateCount,
           discoveryToken: nextSummary.discoveryToken,
           phases: {
@@ -343,9 +501,11 @@ export function useMobileSearchController() {
         status: "running",
       }),
     );
+    stopEnrichmentPolling();
 
     try {
       const payload = await finalizeSearch({
+        amazonDomain: session.amazonDomain,
         discoveryToken: session.discoveryToken,
         followUpNotes,
         query: session.submittedQuery,
@@ -374,6 +534,17 @@ export function useMobileSearchController() {
           timingMs: payload.clientTimingMs,
         }),
       );
+      if (
+        nextFinalResults.length > 0 &&
+        !nextFinalResults.some((result) => Boolean(result.fit_reason))
+      ) {
+        startEnrichmentPolling({
+          amazonDomain: session.amazonDomain,
+          query: session.submittedQuery,
+          requestId,
+          token: session.discoveryToken,
+        });
+      }
     } catch (error) {
       if (!isActiveRequest(requestId) || finalizingRequestIdRef.current !== requestId) {
         return;
@@ -403,11 +574,156 @@ export function useMobileSearchController() {
     }
   }
 
+  async function submitRetry() {
+    const session = activeSearchSessionRef.current;
+    const normalizedFeedback = retryFeedback.trim();
+
+    if (finalizingRequestIdRef.current) {
+      return;
+    }
+
+    if (finalResults.length === 0 || !normalizedFeedback || retryCount >= MAX_RETRY_COUNT) {
+      return;
+    }
+
+    if (!session?.discoveryToken || !session?.submittedQuery) {
+      const requestId = session?.requestId || searchRequestIdRef.current;
+
+      setErrorMessage("This search session expired. Start the search again before trying again.");
+      if (requestId) {
+        updateSessionForRequest(requestId, (currentSession) => ({
+          ...currentSession,
+          phases: {
+            ...currentSession.phases,
+            finalize: "failed",
+          },
+        }));
+        updatePhaseEvent(
+          buildPhaseEvent({
+            detail: "Retry blocked because the discovery token is missing",
+            eventKey: "finalize-retry-blocked",
+            phase: "finalize",
+            requestId,
+            status: "failed",
+          }),
+        );
+      }
+      return;
+    }
+
+    const requestId = session.requestId;
+    const nextRetryCount = retryCount + 1;
+    const retryEventKey = `finalize-retry-${nextRetryCount}`;
+    finalizingRequestIdRef.current = requestId;
+
+    setIsFinalizing(true);
+    setErrorMessage("");
+    updateSessionForRequest(requestId, (currentSession) => ({
+      ...currentSession,
+      phases: {
+        ...currentSession.phases,
+        finalize: "running",
+      },
+    }));
+    updatePhaseEvent(
+      buildPhaseEvent({
+        detail: `Sending retry ${nextRetryCount} request`,
+        eventKey: retryEventKey,
+        phase: "finalize",
+        requestId,
+        status: "running",
+      }),
+    );
+    stopEnrichmentPolling();
+
+    try {
+      const payload = await finalizeSearch({
+        amazonDomain: session.amazonDomain,
+        discoveryToken: session.discoveryToken,
+        excludedCandidateIds: finalResults.map((result) => result.id).filter(Boolean),
+        followUpNotes,
+        query: session.submittedQuery,
+        rejectionFeedback: normalizedFeedback,
+        retryCount: nextRetryCount,
+      });
+
+      if (!isActiveRequest(requestId) || finalizingRequestIdRef.current !== requestId) {
+        return;
+      }
+
+      const nextFinalResults = normalizeFinalResults(payload.results);
+
+      setFinalResults(nextFinalResults);
+      setRetryCount(nextRetryCount);
+      setRetryFeedback("");
+      updateSessionForRequest(requestId, (currentSession) => ({
+        ...currentSession,
+        phases: {
+          ...currentSession.phases,
+          finalize: "complete",
+        },
+      }));
+      updatePhaseEvent(
+        buildPhaseEvent({
+          detail: `${nextFinalResults.length} replacement focused picks`,
+          eventKey: retryEventKey,
+          phase: "finalize",
+          requestId,
+          status: "complete",
+          timingMs: payload.clientTimingMs,
+        }),
+      );
+      if (
+        nextFinalResults.length > 0 &&
+        !nextFinalResults.some((result) => Boolean(result.fit_reason))
+      ) {
+        startEnrichmentPolling({
+          amazonDomain: session.amazonDomain,
+          query: session.submittedQuery,
+          requestId,
+          token: session.discoveryToken,
+        });
+      }
+    } catch (error) {
+      if (!isActiveRequest(requestId) || finalizingRequestIdRef.current !== requestId) {
+        return;
+      }
+
+      updateSessionForRequest(requestId, (currentSession) => ({
+        ...currentSession,
+        phases: {
+          ...currentSession.phases,
+          finalize: "failed",
+        },
+      }));
+      setErrorMessage(error instanceof Error ? error.message : "Unable to retry focused picks.");
+      updatePhaseEvent(
+        buildPhaseEvent({
+          detail: "Retry finalize request failed",
+          eventKey: retryEventKey,
+          phase: "finalize",
+          requestId,
+          status: "failed",
+        }),
+      );
+    } finally {
+      if (isActiveRequest(requestId) && finalizingRequestIdRef.current === requestId) {
+        finalizingRequestIdRef.current = null;
+        setIsFinalizing(false);
+      }
+    }
+  }
+
   const previewItems = Array.isArray(discoverySummary?.previewItems)
     ? discoverySummary.previewItems
     : [];
   const canFinalize =
     Boolean(activeSearchSession?.discoveryToken && discoverySummary?.discoveryToken) && !isFinalizing;
+  const canRetry =
+    finalResults.length > 0 &&
+    retryFeedback.trim().length > 0 &&
+    retryCount < MAX_RETRY_COUNT &&
+    !isFinalizing;
   const hasStartedSearch = Boolean(
     activeSearchSession || discoverySummary || refinementPrompt || isDiscovering || isGeneratingPrompt,
   );
@@ -415,6 +731,7 @@ export function useMobileSearchController() {
   return {
     activeSearchSession,
     canFinalize,
+    canRetry,
     discoverySummary,
     errorMessage,
     finalResults,
@@ -428,8 +745,12 @@ export function useMobileSearchController() {
     previewItems,
     productQuery,
     refinementPrompt,
+    retryCount,
+    retryFeedback,
     setFollowUpNotes,
     setProductQuery,
+    setRetryFeedback,
     startDiscoverySearch,
+    submitRetry,
   };
 }

@@ -16,6 +16,7 @@
   - a tiny capped preview of the first few discovery preview results
   - a refinement prompt and local follow-up notes box
   - a combined results checkpoint that owns discovery preview and focused-pick rows together
+  - a plain retry-with-feedback box after focused picks
   - lightweight phase events for `discover`, `refine`, and `finalize` in the existing Progress panel
   - lightweight focused-pick metadata rows capped at 6
   - a plain focused-pick detail screen with an at-a-glance metadata snapshot and existing metadata rows only
@@ -48,8 +49,21 @@
 - A small detail-content slice now adds a rank-aware at-a-glance snapshot to `SearchResultDetailScreen`.
 - The detail-content slice still uses only already-normalized metadata already passed through navigation: title, source/provider, price, rating, review count, and rank.
 - The latest detail-content slice passed a local JSX parser check and `npx expo export --platform android --output-dir .expo-export-check`; the temporary export directory was removed afterward.
+- The controller now propagates the real `amazonDomain` from the discovery response into the active search session and forwards that domain through finalize and enrichment requests.
+- Enrichment polling is now implemented as a guarded best-effort post-finalize path:
+  - it polls `GET /api/search/enrich` with discovery token, submitted query, and session Amazon domain
+  - it merges `fit_reason`, `caveat`, and `feature_bullets` into focused picks by candidate id
+  - it records an `enrich` phase event as running, complete, or timeout without blocking the existing shortlist UI
+- The focused-pick list can now show a one-line `fit_reason` preview, and the detail screen can show `Why this pick` and `Worth knowing` rows when enrichment data is available.
+- The enrichment/domain slice passed `npx expo export --platform android --output-dir .expo-export-check`; the temporary export directory was removed afterward.
+- Retry with feedback is now implemented after focused picks:
+  - `finalizeSearch` accepts `excludedCandidateIds`, `rejectionFeedback`, and `retryCount`, and sends `requestMode: "guided_retry"` when retry count is above zero
+  - `useMobileSearchController.js` keeps same-session retry state, blocks overlapping finalize calls, stops enrichment polling before retry finalize, excludes the currently displayed focused-pick IDs, and replaces the shortlist on success
+  - retry attempts are capped at 2 and render as separate finalize phase events in the Progress panel
+  - `SearchRetrySection.jsx` renders the plain feedback input, disabled-state button, and retry usage note below focused results
+- The retry-with-feedback slice passed `npx expo export --platform android --output-dir .expo-export-check`; the temporary export directory was removed afterward. Manual Expo Go retry verification is still pending from this chat.
 - Discovery and refinement requests are still launched together, but the UI now updates each one independently so a slow follow-up question does not block discovery rendering.
-- The mobile app still does not run the full guided flow: no enrichment, real product cards, analytics, persistence, retry, or modal/details are active.
+- The mobile app still does not run the full guided flow: no real product cards, analytics, persistence, or modal/details are active.
 - The current Home UI is now a slightly cleaner search/refine/results scaffold, not the intended final mobile UX.
 - A tiny mobile search controller hook now owns the scaffold's query, phase loading flags, discovery/refine orchestration, follow-up notes, and finalize result state around `src/search/searchApi.js`.
 - The hook path and lighter Home scaffold have passed local Android Metro export/bundle checks with `npx expo export --platform android`.
@@ -76,6 +90,7 @@
   - `src/search/SearchEntrySection.jsx` owns the temporary product query input, search button, and About button presentation.
   - `src/search/SearchProgressStatus.jsx` owns the temporary progress/status section so HomeScreen stays focused on screen composition.
   - `src/search/SearchRefineSection.jsx` owns the temporary refine prompt, notes input, and finalize button presentation.
+  - `src/search/SearchRetrySection.jsx` owns the temporary retry feedback input, retry button, and retry usage note.
   - The hook exposes a tiny preview capped at 3 normalized items from `previewResults`.
   - The hook also calls `GET /api/search/refine` in parallel and exposes the follow-up prompt plus local notes state.
   - The hook can call `POST /api/search/finalize` with minimal guided payload and expose final results capped at 6.
@@ -126,12 +141,26 @@
 - Vendor-agnostic product shape
 - Mobile does not need to copy the web UI/UX 1:1; preserve product behavior and trust principles, then design the native experience intentionally.
 
+## Phase status
+
+The small-slice foundation and same-session retry data path are complete in code. Discovery, refinement, finalize, session hardening, stale-response guards, enrichment polling, and retry-with-feedback are working in the mobile controller.
+
+The current phase is ready to move toward native UI redesign after a quick Expo Go retry smoke check. The next work should focus on real product cards plus the full search/refine/results UX, not more backend data-path expansion.
+
 ## Recommended next step
-- Continue with bounded vertical slices rather than extraction-only cleanup.
-- A good next slice is a small native UX pass around result/refine ordering after Expo Go verification confirms phase events and the detail snapshot render clearly.
-- Another acceptable slice is a narrow controller-state guard if Expo Go verification exposes stale finalize or overlapping-search behavior.
-- Avoid broad ports and avoid endless scaffold-only cleanup. Each next slice should be user-visible or improve diagnosis of the current search path.
-- Keep result count capped at 6 and do not add images, modal/details, enrichment, analytics, or retry yet.
+
+Run a manual Expo Go smoke check for retry with feedback when possible:
+- full search
+- focused picks
+- enter retry feedback
+- tap Try again
+- confirm a replacement shortlist appears
+- confirm the Progress panel shows a retry finalize event
+- confirm the note shows `1 of 2 retries used`
+
+Then move to the native UI redesign phase: real product cards plus the full search/refine/results UX.
+
+## Environment notes
 - `EXPO_PUBLIC_API_BASE_URL` must point to the backend API, not the public frontend site.
 - Do not fall back to `https://focamai.com` for mobile API requests; that returns frontend HTML for unknown API paths.
 - If using the deployed backend, set `EXPO_PUBLIC_API_BASE_URL` to the active Render backend URL and restart Expo with `--clear`.

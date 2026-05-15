@@ -3,12 +3,14 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { SearchEntrySection } from "../search/SearchEntrySection";
 import { SearchProgressStatus } from "../search/SearchProgressStatus";
 import { SearchRefineSection } from "../search/SearchRefineSection";
+import { SearchRetrySection } from "../search/SearchRetrySection";
 import { SearchResultsSection } from "../search/SearchResultsSection";
 import { useMobileSearchController } from "../search/useMobileSearchController";
 
 export default function HomeScreen({ navigation }) {
   const {
     canFinalize,
+    canRetry,
     discoverySummary,
     errorMessage,
     finalResults,
@@ -22,9 +24,13 @@ export default function HomeScreen({ navigation }) {
     previewItems,
     productQuery,
     refinementPrompt,
+    retryCount,
+    retryFeedback,
     setFollowUpNotes,
     setProductQuery,
+    setRetryFeedback,
     startDiscoverySearch,
+    submitRetry,
   } = useMobileSearchController();
 
   return (
@@ -73,6 +79,15 @@ export default function HomeScreen({ navigation }) {
             })
           }
           previewItems={previewItems}
+        />
+
+        <SearchRetrySection
+          canRetry={canRetry}
+          finalResults={finalResults}
+          retryCount={retryCount}
+          retryFeedback={retryFeedback}
+          setRetryFeedback={setRetryFeedback}
+          submitRetry={submitRetry}
         />
 
         <SearchRefineSection

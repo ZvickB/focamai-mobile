@@ -2,15 +2,23 @@ const MAX_PHASE_EVENTS = 6;
 
 const PHASE_LABELS = {
   discover: "Discover",
+  enrich: "Enrich",
   finalize: "Finalize",
   refine: "Refine",
   session: "Session",
 };
 
-export function buildPhaseEvent({ detail = "", phase, requestId, status, timingMs = null }) {
+export function buildPhaseEvent({
+  detail = "",
+  eventKey = phase,
+  phase,
+  requestId,
+  status,
+  timingMs = null,
+}) {
   return {
     detail,
-    id: `${requestId}-${phase}`,
+    id: `${requestId}-${eventKey}`,
     phase,
     status,
     timingMs,

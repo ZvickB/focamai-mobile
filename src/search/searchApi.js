@@ -62,28 +62,57 @@ export async function getRefinementPrompt({ query }) {
   return readJsonResponse(response, requestStartedAt, "Refinement request failed.");
 }
 
-export async function finalizeSearch({ discoveryToken, followUpNotes, query }) {
+export async function finalizeSearch({
+  amazonDomain,
+  discoveryToken,
+  excludedCandidateIds = [],
+  followUpNotes = "",
+  query,
+  rejectionFeedback = "",
+  retryCount = 0,
+}) {
   assertApiBaseUrl();
 
   const requestStartedAt = Date.now();
   const normalizedNotes = followUpNotes.trim();
+  const normalizedFeedback = rejectionFeedback.trim();
+  const requestMode = retryCount > 0
+    ? "guided_retry"
+    : normalizedNotes
+      ? "guided_refined"
+      : "guided_empty_notes";
   const response = await fetch(`${API_BASE_URL}/api/search/finalize`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
+      amazonDomain,
       discoveryToken,
-      excludedCandidateIds: [],
+      excludedCandidateIds,
       followUpNotes: normalizedNotes,
       query,
-      rejectionFeedback: "",
-      requestMode: normalizedNotes ? "guided_refined" : "guided_empty_notes",
-      retryCount: 0,
+      rejectionFeedback: normalizedFeedback,
+      requestMode,
+      retryCount,
     }),
   });
 
   return readJsonResponse(response, requestStartedAt, "Finalize request failed.");
+}
+
+export async function pollEnrichment({ amazonDomain, query, token }) {
+  assertApiBaseUrl();
+
+  const requestStartedAt = Date.now();
+  const params = new URLSearchParams({
+    amazonDomain,
+    query,
+    token,
+  });
+  const response = await fetch(`${API_BASE_URL}/api/search/enrich?${params.toString()}`);
+
+  return readJsonResponse(response, requestStartedAt, "Enrichment request failed.");
 }
 
 export function normalizePreviewResults(results) {
@@ -106,7 +135,10 @@ export function normalizeFinalResults(results) {
   }
 
   return results.slice(0, FINAL_RESULT_LIMIT).map((item, index) => ({
-    id: String(item?.id || item?.asin || `final-${index}`),
+    caveat: item?.caveat || "",
+    feature_bullets: Array.isArray(item?.feature_bullets) ? item.feature_bullets : [],
+    fit_reason: item?.fit_reason || "",
+    id: String(item?.id || item?.candidate_id || item?.candidateId || item?.asin || `final-${index}`),
     price: item?.price || "Price not shown",
     provider: item?.subtitle || item?.source || item?.provider || "Unknown source",
     rating: item?.rating ?? null,

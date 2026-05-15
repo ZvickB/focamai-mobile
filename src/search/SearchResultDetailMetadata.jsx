@@ -60,6 +60,8 @@ export function SearchResultDetailMetadata({ item, rank }) {
       <DetailMetadataRow label="Price" value={detailValue(item.price, "Price not shown")} />
       <DetailMetadataRow label="Rating" value={formatRating(item.rating)} />
       <DetailMetadataRow label="Reviews" value={formatReviews(item.reviewCount)} />
+      {item.fit_reason ? <DetailMetadataRow label="Why this pick" value={item.fit_reason} /> : null}
+      {item.caveat ? <DetailMetadataRow label="Worth knowing" value={item.caveat} /> : null}
     </View>
   );
 }
