@@ -7,17 +7,24 @@ import { useSearchFlow } from "../search/SearchFlowContext";
 
 export default function ResultsScreen({ navigation }) {
   const {
+    applyRetrySuggestion,
     canRetry,
+    canRequestRetryAdvice,
     discoverySummary,
     errorMessage,
     finalResults,
+    followUpNotes,
     hasStartedSearch,
     isFinalizing,
+    isGeneratingRetryAdvice,
     isGeneratingPrompt,
     phaseEvents,
     previewItems,
     productQuery,
     refinementPrompt,
+    requestRetryAdvice,
+    retryAdvice,
+    retryAdviceError,
     retryCount,
     retryFeedback,
     setRetryFeedback,
@@ -64,8 +71,16 @@ export default function ResultsScreen({ navigation }) {
         />
 
         <SearchRetrySection
+          applyRetrySuggestion={applyRetrySuggestion}
           canRetry={canRetry}
+          canRequestRetryAdvice={canRequestRetryAdvice}
           finalResults={finalResults}
+          followUpNotes={followUpNotes}
+          isGeneratingRetryAdvice={isGeneratingRetryAdvice}
+          productQuery={productQuery}
+          requestRetryAdvice={requestRetryAdvice}
+          retryAdvice={retryAdvice}
+          retryAdviceError={retryAdviceError}
           retryCount={retryCount}
           retryFeedback={retryFeedback}
           setRetryFeedback={setRetryFeedback}

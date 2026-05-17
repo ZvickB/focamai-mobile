@@ -1,21 +1,26 @@
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { QuerySuggestionPrompt } from "../search/QuerySuggestionPrompt";
 import { SearchProgressStatus } from "../search/SearchProgressStatus";
 import { SearchRefineSection } from "../search/SearchRefineSection";
 import { useSearchFlow } from "../search/SearchFlowContext";
 
 export default function FollowUpScreen({ navigation }) {
   const {
+    applyQuerySuggestion,
     canFinalize,
+    dismissQuerySuggestion,
     discoverySummary,
     errorMessage,
     finalizeFocusedPicks,
     followUpNotes,
     hasStartedSearch,
+    isApplyingQuerySuggestion,
     isFinalizing,
     isGeneratingPrompt,
     phaseEvents,
     productQuery,
+    querySuggestion,
     refinementPrompt,
     setFollowUpNotes,
   } = useSearchFlow();
@@ -56,6 +61,13 @@ export default function FollowUpScreen({ navigation }) {
           phaseEvents={phaseEvents}
           productQuery={productQuery}
           refinementPrompt={refinementPrompt}
+        />
+
+        <QuerySuggestionPrompt
+          isApplying={isApplyingQuerySuggestion}
+          onKeepResults={dismissQuerySuggestion}
+          onTrySuggestedSearch={applyQuerySuggestion}
+          suggestion={querySuggestion}
         />
 
         <SearchRefineSection

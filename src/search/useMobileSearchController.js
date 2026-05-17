@@ -2,10 +2,12 @@ import { useEffect, useRef, useState } from "react";
 import {
   discoverProducts,
   finalizeSearch,
+  getRetryAdvice,
   getRefinementPrompt,
   normalizeFinalResults,
   normalizePreviewResults,
   pollEnrichment,
+  pollQueryQuality,
 } from "./searchApi";
 import {
   DEFAULT_AMAZON_DOMAIN,
@@ -20,11 +22,14 @@ import { buildPhaseEvent, replacePhaseEvent } from "./searchPhaseEvents";
 
 const ENRICHMENT_POLL_INTERVAL_MS = 1500;
 const ENRICHMENT_POLL_TIMEOUT_MS = 30000;
+const QUERY_QUALITY_POLL_INTERVAL_MS = 1500;
+const QUERY_QUALITY_POLL_TIMEOUT_MS = 20000;
 const MAX_RETRY_COUNT = 2;
 
 function createSearchSession({ amazonDomain, requestId, submittedQuery }) {
   return {
     amazonDomain,
+    candidatePool: null,
     candidateCount: 0,
     discoveryToken: "",
     phases: {
@@ -42,6 +47,10 @@ function hasRunningPhase(session) {
   return Object.values(session?.phases || {}).some((status) => status === "running");
 }
 
+function getFinalResultsKey(results) {
+  return Array.isArray(results) ? results.map((item) => String(item?.id || "")).join("|") : "";
+}
+
 function buildDiscoverySummary(discoveryPayload, query) {
   const candidates = Array.isArray(discoveryPayload.candidatePool?.candidates)
     ? discoveryPayload.candidatePool.candidates
@@ -53,6 +62,7 @@ function buildDiscoverySummary(discoveryPayload, query) {
   return {
     amazonDomain: discoveryPayload.amazonDomain || "",
     candidateCount: candidates.length,
+    candidatePool: discoveryPayload.candidatePool || null,
     discoveryToken: discoveryPayload.discoveryToken || "",
     previewCount: previewResults.length,
     previewItems: normalizePreviewResults(previewResults),
@@ -81,7 +91,7 @@ function mergeEnrichmentIntoResults(currentResults, entries) {
   const entriesByCandidateId = new Map(
     entries
       .map((entry) => {
-        const candidateId = entry?.candidate_id || entry?.candidateId;
+        const candidateId = entry?.candidate_id || entry?.candidateId || entry?.id;
 
         return candidateId ? [String(candidateId), entry] : null;
       })
@@ -104,8 +114,12 @@ function mergeEnrichmentIntoResults(currentResults, entries) {
       caveat: entry.caveat ?? result.caveat,
       feature_bullets: Array.isArray(entry.feature_bullets)
         ? entry.feature_bullets
-        : result.feature_bullets,
-      fit_reason: entry.fit_reason ?? result.fit_reason,
+        : Array.isArray(entry.featureBullets)
+          ? entry.featureBullets
+          : result.feature_bullets,
+      fit_reason: entry.fit_reason ?? entry.fitReason ?? result.fit_reason,
+      image: entry.image || result.image,
+      link: entry.link || result.link,
     };
   });
 }
@@ -113,7 +127,12 @@ function mergeEnrichmentIntoResults(currentResults, entries) {
 export function useMobileSearchController() {
   const activeSearchSessionRef = useRef(null);
   const enrichmentPollTimerRef = useRef(null);
+  const finalResultsRef = useRef([]);
   const finalizingRequestIdRef = useRef(null);
+  const followUpNotesRef = useRef("");
+  const queryQualityPollTimerRef = useRef(null);
+  const retryFeedbackRef = useRef("");
+  const retryAdviceRequestIdRef = useRef(0);
   const searchRequestIdRef = useRef(0);
   const selectedAmazonDomainTouchedRef = useRef(false);
   const [activeSearchSession, setActiveSearchSession] = useState(null);
@@ -126,8 +145,14 @@ export function useMobileSearchController() {
   const [isDiscovering, setIsDiscovering] = useState(false);
   const [isFinalizing, setIsFinalizing] = useState(false);
   const [isGeneratingPrompt, setIsGeneratingPrompt] = useState(false);
+  const [isGeneratingRetryAdvice, setIsGeneratingRetryAdvice] = useState(false);
+  const [isApplyingQuerySuggestion, setIsApplyingQuerySuggestion] = useState(false);
+  const [isCheckingQueryQuality, setIsCheckingQueryQuality] = useState(false);
   const [phaseEvents, setPhaseEvents] = useState([]);
+  const [querySuggestion, setQuerySuggestion] = useState(null);
   const [refinementPrompt, setRefinementPrompt] = useState(null);
+  const [retryAdvice, setRetryAdvice] = useState(null);
+  const [retryAdviceError, setRetryAdviceError] = useState("");
   const [retryCount, setRetryCount] = useState(0);
   const [retryFeedback, setRetryFeedback] = useState("");
   const [showMarketplacePrompt, setShowMarketplacePrompt] = useState(false);
@@ -161,6 +186,157 @@ export function useMobileSearchController() {
       clearTimeout(enrichmentPollTimerRef.current);
       enrichmentPollTimerRef.current = null;
     }
+  }
+
+  function stopQueryQualityPolling({ clearSuggestion = false, updateState = true } = {}) {
+    if (queryQualityPollTimerRef.current) {
+      clearTimeout(queryQualityPollTimerRef.current);
+      queryQualityPollTimerRef.current = null;
+    }
+
+    if (!updateState) {
+      return;
+    }
+
+    setIsCheckingQueryQuality(false);
+
+    if (clearSuggestion) {
+      setQuerySuggestion(null);
+      setIsApplyingQuerySuggestion(false);
+    }
+  }
+
+  function clearRetryAdviceState() {
+    retryAdviceRequestIdRef.current += 1;
+    setRetryAdvice(null);
+    setRetryAdviceError("");
+    setIsGeneratingRetryAdvice(false);
+  }
+
+  function startQueryQualityPolling({ amazonDomain, query, requestId, token }) {
+    const pollingStartedAt = Date.now();
+
+    if (!token || !query) {
+      return;
+    }
+
+    updateSessionForRequest(requestId, (currentSession) => ({
+      ...currentSession,
+      phases: {
+        ...currentSession.phases,
+        queryQuality: "running",
+      },
+    }));
+    updatePhaseEvent(
+      buildPhaseEvent({
+        detail: "Checking whether a more specific search would help",
+        phase: "queryQuality",
+        requestId,
+        status: "running",
+      }),
+    );
+    setIsCheckingQueryQuality(true);
+
+    const scheduleNextPoll = () => {
+      if (queryQualityPollTimerRef.current) {
+        clearTimeout(queryQualityPollTimerRef.current);
+        queryQualityPollTimerRef.current = null;
+      }
+
+      if (!isActiveRequest(requestId)) {
+        setIsCheckingQueryQuality(false);
+        return;
+      }
+
+      const hasTimedOut = Date.now() - pollingStartedAt >= QUERY_QUALITY_POLL_TIMEOUT_MS;
+
+      if (hasTimedOut) {
+        updateSessionForRequest(requestId, (currentSession) => ({
+          ...currentSession,
+          phases: {
+            ...currentSession.phases,
+            queryQuality: "timeout",
+          },
+        }));
+        updatePhaseEvent(
+          buildPhaseEvent({
+            detail: "No query suggestion was ready",
+            phase: "queryQuality",
+            requestId,
+            status: "timeout",
+          }),
+        );
+        setIsCheckingQueryQuality(false);
+        return;
+      }
+
+      queryQualityPollTimerRef.current = setTimeout(runPoll, QUERY_QUALITY_POLL_INTERVAL_MS);
+    };
+
+    const runPoll = async () => {
+      if (!isActiveRequest(requestId)) {
+        setIsCheckingQueryQuality(false);
+        return;
+      }
+
+      try {
+        const payload = await pollQueryQuality({
+          amazonDomain,
+          query,
+          token,
+        });
+
+        if (!isActiveRequest(requestId)) {
+          setIsCheckingQueryQuality(false);
+          return;
+        }
+
+        if (payload.ready) {
+          const shouldShowSuggestion = Boolean(payload.shouldSuggest && payload.suggestedQuery);
+
+          if (shouldShowSuggestion) {
+            setQuerySuggestion({
+              amazonDomain,
+              classification: payload.classification || "",
+              confidence: payload.confidence || "",
+              originalQuery: payload.originalQuery || query,
+              query,
+              reason: payload.reason || "",
+              requestId,
+              suggestedQuery: payload.suggestedQuery,
+              token,
+            });
+          }
+
+          updateSessionForRequest(requestId, (currentSession) => ({
+            ...currentSession,
+            phases: {
+              ...currentSession.phases,
+              queryQuality: "complete",
+            },
+          }));
+          updatePhaseEvent(
+            buildPhaseEvent({
+              detail: shouldShowSuggestion
+                ? "Suggested a more specific search"
+                : "No query suggestion needed",
+              phase: "queryQuality",
+              requestId,
+              status: "complete",
+              timingMs: payload.clientTimingMs,
+            }),
+          );
+          setIsCheckingQueryQuality(false);
+          return;
+        }
+      } catch {
+        // Query-quality recovery is optional; keep the original search uninterrupted.
+      }
+
+      scheduleNextPoll();
+    };
+
+    runPoll();
   }
 
   function startEnrichmentPolling({ amazonDomain, query, requestId, token }) {
@@ -262,7 +438,24 @@ export function useMobileSearchController() {
     scheduleNextPoll();
   }
 
-  useEffect(() => stopEnrichmentPolling, []);
+  useEffect(() => {
+    return () => {
+      stopEnrichmentPolling();
+      stopQueryQualityPolling({ updateState: false });
+    };
+  }, []);
+
+  useEffect(() => {
+    finalResultsRef.current = finalResults;
+  }, [finalResults]);
+
+  useEffect(() => {
+    followUpNotesRef.current = followUpNotes;
+  }, [followUpNotes]);
+
+  useEffect(() => {
+    retryFeedbackRef.current = retryFeedback;
+  }, [retryFeedback]);
 
   useEffect(() => {
     let isMounted = true;
@@ -282,14 +475,18 @@ export function useMobileSearchController() {
     };
   }, []);
 
-  function startDiscoverySearch() {
-    const normalizedQuery = productQuery.trim();
+  function startDiscoverySearch({ cacheMode = "", queryOverride } = {}) {
+    const normalizedQuery = String(queryOverride ?? productQuery).trim();
     const requestedAmazonDomain = normalizeAmazonDomain(selectedAmazonDomain) || DEFAULT_AMAZON_DOMAIN;
 
     if (!normalizedQuery) {
       setErrorMessage("Enter a product query first.");
       setDiscoverySummary(null);
       return;
+    }
+
+    if (queryOverride !== undefined) {
+      setProductQuery(normalizedQuery);
     }
 
     const requestId = searchRequestIdRef.current + 1;
@@ -299,6 +496,8 @@ export function useMobileSearchController() {
       Boolean(previousSession) && (hasRunningPhase(previousSession) || finalizingRequestIdRef.current);
     finalizingRequestIdRef.current = null;
     stopEnrichmentPolling();
+    stopQueryQualityPolling({ clearSuggestion: true });
+    clearRetryAdviceState();
 
     const nextSession = createSearchSession({
       amazonDomain: requestedAmazonDomain,
@@ -328,7 +527,9 @@ export function useMobileSearchController() {
           ]
         : []),
       buildPhaseEvent({
-        detail: `Starting discovery request for ${requestedAmazonDomain}`,
+        detail: cacheMode === "refresh"
+          ? `Starting refreshed discovery request for ${requestedAmazonDomain}`
+          : `Starting discovery request for ${requestedAmazonDomain}`,
         phase: "discover",
         requestId,
         status: "running",
@@ -342,7 +543,7 @@ export function useMobileSearchController() {
     ]);
     setRefinementPrompt(null);
 
-    discoverProducts({ amazonDomain: requestedAmazonDomain, query: normalizedQuery })
+    discoverProducts({ amazonDomain: requestedAmazonDomain, cacheMode, query: normalizedQuery })
       .then((discoveryPayload) => {
         if (!isActiveRequest(requestId)) {
           return;
@@ -360,6 +561,7 @@ export function useMobileSearchController() {
           updateSessionForRequest(requestId, (currentSession) => ({
             ...currentSession,
             amazonDomain: nextAmazonDomain,
+            candidatePool: nextSummary.candidatePool,
             candidateCount: nextSummary.candidateCount,
             discoveryToken: "",
             phases: {
@@ -384,6 +586,7 @@ export function useMobileSearchController() {
         updateSessionForRequest(requestId, (currentSession) => ({
           ...currentSession,
           amazonDomain: nextAmazonDomain,
+          candidatePool: nextSummary.candidatePool,
           candidateCount: nextSummary.candidateCount,
           discoveryToken: nextSummary.discoveryToken,
           phases: {
@@ -401,6 +604,12 @@ export function useMobileSearchController() {
             timingMs: nextSummary.timingMs,
           }),
         );
+        startQueryQualityPolling({
+          amazonDomain: nextAmazonDomain,
+          query: normalizedQuery,
+          requestId,
+          token: nextSummary.discoveryToken,
+        });
       })
       .catch((error) => {
         if (!isActiveRequest(requestId)) {
@@ -552,7 +761,7 @@ export function useMobileSearchController() {
         return;
       }
 
-      const nextFinalResults = normalizeFinalResults(payload.results);
+      const nextFinalResults = normalizeFinalResults(payload.results, session.candidatePool);
 
       setFinalResults(nextFinalResults);
       updateSessionForRequest(requestId, (currentSession) => ({
@@ -607,6 +816,91 @@ export function useMobileSearchController() {
       if (isActiveRequest(requestId) && finalizingRequestIdRef.current === requestId) {
         finalizingRequestIdRef.current = null;
         setIsFinalizing(false);
+      }
+    }
+  }
+
+  async function requestRetryAdvice({ rejectionFeedback } = {}) {
+    const session = activeSearchSessionRef.current;
+    const normalizedVisibleFeedback = retryFeedback.trim();
+    const normalizedFeedback = String(rejectionFeedback ?? normalizedVisibleFeedback).trim();
+
+    if (finalResults.length === 0 || !normalizedFeedback || isGeneratingRetryAdvice) {
+      return;
+    }
+
+    if (!session?.submittedQuery) {
+      setRetryAdvice(null);
+      setRetryAdviceError("Start a fresh search before asking for a better direction.");
+      return;
+    }
+
+    const requestId = retryAdviceRequestIdRef.current + 1;
+    const snapshot = {
+      feedback: normalizedFeedback,
+      followUpNotes,
+      requestId,
+      resultsKey: getFinalResultsKey(finalResults),
+      searchRequestId: session.requestId,
+      submittedQuery: session.submittedQuery,
+      visibleFeedback: normalizedVisibleFeedback,
+    };
+
+    retryAdviceRequestIdRef.current = requestId;
+    setIsGeneratingRetryAdvice(true);
+    setRetryAdvice(null);
+    setRetryAdviceError("");
+    setErrorMessage("");
+
+    try {
+      const payload = await getRetryAdvice({
+        followUpNotes,
+        query: session.submittedQuery,
+        rejectionFeedback: normalizedFeedback,
+        shortlist: finalResults.map((result) => ({
+          title: result.title || "",
+        })),
+      });
+
+      const isStale =
+        retryAdviceRequestIdRef.current !== snapshot.requestId ||
+        activeSearchSessionRef.current?.requestId !== snapshot.searchRequestId ||
+        activeSearchSessionRef.current?.submittedQuery !== snapshot.submittedQuery ||
+        followUpNotesRef.current !== snapshot.followUpNotes ||
+        retryFeedbackRef.current.trim() !== snapshot.visibleFeedback ||
+        getFinalResultsKey(finalResultsRef.current) !== snapshot.resultsKey;
+
+      if (isStale) {
+        return;
+      }
+
+      setRetryAdvice({
+        recommendation: payload.recommendation || "",
+        rationale: payload.rationale || "",
+        suggestedQuery: payload.suggestedQuery || "",
+        timingMs: payload.clientTimingMs,
+      });
+    } catch (error) {
+      const isStale =
+        retryAdviceRequestIdRef.current !== snapshot.requestId ||
+        activeSearchSessionRef.current?.requestId !== snapshot.searchRequestId ||
+        activeSearchSessionRef.current?.submittedQuery !== snapshot.submittedQuery ||
+        followUpNotesRef.current !== snapshot.followUpNotes ||
+        retryFeedbackRef.current.trim() !== snapshot.visibleFeedback ||
+        getFinalResultsKey(finalResultsRef.current) !== snapshot.resultsKey;
+
+      if (isStale) {
+        return;
+      }
+
+      setRetryAdviceError(
+        error instanceof Error
+          ? error.message
+          : "Unable to suggest a better search direction.",
+      );
+    } finally {
+      if (retryAdviceRequestIdRef.current === snapshot.requestId) {
+        setIsGeneratingRetryAdvice(false);
       }
     }
   }
@@ -688,11 +982,13 @@ export function useMobileSearchController() {
         return;
       }
 
-      const nextFinalResults = normalizeFinalResults(payload.results);
+      const nextFinalResults = normalizeFinalResults(payload.results, session.candidatePool);
 
       setFinalResults(nextFinalResults);
       setRetryCount(nextRetryCount);
       setRetryFeedback("");
+      setRetryAdvice(null);
+      setRetryAdviceError("");
       updateSessionForRequest(requestId, (currentSession) => ({
         ...currentSession,
         phases: {
@@ -751,6 +1047,44 @@ export function useMobileSearchController() {
     }
   }
 
+  function dismissQuerySuggestion() {
+    setQuerySuggestion(null);
+    setIsApplyingQuerySuggestion(false);
+  }
+
+  function updateRetryFeedback(nextValue) {
+    retryAdviceRequestIdRef.current += 1;
+    setRetryAdvice(null);
+    setRetryAdviceError("");
+    setIsGeneratingRetryAdvice(false);
+    setRetryFeedback(nextValue);
+  }
+
+  function applyRetrySuggestion(query) {
+    const nextQuery = String(query || retryAdvice?.suggestedQuery || "").trim();
+
+    if (!nextQuery) {
+      setRetryAdviceError("Add a suggested search before starting again.");
+      return false;
+    }
+
+    startDiscoverySearch({ cacheMode: "refresh", queryOverride: nextQuery });
+    return true;
+  }
+
+  function applyQuerySuggestion() {
+    const nextQuery = String(querySuggestion?.suggestedQuery || "").trim();
+
+    if (!nextQuery) {
+      dismissQuerySuggestion();
+      return;
+    }
+
+    setIsApplyingQuerySuggestion(true);
+    startDiscoverySearch({ queryOverride: nextQuery });
+    setIsApplyingQuerySuggestion(false);
+  }
+
   const previewItems = Array.isArray(discoverySummary?.previewItems)
     ? discoverySummary.previewItems
     : [];
@@ -761,6 +1095,10 @@ export function useMobileSearchController() {
     retryFeedback.trim().length > 0 &&
     retryCount < MAX_RETRY_COUNT &&
     !isFinalizing;
+  const canRequestRetryAdvice =
+    finalResults.length > 0 &&
+    !isFinalizing &&
+    !isGeneratingRetryAdvice;
   const hasStartedSearch = Boolean(
     activeSearchSession || discoverySummary || refinementPrompt || isDiscovering || isGeneratingPrompt,
   );
@@ -784,6 +1122,8 @@ export function useMobileSearchController() {
     searchRequestIdRef.current = resetRequestId;
     finalizingRequestIdRef.current = null;
     stopEnrichmentPolling();
+    stopQueryQualityPolling({ clearSuggestion: true });
+    clearRetryAdviceState();
     setSession(null);
     setIsDiscovering(false);
     setIsGeneratingPrompt(false);
@@ -834,19 +1174,29 @@ export function useMobileSearchController() {
     activeSearchSession,
     canFinalize,
     canRetry,
+    canRequestRetryAdvice,
+    dismissQuerySuggestion,
     discoverySummary,
     errorMessage,
     finalResults,
     finalizeFocusedPicks,
     followUpNotes,
+    applyQuerySuggestion,
+    isApplyingQuerySuggestion,
+    isCheckingQueryQuality,
     isDiscovering,
     isFinalizing,
+    isGeneratingRetryAdvice,
     isGeneratingPrompt,
     hasStartedSearch,
     phaseEvents,
     previewItems,
     productQuery,
+    querySuggestion,
     refinementPrompt,
+    requestRetryAdvice,
+    retryAdvice,
+    retryAdviceError,
     retryCount,
     retryFeedback,
     selectedAmazonDomain,
@@ -854,9 +1204,10 @@ export function useMobileSearchController() {
     confirmSelectedAmazonDomain,
     setFollowUpNotes,
     setProductQuery,
-    setRetryFeedback,
+    setRetryFeedback: updateRetryFeedback,
     setSelectedAmazonDomain,
     startDiscoverySearch,
     submitRetry,
+    applyRetrySuggestion,
   };
 }

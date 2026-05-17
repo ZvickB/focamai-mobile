@@ -42,7 +42,7 @@ async function readJsonResponse(response, requestStartedAt, fallbackErrorMessage
   };
 }
 
-export async function discoverProducts({ amazonDomain, query }) {
+export async function discoverProducts({ amazonDomain, cacheMode = "", query }) {
   assertApiBaseUrl();
 
   const requestStartedAt = Date.now();
@@ -50,6 +50,10 @@ export async function discoverProducts({ amazonDomain, query }) {
 
   if (amazonDomain) {
     params.set("amazonDomain", amazonDomain);
+  }
+
+  if (cacheMode === "refresh") {
+    params.set("cacheMode", "refresh");
   }
 
   const response = await fetch(`${API_BASE_URL}/api/search/rainforest-discover?${params.toString()}`);
@@ -114,9 +118,52 @@ export async function pollEnrichment({ amazonDomain, query, token }) {
     query,
     token,
   });
-  const response = await fetch(`${API_BASE_URL}/api/search/enrich?${params.toString()}`);
+  const response = await fetch(`${API_BASE_URL}/api/search/enrichment?${params.toString()}`);
 
   return readJsonResponse(response, requestStartedAt, "Enrichment request failed.");
+}
+
+export async function pollQueryQuality({ amazonDomain, query, token }) {
+  assertApiBaseUrl();
+
+  const requestStartedAt = Date.now();
+  const params = new URLSearchParams({
+    query,
+    token,
+  });
+
+  if (amazonDomain) {
+    params.set("amazonDomain", amazonDomain);
+  }
+
+  const response = await fetch(`${API_BASE_URL}/api/search/query-quality?${params.toString()}`);
+
+  return readJsonResponse(response, requestStartedAt, "Query-quality request failed.");
+}
+
+export async function getRetryAdvice({
+  followUpNotes = "",
+  query,
+  rejectionFeedback = "",
+  shortlist = [],
+}) {
+  assertApiBaseUrl();
+
+  const requestStartedAt = Date.now();
+  const response = await fetch(`${API_BASE_URL}/api/search/retry-advice`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      followUpNotes: followUpNotes.trim(),
+      query,
+      rejectionFeedback: rejectionFeedback.trim(),
+      shortlist,
+    }),
+  });
+
+  return readJsonResponse(response, requestStartedAt, "Unable to suggest a better search direction.");
 }
 
 export function normalizePreviewResults(results) {
@@ -133,16 +180,59 @@ export function normalizePreviewResults(results) {
   }));
 }
 
-export function normalizeFinalResults(results) {
+function getCandidateId(item, fallbackId = "") {
+  return String(item?.id || item?.candidate_id || item?.candidateId || item?.asin || fallbackId);
+}
+
+function getFeatureBullets(item) {
+  if (Array.isArray(item?.feature_bullets)) {
+    return item.feature_bullets;
+  }
+
+  if (Array.isArray(item?.featureBullets)) {
+    return item.featureBullets;
+  }
+
+  return [];
+}
+
+function mergeFinalResultsWithCandidatePool(results, candidatePool) {
   if (!Array.isArray(results)) {
     return [];
   }
 
-  return results.slice(0, FINAL_RESULT_LIMIT).map((item, index) => ({
+  const candidates = Array.isArray(candidatePool?.candidates) ? candidatePool.candidates : [];
+  const candidatesById = new Map(
+    candidates.map((candidate, index) => [getCandidateId(candidate, `candidate-${index}`), candidate]),
+  );
+
+  return results.map((result, index) => {
+    const candidate = candidatesById.get(getCandidateId(result, `final-${index}`));
+
+    if (!candidate) {
+      return result;
+    }
+
+    return {
+      ...result,
+      image: candidate.image || result.image,
+      link: candidate.link || result.link,
+    };
+  });
+}
+
+export function normalizeFinalResults(results, candidatePool) {
+  if (!Array.isArray(results)) {
+    return [];
+  }
+
+  return mergeFinalResultsWithCandidatePool(results, candidatePool).slice(0, FINAL_RESULT_LIMIT).map((item, index) => ({
     caveat: item?.caveat || "",
-    feature_bullets: Array.isArray(item?.feature_bullets) ? item.feature_bullets : [],
-    fit_reason: item?.fit_reason || "",
-    id: String(item?.id || item?.candidate_id || item?.candidateId || item?.asin || `final-${index}`),
+    feature_bullets: getFeatureBullets(item),
+    fit_reason: item?.fit_reason || item?.fitReason || "",
+    id: getCandidateId(item, `final-${index}`),
+    image: item?.image || "",
+    link: item?.link || "",
     price: item?.price || "Price not shown",
     provider: item?.subtitle || item?.source || item?.provider || "Unknown source",
     rating: item?.rating ?? null,

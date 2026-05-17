@@ -4,6 +4,7 @@ const PHASE_LABELS = {
   discover: "Discover",
   enrich: "Enrich",
   finalize: "Finalize",
+  queryQuality: "Query",
   refine: "Refine",
   session: "Session",
 };
