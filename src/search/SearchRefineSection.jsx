@@ -22,6 +22,7 @@ export function SearchRefineSection({
         </Text>
       ) : null}
       <TextInput
+        testID="followup.notesInput"
         value={followUpNotes}
         onChangeText={setFollowUpNotes}
         placeholder={refinementPrompt.followUpPlaceholder}
@@ -30,6 +31,7 @@ export function SearchRefineSection({
         className="mt-3 min-h-[96px] rounded-2xl border border-line bg-mist px-4 py-3 text-base text-ink"
       />
       <Pressable
+        testID="followup.showFocusedPicksButton"
         disabled={!canFinalize}
         onPress={finalizeFocusedPicks}
         className={`mt-3 rounded-2xl px-4 py-3 ${canFinalize ? "bg-slate-800" : "bg-slate-300"}`}

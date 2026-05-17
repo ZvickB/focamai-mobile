@@ -1,0 +1,42 @@
+appId: host.exp.exponent
+env:
+  EXPO_GO_URL: "exp://127.0.0.1:8081"
+  SEARCH_QUERY: "travel stroller"
+  FOLLOW_UP_NOTES: "Lightweight, compact fold, under 300 dollars if possible."
+---
+- openLink: ${EXPO_GO_URL}
+- extendedWaitUntil:
+    visible:
+      id: search.screen
+    timeout: 60000
+- tapOn:
+    id: search.queryInput
+- inputText: ${SEARCH_QUERY}
+- tapOn:
+    id: search.submitButton
+- extendedWaitUntil:
+    visible:
+      id: followup.screen
+    timeout: 20000
+- extendedWaitUntil:
+    visible:
+      id: followup.showFocusedPicksButton
+    timeout: 120000
+- extendedWaitUntil:
+    visible: Ready to refine or build focused picks.
+    timeout: 120000
+- tapOn:
+    id: followup.notesInput
+- inputText: ${FOLLOW_UP_NOTES}
+- tapOn:
+    id: followup.showFocusedPicksButton
+- extendedWaitUntil:
+    visible:
+      id: results.focusedPick.1
+    timeout: 180000
+- tapOn:
+    id: results.focusedPick.1
+- extendedWaitUntil:
+    visible:
+      id: detail.screen
+    timeout: 10000

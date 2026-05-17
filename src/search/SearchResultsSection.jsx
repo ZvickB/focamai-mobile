@@ -30,7 +30,7 @@ export function SearchResultsSection({ finalResults, onOpenResult, previewItems 
       ) : null}
 
       {hasFocusedPicks ? (
-        <View className="mt-4">
+        <View className="mt-4" testID="results.focusedPicks">
           <Text className="text-xs font-semibold uppercase text-slate-500">
             Focused picks ({finalResults.length}/6)
           </Text>

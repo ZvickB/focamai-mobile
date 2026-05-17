@@ -25,6 +25,12 @@
   - calm user-facing search status with expandable diagnostics for phase events and backend details
   - lightweight focused-pick metadata rows capped at 6
   - a plain focused-pick detail screen with rank, title, source/provider, price, rating, review count, explanation fallback sections, caveat fallback sections, and feature notes
+- A minimal Maestro smoke-test layer now exists under `maestro/`:
+  - `maestro/smoke-shell.yaml` opens the current Expo Go URL, verifies the Search screen, opens Settings, and returns to Search.
+  - `maestro/search-live.yaml` is an optional live-backend journey for query -> Follow-up -> focused picks -> detail; keep it separate from stable smoke coverage because it depends on backend/provider/network timing.
+  - `maestro/README.md` documents Windows/Android usage with Expo Go and the `EXPO_GO_URL` override.
+  - `package.json` has `maestro:smoke`, `maestro:search:live`, and `check:android-export` scripts.
+  - Stable test IDs were added to the Search, Settings, Follow-up, Results, first focused-pick, and detail surfaces without changing controller flow, backend contracts, marketplace preference behavior, query-quality polling, enrichment polling, retry paths, candidate-id lookup, retailer CTA/disclosure, or the 6-result cap.
 - The backend remains shared with the web app, and mobile now has a minimal discovery/refine/finalize request path.
 - The discovery-only slice has been verified in Expo Go against the local backend using a LAN API base URL.
 - The tiny capped preview has also been verified in Expo Go.
@@ -208,7 +214,7 @@ The current phase is mobile-native search/refine/results work. The first detail 
 
 ## Recommended next step
 
-Next planned slice: verify the native detail parity and retry-advice passes in Expo Go, then return to follow-up hard-constraint refresh or broader mobile-native flow polish.
+Next planned slice: run the new Maestro shell smoke locally on Android/Expo Go, then verify the native detail parity and retry-advice passes in Expo Go before returning to follow-up hard-constraint refresh or broader mobile-native flow polish.
 - Keep the native stack detail screen pattern.
 - Preserve the current controller flow, backend contracts, candidate-id lookup, retailer CTA/disclosure, query-quality polling, retry behavior, and 6-result cap.
 - Add only detail content/behavior that already exists in normalized finalize/enrichment data or can be safely derived on device.

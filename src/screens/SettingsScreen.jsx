@@ -41,7 +41,7 @@ export default function SettingsScreen({ navigation }) {
   }
 
   return (
-    <SafeAreaView edges={["bottom"]} className="flex-1 bg-mist">
+    <SafeAreaView edges={["bottom"]} className="flex-1 bg-mist" testID="settings.screen">
       <ScrollView
         className="flex-1"
         contentContainerStyle={{ paddingHorizontal: 20, paddingVertical: 24, gap: 18 }}

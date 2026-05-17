@@ -89,7 +89,7 @@ export default function SearchResultDetailScreen({ route }) {
   const rank = routeRank || (matchedIndex >= 0 ? matchedIndex + 1 : undefined);
 
   return (
-    <SafeAreaView edges={["bottom"]} className="flex-1 bg-mist">
+    <SafeAreaView edges={["bottom"]} className="flex-1 bg-mist" testID="detail.screen">
       <ScrollView
         className="flex-1"
         contentContainerStyle={{ paddingHorizontal: 20, paddingVertical: 24, gap: 18 }}

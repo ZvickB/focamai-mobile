@@ -11,6 +11,7 @@ export function SearchEntrySection({
     <View className="rounded-2xl border border-line bg-white px-4 py-4">
       <Text className="text-sm font-medium text-slate-800">What are you shopping for?</Text>
       <TextInput
+        testID="search.queryInput"
         value={productQuery}
         onChangeText={setProductQuery}
         onSubmitEditing={startDiscoverySearch}
@@ -20,6 +21,7 @@ export function SearchEntrySection({
       />
       <View className="mt-4 flex-row gap-3">
         <Pressable
+          testID="search.submitButton"
           disabled={isDiscovering}
           onPress={startDiscoverySearch}
           className={`flex-1 rounded-2xl px-4 py-3 ${
@@ -31,6 +33,7 @@ export function SearchEntrySection({
           </Text>
         </Pressable>
         <Pressable
+          testID="search.settingsButton"
           onPress={onSettingsPress}
           className="rounded-2xl border border-line bg-white px-4 py-3"
         >

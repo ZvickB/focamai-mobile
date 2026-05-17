@@ -19,6 +19,8 @@
 
 **The next phase is not "just make it prettier."** The user reported the temporary retry UI smoke test and first product-card smoke test are complete, so work is now in mobile-native result/detail UX vertical slices, adding only the product behaviors each slice needs. Mobile UI/UX is expected to deliberately differ from the web layout — preserve product behavior and trust principles, not the exact web layout.
 
+**Maestro is now present as a repeatable smoke layer, not a replacement for manual Expo Go testing.** The stable shell flow in `maestro/smoke-shell.yaml` opens the app through Expo Go, verifies Search, opens Settings, and returns to Search. The optional `maestro/search-live.yaml` flow covers query -> Follow-up -> focused picks -> detail, but it requires a reachable backend and stable live responses, so keep it separate from deterministic smoke coverage until there is a fixture or test backend mode.
+
 **What not to do:**
 - Do not copy the 1552-line web `useGuidedSearch.js` wholesale. That's what broke `main`. The lesson was not "don't build complex things" — it was "don't port complexity before the foundation is proven."
 - Do not assume all web data-path features are done. Add missing product behavior in bounded slices when the mobile UX needs it.
@@ -26,6 +28,11 @@
 
 ## Current mobile reality
 - Current app root runs `RootNavigator.jsx` inside `SafeAreaProvider`.
+- Current mobile smoke-test files:
+  - `maestro/smoke-shell.yaml`
+  - `maestro/search-live.yaml`
+  - `maestro/README.md`
+  - `package.json` scripts: `maestro:smoke`, `maestro:search:live`, and `check:android-export`
 - Current screens:
   - Search
   - Follow-up

@@ -1,0 +1,23 @@
+appId: host.exp.exponent
+env:
+  EXPO_GO_URL: "exp://127.0.0.1:8081"
+---
+- openLink: ${EXPO_GO_URL}
+- extendedWaitUntil:
+    visible:
+      id: search.screen
+    timeout: 60000
+- assertVisible:
+    id: search.title
+- assertVisible:
+    id: search.queryInput
+- tapOn:
+    id: search.settingsButton
+- extendedWaitUntil:
+    visible:
+      id: settings.screen
+    timeout: 10000
+- assertVisible: Settings
+- back
+- assertVisible:
+    id: search.screen

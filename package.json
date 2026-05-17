@@ -6,7 +6,10 @@
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "maestro:smoke": "maestro test maestro/smoke-shell.yaml",
+    "maestro:search:live": "maestro test maestro/search-live.yaml",
+    "check:android-export": "expo export --platform android --output-dir .expo-export-check"
   },
   "dependencies": {
     "@expo-google-fonts/manrope": "^0.4.2",

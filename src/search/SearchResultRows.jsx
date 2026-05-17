@@ -126,6 +126,7 @@ export function FocusedPickRow({ item, index, onPress }) {
   return (
     <View className="overflow-hidden rounded-2xl border border-line bg-white">
       <Pressable
+        testID={`results.focusedPick.${index + 1}`}
         accessibilityRole="button"
         accessibilityLabel={`Open focused pick ${index + 1}: ${item.title}`}
         onPress={onPress}

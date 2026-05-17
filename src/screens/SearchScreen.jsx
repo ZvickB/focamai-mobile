@@ -45,7 +45,7 @@ export default function SearchScreen({ navigation, route }) {
   }
 
   return (
-    <SafeAreaView edges={["bottom"]} className="flex-1 bg-mist">
+    <SafeAreaView edges={["bottom"]} className="flex-1 bg-mist" testID="search.screen">
       <ScrollView
         className="flex-1"
         contentContainerStyle={{ paddingHorizontal: 20, paddingVertical: 24, gap: 18 }}
@@ -55,7 +55,9 @@ export default function SearchScreen({ navigation, route }) {
           <Text className="text-[12px] font-medium uppercase tracking-[2px] text-accent">
             Focama Mobile
           </Text>
-          <Text className="mt-2 text-3xl font-semibold text-ink">What are you looking for?</Text>
+          <Text className="mt-2 text-3xl font-semibold text-ink" testID="search.title">
+            What are you looking for?
+          </Text>
           <Text className="mt-3 text-base leading-6 text-slate-600">
             Search once, add a little context, then ask for a short list.
           </Text>
