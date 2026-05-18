@@ -163,7 +163,7 @@ Done when:
 - Retry replacement cards still render correctly.
 
 ### Slice 3 - Product detail screen
-Status: complete in code and Android export verified. The native detail page now leads with image/fallback, product title, price, rating/reviews, rank/source context, then places `Why this pick` and `Worth knowing` near the top. Feature notes, retailer CTA, pricing/availability note, and affiliate disclosure stay retailer-agnostic and close to the product decision.
+Status: complete in code and Android export verified. The native detail page now leads with image/fallback, product title, price, rating/reviews, rank/source context, then places `Why this pick` and `Worth knowing` near the top. Feature notes, retailer CTA, pricing/availability note, and affiliate disclosure stay retailer-agnostic and close to the product decision. A later trust-polish pass made the missing-note copy status-aware, so the detail screen distinguishes enrichment that is still checking from enrichment that finished or timed out without extra fit/caveat/feature notes. A small CTA polish pass also keeps a compact retailer footer reachable while scrolling when a retailer link exists.
 
 Goal: make each pick understandable enough to decide whether to leave for the retailer.
 

@@ -98,7 +98,9 @@
   - discovery stores the requested/resolved `amazonDomain` on the active search session
   - `AsyncStorage` stores the selected domain under `focamai_marketplace` and reloads it on app startup
   - `AsyncStorage` tracks the first-run prompt under `focamai_marketplace_asked`
+  - marketplace persistence writes the selected domain before marking the first-run prompt seen, so a failed domain write does not permanently suppress the prompt
   - `MarketplacePromptSection.jsx` asks first-run users to choose a store before searching without requesting GPS/location permission
+  - first-run store pills are draft-only; `Use [store]` is the actual commit action
   - `SettingsScreen.jsx` lets users change the saved store later, passes the changed domain back to Home, and owns secondary utility/legal navigation
   - finalize forwards the active session's Amazon domain, and post-finalize enrichment polling calls `GET /api/search/enrich` with discovery token, submitted query, and session domain
   - changing the store while a search is active clears marketplace-scoped results, cancels stale in-flight responses, keeps the typed query, and asks the user to search again
@@ -186,16 +188,33 @@
   - `src/search/searchConstraints.js` mirrors the web hard-constraint detector for kosher/Jewish-use, dietary/allergy, safety/material, and compatibility/exclusion notes
   - when the Follow-up answer contains one of those hard constraints, `src/search/useMobileSearchController.js` does one pre-finalize `GET /api/search/rainforest-discover` refresh with the original query plus notes and `cacheMode=refresh`
   - finalize and post-finalize enrichment then use the refreshed discovery token, refreshed candidate pool, refreshed marketplace domain, and combined query
-  - query-quality polling is stopped for the old token once the refresh succeeds, stale response guards still apply, and the Search -> Follow-up -> Results -> Detail stack flow is unchanged
+  - query-quality polling is stopped and any existing suggestion is cleared before hard-constraint refresh starts, stale response guards still apply, and the Search -> Follow-up -> Results -> Detail stack flow is unchanged
   - ordinary soft follow-up preferences still finalize against the existing discovery token
 - The follow-up hard-constraint refresh slice passed `npm test -- --runInBand src/search/__tests__/searchConstraints.test.js`, direct `node --check` on touched `.js` files, and Android Expo export; `.expo-export-check` was removed afterward.
 - The stale-query submit fix passed `npm test -- --runInBand src/search/__tests__/SearchEntrySection.test.jsx` and Android Expo export; `.expo-export-check` was removed afterward.
 - The query-quality display fix passed `npm test -- --runInBand src/search/__tests__/searchApi.test.js src/search/__tests__/QuerySuggestionPrompt.test.jsx`, direct `node --check` on touched `.js` files, and Android Expo export; `.expo-export-check` was removed afterward.
+- A small detail trust-polish slice is implemented:
+  - `SearchResultDetailScreen` passes the current enrichment phase status from the shared search flow into detail metadata rendering.
+  - `SearchResultDetailMetadata.jsx` now makes `Why this pick`, `Worth knowing`, and feature-note fallback copy status-aware, so mobile distinguishes "still checking" from "extra analysis finished/was not ready in time and this note is limited."
+  - This is copy/readiness polish only; backend contracts, controller flow, explicit store preference behavior, query-quality polling, retry advice, hard-constraint refresh behavior, enrichment hydration, candidate-id detail lookup, retailer CTA/disclosure, and the 6-result cap are unchanged.
+- A small detail CTA polish slice is implemented:
+  - `ScreenContainer` supports an optional fixed footer below the scroll view.
+  - `SearchResultDetailScreen` uses that footer only when a retailer link exists, keeping `View retailer`, current price, short confirmation copy, and the affiliate disclosure reachable while scrolling detail content.
+  - The in-page CTA/disclosure and unavailable-link state remain intact, with no backend contract or controller-flow changes.
 - The native detail parity slice keeps the native stack detail screen instead of copying the web modal layout. It adds a clearer detail overview and feature-highlight section, formats rating/review values on device, keeps calm fallback copy when feature/fit/caveat enrichment is absent, and preserves the existing candidate-id lookup, retailer CTA/disclosure, pricing/availability caveat, retry behavior, query-quality polling, controller flow, backend contracts, and 6-result cap.
 - The native detail parity slice passed `node --check index.js`, `node --check App.js`, and `npx expo export --platform android --output-dir .expo-export-check`; `.expo-export-check` was removed afterward. Direct `node --check` on touched `.jsx` files is not supported by this Node setup, so the Expo Android export is the JSX parse/bundle check.
 - The detail enrichment fix now polls `GET /api/search/enrichment` instead of `/api/search/enrich`, preserves finalize `fitReason`/`featureBullets` camelCase data, and merges enrichment entries by `candidate_id`, `candidateId`, or `id`. If the detail screen lacks AI fit reasons, caveats, or feature bullets, verify this path first.
 - The detail enrichment fix passed `node --check src/search/searchApi.js`, `node --check src/search/useMobileSearchController.js`, `node --check index.js`, `node --check App.js`, and `npx expo export --platform android --output-dir .expo-export-check`; `.expo-export-check` was removed afterward.
 - The enrichment/domain slice passed `npx expo export --platform android --output-dir .expo-export-check`; `.expo-export-check` was removed afterward.
+- A focused audit-hardening slice is implemented:
+  - result rows and detail metadata no longer turn missing ratings into `0.0` or object-shaped review counts into `[object Object]`
+  - missing detail ratings no longer render as empty stars
+  - `SearchResultsSection` and `SearchResultDetailScreen` are defensive about malformed/non-array result props
+  - Results now passes the tapped item snapshot to detail navigation
+  - detail prefers the live matched rank, falls back to a normalized route snapshot with a stale-snapshot note, and shows a clear unavailable state when neither live item nor snapshot exists
+  - enrichment merge now trims primitive copy and drops object-shaped `fit_reason`/`caveat` values before hydrating focused picks
+  - the fallback candidate-id generation and `isApplyingQuerySuggestion` lifecycle audit items remain open
+  - verification passed with focused Jest tests, direct `node --check` for touched `.js` entry/controller files, and Android Expo export; `.expo-export-check` was removed afterward
 - Temporary same-session retry with feedback exists in code:
   - `src/search/searchApi.js` sends retry finalize requests with `requestMode: "guided_retry"`, feedback, retry count, and excluded current focused-pick IDs
   - `src/search/useMobileSearchController.js` keeps retry state, blocks overlapping finalize requests, reuses the current discovery session, stops enrichment polling before retry finalize, replaces the shortlist on success, and restarts enrichment polling when needed
@@ -249,7 +268,7 @@
 ## Next step
 - Continue building mobile search in bounded vertical slices against `src/search/useMobileSearchController.js`.
 - Do not keep doing micro-extractions unless they directly support a real mobile UX/data slice.
-- Next planned step: manually verify the polished Search -> Follow-up -> Results -> Detail flow in Expo Go against a reachable backend, then choose the next product-completeness slice rather than continuing visual-only UI slices.
+- Next planned step: manually verify the polished Search -> Follow-up -> Results -> Detail flow in Expo Go against a reachable backend, including the status-aware detail fallback copy and the fixed detail retailer footer.
 - Keep the current controller flow, backend contracts, candidate-id lookup, retailer CTA/disclosure, query-quality polling, retry behavior, and 6-result cap while improving detail content/behavior.
 - Keep result count capped at 6 and do not add analytics or broad persistence yet.
 - `EXPO_PUBLIC_API_BASE_URL` must point to the backend API, not the public frontend site.
