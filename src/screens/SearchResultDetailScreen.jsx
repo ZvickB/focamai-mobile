@@ -1,4 +1,4 @@
-import { Linking, Text } from "react-native";
+import { Linking, Text, View } from "react-native";
 import {
   Button,
   ScreenContainer,
@@ -60,19 +60,123 @@ function DetailRetailerCta({ item }) {
   );
 }
 
-export default function SearchResultDetailScreen({ route }) {
-  const { finalResults } = useSearchFlow();
-  const candidateId = route.params?.candidateId;
-  const routeItem = route.params?.item;
-  const routeRank = route.params?.rank;
-  const matchedIndex = candidateId
-    ? finalResults.findIndex((result) => String(result.id) === String(candidateId))
-    : -1;
-  const item = matchedIndex >= 0 ? finalResults[matchedIndex] : routeItem || {};
-  const rank = routeRank || (matchedIndex >= 0 ? matchedIndex + 1 : undefined);
+function DetailRetailerFooter({ item }) {
+  if (!item.link) {
+    return null;
+  }
+
+  const provider = detailValue(item.provider, "the retailer");
+  const price = detailValue(item.price, "Price not shown");
 
   return (
+    <View className="gap-2">
+      <View className="flex-row items-center justify-between gap-3">
+        <View className="flex-1">
+          <Text className="text-xs font-medium text-stone-500">Current listing</Text>
+          <Text className="text-base font-semibold text-ink" numberOfLines={1}>
+            {price}
+          </Text>
+        </View>
+        <Button
+          accessibilityRole="link"
+          accessibilityLabel={`View ${detailValue(item.title, "this product")} on ${provider}`}
+          className="min-w-[144px]"
+          onPress={() => openRetailerLink(item.link)}
+        >
+          View retailer
+        </Button>
+      </View>
+      <Text className="text-xs leading-4 text-slate-500">
+        Confirm price, availability, and seller details with {provider}.
+      </Text>
+      <AffiliateDisclosureNote />
+    </View>
+  );
+}
+
+function normalizePrimitive(value) {
+  if (
+    value === null ||
+    value === undefined ||
+    typeof value === "object" ||
+    typeof value === "function"
+  ) {
+    return "";
+  }
+
+  return String(value).trim();
+}
+
+function normalizeFeatureBullets(value) {
+  return Array.isArray(value)
+    ? value.map((bullet) => normalizePrimitive(bullet)).filter(Boolean)
+    : [];
+}
+
+function normalizeDetailRouteItem(routeItem) {
+  if (!routeItem || typeof routeItem !== "object" || Array.isArray(routeItem)) {
+    return null;
+  }
+
+  const item = {
+    caveat: normalizePrimitive(routeItem.caveat),
+    feature_bullets: normalizeFeatureBullets(routeItem.feature_bullets || routeItem.featureBullets),
+    fit_reason: normalizePrimitive(routeItem.fit_reason || routeItem.fitReason),
+    id: normalizePrimitive(routeItem.id || routeItem.candidateId || routeItem.candidate_id),
+    image: normalizePrimitive(routeItem.image || routeItem.imageUrl),
+    link: normalizePrimitive(routeItem.link || routeItem.url),
+    price: normalizePrimitive(routeItem.price),
+    provider: normalizePrimitive(routeItem.provider || routeItem.source),
+    rating: routeItem.rating,
+    reviewCount: routeItem.reviewCount ?? routeItem.review_count,
+    title: normalizePrimitive(routeItem.title || routeItem.name),
+  };
+
+  return item.id || item.title || item.link ? item : null;
+}
+
+function UnavailableDetailState() {
+  return (
     <ScreenContainer testID="detail.screen">
+      <ScreenIntro
+        eyebrow="Focused pick"
+        title="Pick details unavailable"
+        description="This pick is no longer available in the current shortlist."
+      />
+      <QuietStatusPanel>
+        <Text className="text-sm font-semibold text-slate-700">
+          Go back and select a current pick.
+        </Text>
+        <Text className="mt-1 text-sm leading-5 text-slate-500">
+          Focamai keeps detail pages tied to the latest shortlist. If the results changed or the
+          detail link opened without a saved pick snapshot, the old item cannot be shown reliably.
+        </Text>
+      </QuietStatusPanel>
+    </ScreenContainer>
+  );
+}
+
+export default function SearchResultDetailScreen({ route }) {
+  const { activeSearchSession, finalResults } = useSearchFlow();
+  const safeFinalResults = Array.isArray(finalResults) ? finalResults : [];
+  const candidateId = route.params?.candidateId;
+  const routeItem = normalizeDetailRouteItem(route.params?.item);
+  const routeRank = route.params?.rank;
+  const matchedIndex = candidateId
+    ? safeFinalResults.findIndex((result) => String(result.id) === String(candidateId))
+    : -1;
+  const matchedItem = matchedIndex >= 0 ? safeFinalResults[matchedIndex] : null;
+  const item = matchedItem || routeItem;
+  const rank = matchedIndex >= 0 ? matchedIndex + 1 : routeRank;
+  const enrichmentStatus = activeSearchSession?.phases?.enrich || "idle";
+  const isStaleSnapshot = Boolean(routeItem && !matchedItem);
+
+  if (!item) {
+    return <UnavailableDetailState />;
+  }
+
+  return (
+    <ScreenContainer footer={<DetailRetailerFooter item={item} />} testID="detail.screen">
       <ScreenIntro
         eyebrow={`Focused pick ${rank ? `#${rank}` : ""}`}
         title="Product details"
@@ -80,8 +184,19 @@ export default function SearchResultDetailScreen({ route }) {
       />
 
       <SearchResultDetailHero item={item} rank={rank} />
-      <SearchResultDetailMetadata item={item} />
-      <SearchResultFeatureHighlights item={item} />
+      {isStaleSnapshot ? (
+        <QuietStatusPanel>
+          <Text className="text-sm font-semibold text-slate-700">
+            Showing the pick you opened earlier.
+          </Text>
+          <Text className="mt-1 text-sm leading-5 text-slate-500">
+            The current shortlist has changed, so these details may no longer match the latest
+            result order.
+          </Text>
+        </QuietStatusPanel>
+      ) : null}
+      <SearchResultDetailMetadata enrichmentStatus={enrichmentStatus} item={item} />
+      <SearchResultFeatureHighlights enrichmentStatus={enrichmentStatus} item={item} />
       <DetailRetailerCta item={item} />
       <SearchResultDetailSnapshot item={item} rank={rank} />
     </ScreenContainer>

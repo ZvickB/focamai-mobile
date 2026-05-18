@@ -11,6 +11,7 @@ export function cx(...classNames) {
 export function ScreenContainer({
   children,
   contentContainerStyle,
+  footer,
   keyboardShouldPersistTaps,
   testID,
 }) {
@@ -26,6 +27,7 @@ export function ScreenContainer({
       >
         {children}
       </ScrollView>
+      {footer ? <View className="border-t border-line bg-white px-5 py-3">{footer}</View> : null}
     </SafeAreaView>
   );
 }

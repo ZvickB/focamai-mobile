@@ -57,6 +57,7 @@ export default function ResultsScreen({ navigation }) {
           onOpenResult={(item, index) =>
             navigation.navigate("SearchResultDetail", {
               candidateId: item.id,
+              item,
               rank: index + 1,
             })
           }

@@ -3,11 +3,23 @@ import { Pill, ProductImageFrame, Surface } from "../components/MobileUI";
 import { AffiliateDisclosureNote } from "./AffiliateDisclosureNote";
 
 function formatRatingLabel(rating) {
-  if (rating === null || rating === undefined || rating === "") {
+  if (rating === null || rating === undefined || rating === "" || typeof rating === "boolean") {
     return "Rating not shown";
   }
 
-  return `${rating} rating`;
+  const ratingValue = Number(rating);
+
+  if (Number.isFinite(ratingValue)) {
+    return `${ratingValue.toFixed(1)} rating`;
+  }
+
+  if (typeof rating === "string") {
+    const trimmedRating = rating.trim();
+
+    return trimmedRating ? `${trimmedRating} rating` : "Rating not shown";
+  }
+
+  return "Rating not shown";
 }
 
 function formatReviewCountLabel(reviewCount) {
@@ -15,10 +27,24 @@ function formatReviewCountLabel(reviewCount) {
     return "Reviews not shown";
   }
 
-  return `${reviewCount} reviews`;
+  if (typeof reviewCount === "number") {
+    return `${reviewCount} reviews`;
+  }
+
+  if (typeof reviewCount === "string") {
+    const trimmedReviewCount = reviewCount.trim();
+
+    return trimmedReviewCount ? `${trimmedReviewCount} reviews` : "Reviews not shown";
+  }
+
+  return "Reviews not shown";
 }
 
 function getRatingValue(rating) {
+  if (rating === null || rating === undefined || rating === "" || typeof rating === "boolean") {
+    return null;
+  }
+
   const value = Number(rating);
 
   return Number.isFinite(value) ? value : null;
@@ -105,11 +131,9 @@ export function FocusedPickRow({ item, index, onPress }) {
               <Text className="text-xs font-medium text-stone-500">
                 {ratingValue === null ? "Rating not shown" : `${ratingValue.toFixed(1)} rating`}
               </Text>
-              {item.reviewCount ? (
-                <Text className="text-xs font-medium text-stone-500">
-                  {formatReviewCountLabel(item.reviewCount)}
-                </Text>
-              ) : null}
+              <Text className="text-xs font-medium text-stone-500">
+                {formatReviewCountLabel(item.reviewCount)}
+              </Text>
             </View>
 
             {fitPreview ? (

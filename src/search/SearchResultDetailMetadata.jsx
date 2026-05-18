@@ -2,7 +2,13 @@ import { Text, View } from "react-native";
 import { ProductImageFrame, Surface } from "../components/MobileUI";
 
 export function detailValue(value, fallback) {
-  if (value === null || value === undefined || value === "") {
+  if (
+    value === null ||
+    value === undefined ||
+    value === "" ||
+    typeof value === "object" ||
+    typeof value === "function"
+  ) {
     return fallback;
   }
 
@@ -10,6 +16,10 @@ export function detailValue(value, fallback) {
 }
 
 function formatRating(value) {
+  if (value === null || value === undefined || value === "" || typeof value === "boolean") {
+    return "Rating not shown";
+  }
+
   const rating = Number(value);
 
   if (!Number.isFinite(rating)) {
@@ -24,7 +34,17 @@ function formatReviews(value) {
     return "Reviews not shown";
   }
 
-  return `${value} reviews`;
+  if (typeof value === "number") {
+    return `${value} reviews`;
+  }
+
+  if (typeof value === "string") {
+    const trimmedValue = value.trim();
+
+    return trimmedValue ? `${trimmedValue} reviews` : "Reviews not shown";
+  }
+
+  return "Reviews not shown";
 }
 
 function getFeatureBullets(item) {
@@ -34,9 +54,65 @@ function getFeatureBullets(item) {
 }
 
 function getRatingValue(value) {
+  if (value === null || value === undefined || value === "" || typeof value === "boolean") {
+    return null;
+  }
+
   const rating = Number(value);
 
   return Number.isFinite(rating) ? rating : null;
+}
+
+function getEnrichmentCopy(enrichmentStatus) {
+  if (enrichmentStatus === "running") {
+    return {
+      caveat:
+        "Focamai is still checking for a clearer caveat. Confirm availability, sizing, seller, and shipping details on the retailer page before buying.",
+      feature:
+        "Feature notes are still catching up. Confirm the latest specs, sizing, and included parts on the retailer page before buying.",
+      reason:
+        "Focamai is still checking for a clearer fit reason. For now, use the product facts and retailer listing to judge whether it matches your needs.",
+      status:
+        "Extra analysis is still running. These notes can fill in without changing the shortlist order.",
+    };
+  }
+
+  if (enrichmentStatus === "complete") {
+    return {
+      caveat:
+        "Extra analysis did not return a specific caveat for this pick. Still treat the retailer listing as the final source for availability, sizing, seller, and shipping details.",
+      feature:
+        "Extra analysis did not return feature notes for this pick. Confirm the latest specs, sizing, and included parts on the retailer page before buying.",
+      reason:
+        "Extra analysis did not return a specific fit reason for this pick. Use the product facts and retailer listing to decide whether it matches your needs.",
+      status:
+        "Extra analysis finished, but some notes are limited for this pick. The shortlist order has not changed.",
+    };
+  }
+
+  if (enrichmentStatus === "timeout") {
+    return {
+      caveat:
+        "Extra analysis was not ready in time to add a specific caveat. Confirm availability, sizing, seller, and shipping details on the retailer page before buying.",
+      feature:
+        "Feature notes were not ready in time. Confirm the latest specs, sizing, and included parts on the retailer page before buying.",
+      reason:
+        "Extra analysis was not ready in time to add a specific fit reason. Use the product facts and retailer listing to decide whether it matches your needs.",
+      status:
+        "Extra analysis was not ready in time, so this page is showing the reliable product facts Focamai already has.",
+    };
+  }
+
+  return {
+    caveat:
+      "No specific caveat is available yet. Treat the retailer listing as the final source for availability, sizing, seller, and shipping details.",
+    feature:
+      "Feature notes may still be catching up. Confirm the latest specs, sizing, and included parts on the retailer page before buying.",
+    reason:
+      "The assistant may still be adding the specific fit reason. For now, use the product facts and retailer listing to judge whether it matches your needs.",
+    status:
+      "If extra analysis finishes while this page is open, these notes can fill in without changing the shortlist order.",
+  };
 }
 
 function SnapshotPill({ label, value }) {
@@ -57,12 +133,13 @@ function DetailTextSection({ label, value }) {
   );
 }
 
-function FeatureBulletList({ bullets }) {
+function FeatureBulletList({ bullets, enrichmentStatus }) {
+  const enrichmentCopy = getEnrichmentCopy(enrichmentStatus);
+
   if (!bullets.length) {
     return (
       <Text className="mt-2 text-base leading-6 text-slate-900">
-        Feature notes may still be catching up. Confirm the latest specs, sizing, and included
-        parts on the retailer page before buying.
+        {enrichmentCopy.feature}
       </Text>
     );
   }
@@ -81,7 +158,12 @@ function FeatureBulletList({ bullets }) {
 
 export function DetailRatingStars({ rating }) {
   const ratingValue = getRatingValue(rating);
-  const roundedRating = ratingValue === null ? 0 : Math.round(ratingValue);
+
+  if (ratingValue === null) {
+    return null;
+  }
+
+  const roundedRating = Math.round(ratingValue);
 
   return (
     <View className="flex-row gap-0.5" accessibilityLabel={formatRating(rating)}>
@@ -141,13 +223,13 @@ export function SearchResultDetailHero({ item, rank }) {
   );
 }
 
-export function SearchResultFeatureHighlights({ item }) {
+export function SearchResultFeatureHighlights({ enrichmentStatus = "idle", item }) {
   const featureBullets = getFeatureBullets(item);
 
   return (
     <Surface>
       <Text className="text-sm font-semibold text-slate-900">Feature notes</Text>
-      <FeatureBulletList bullets={featureBullets} />
+      <FeatureBulletList bullets={featureBullets} enrichmentStatus={enrichmentStatus} />
     </Surface>
   );
 }
@@ -167,8 +249,9 @@ export function SearchResultDetailSnapshot({ item, rank }) {
   );
 }
 
-export function SearchResultDetailMetadata({ item }) {
+export function SearchResultDetailMetadata({ enrichmentStatus = "idle", item }) {
   const featureBullets = getFeatureBullets(item);
+  const enrichmentCopy = getEnrichmentCopy(enrichmentStatus);
   const hasReasoning = Boolean(item.fit_reason || item.caveat || featureBullets.length);
 
   return (
@@ -178,20 +261,19 @@ export function SearchResultDetailMetadata({ item }) {
         label="Why this pick"
         value={detailValue(
           item.fit_reason,
-          "The assistant may still be adding the specific fit reason. For now, use the product facts and retailer listing to judge whether it matches your needs.",
+          enrichmentCopy.reason,
         )}
       />
       <DetailTextSection
         label="Worth knowing"
         value={detailValue(
           item.caveat,
-          "No specific caveat is available yet. Treat the retailer listing as the final source for availability, sizing, seller, and shipping details.",
+          enrichmentCopy.caveat,
         )}
       />
       {!hasReasoning ? (
         <Text className="border-t border-line py-4 text-sm leading-5 text-slate-500">
-          If extra analysis finishes while this page is open, these notes can fill in without
-          changing the shortlist order.
+          {enrichmentCopy.status}
         </Text>
       ) : null}
     </Surface>

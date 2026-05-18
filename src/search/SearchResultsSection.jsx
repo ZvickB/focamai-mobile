@@ -4,15 +4,17 @@ import { SectionHeader, Surface } from "../components/MobileUI";
 import { FocusedPickRow, PreviewResultRow } from "./SearchResultRows";
 
 export function SearchResultsSection({
-  finalResults,
+  finalResults = [],
   isFinalizing = false,
   onOpenResult,
-  previewItems,
+  previewItems = [],
   showEmptyState = false,
 }) {
   const [isPreviewVisible, setIsPreviewVisible] = useState(false);
-  const hasPreview = previewItems.length > 0;
-  const hasFocusedPicks = finalResults.length > 0;
+  const safeFinalResults = Array.isArray(finalResults) ? finalResults : [];
+  const safePreviewItems = Array.isArray(previewItems) ? previewItems : [];
+  const hasPreview = safePreviewItems.length > 0;
+  const hasFocusedPicks = safeFinalResults.length > 0;
 
   if (!hasPreview && !hasFocusedPicks) {
     if (showEmptyState) {
@@ -42,15 +44,15 @@ export function SearchResultsSection({
             eyebrow="Shortlist"
             title="Your focused picks"
             description={
-              finalResults.length < 6
-                ? `${finalResults.length} credible option${
-                    finalResults.length === 1 ? "" : "s"
+              safeFinalResults.length < 6
+                ? `${safeFinalResults.length} credible option${
+                    safeFinalResults.length === 1 ? "" : "s"
                   } came back for this search. Open any pick to see reasoning, caveats, and availability.`
                 : "Six ranked options to scan before you leave for the retailer. Open any pick to see reasoning, caveats, and availability."
             }
           />
           <View className="gap-3" testID="results.focusedPicks">
-            {finalResults.map((item, index) => (
+            {safeFinalResults.map((item, index) => (
               <FocusedPickRow
                 key={item.id}
                 item={item}
@@ -89,7 +91,7 @@ export function SearchResultsSection({
 
           {isPreviewVisible ? (
             <View className="mt-3 border-t border-line pt-1">
-              {previewItems.map((item, index) => (
+              {safePreviewItems.map((item, index) => (
                 <PreviewResultRow key={item.id} item={item} index={index} />
               ))}
             </View>
