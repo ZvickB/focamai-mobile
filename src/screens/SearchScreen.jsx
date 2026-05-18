@@ -62,7 +62,6 @@ export default function SearchScreen({ navigation, route }) {
         <MarketplacePromptSection
           confirmSelectedAmazonDomain={confirmSelectedAmazonDomain}
           selectedAmazonDomain={selectedAmazonDomain}
-          setSelectedAmazonDomain={setSelectedAmazonDomain}
         />
       ) : null}
 

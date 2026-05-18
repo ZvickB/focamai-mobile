@@ -17,8 +17,7 @@ import {
   loadAmazonMarketplacePreference,
   getAmazonMarketplaceLabel,
   normalizeAmazonDomain,
-  saveAmazonMarketplacePromptSeen,
-  saveAmazonDomainPreference,
+  saveAmazonMarketplaceSelection,
 } from "./amazonMarketplaces";
 import { buildPhaseEvent, replacePhaseEvent } from "./searchPhaseEvents";
 
@@ -121,19 +120,35 @@ function mergeEnrichmentIntoResults(currentResults, entries) {
       return result;
     }
 
+    const caveat = normalizeEnrichmentText(entry.caveat);
+    const fitReason = normalizeEnrichmentText(entry.fit_reason ?? entry.fitReason);
+    const featureBullets = normalizeEnrichmentBullets(
+      entry.feature_bullets ?? entry.featureBullets,
+    );
+
     return {
       ...result,
-      caveat: entry.caveat ?? result.caveat,
-      feature_bullets: Array.isArray(entry.feature_bullets)
-        ? entry.feature_bullets
-        : Array.isArray(entry.featureBullets)
-          ? entry.featureBullets
-          : result.feature_bullets,
-      fit_reason: entry.fit_reason ?? entry.fitReason ?? result.fit_reason,
+      caveat: caveat || result.caveat,
+      feature_bullets: featureBullets.length ? featureBullets : result.feature_bullets,
+      fit_reason: fitReason || result.fit_reason,
       image: entry.image || result.image,
       link: entry.link || result.link,
     };
   });
+}
+
+function normalizeEnrichmentText(value) {
+  if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+    return String(value).trim();
+  }
+
+  return "";
+}
+
+function normalizeEnrichmentBullets(value) {
+  return Array.isArray(value)
+    ? value.map((bullet) => normalizeEnrichmentText(bullet)).filter(Boolean)
+    : [];
 }
 
 export function useMobileSearchController() {
@@ -476,12 +491,19 @@ export function useMobileSearchController() {
     Promise.all([
       loadAmazonMarketplacePreference(),
       hasSeenAmazonMarketplacePrompt(),
-    ]).then(([preference, hasSeenPrompt]) => {
-      if (isMounted && !selectedAmazonDomainTouchedRef.current) {
-        setSelectedAmazonDomainState(preference.domain);
-        setShowMarketplacePrompt(!preference.hasSavedPreference && !hasSeenPrompt);
-      }
-    });
+    ])
+      .then(([preference, hasSeenPrompt]) => {
+        if (isMounted && !selectedAmazonDomainTouchedRef.current) {
+          setSelectedAmazonDomainState(preference.domain);
+          setShowMarketplacePrompt(!preference.hasSavedPreference && !hasSeenPrompt);
+        }
+      })
+      .catch(() => {
+        if (isMounted && !selectedAmazonDomainTouchedRef.current) {
+          setSelectedAmazonDomainState(DEFAULT_AMAZON_DOMAIN);
+          setShowMarketplacePrompt(true);
+        }
+      });
 
     return () => {
       isMounted = false;
@@ -721,6 +743,7 @@ export function useMobileSearchController() {
 
     const refreshQuery = buildConstraintRefreshQuery(session.submittedQuery, notesForRequest);
 
+    stopQueryQualityPolling({ clearSuggestion: true });
     updateSessionForRequest(requestId, (currentSession) => ({
       ...currentSession,
       phases: {
@@ -1319,8 +1342,7 @@ export function useMobileSearchController() {
 
     selectedAmazonDomainTouchedRef.current = true;
     setSelectedAmazonDomainState(normalizedDomain);
-    saveAmazonDomainPreference(normalizedDomain);
-    saveAmazonMarketplacePromptSeen();
+    saveAmazonMarketplaceSelection(normalizedDomain);
     setShowMarketplacePrompt(false);
 
     if (domainChanged && hasMarketplaceScopedSearchState()) {
@@ -1328,11 +1350,18 @@ export function useMobileSearchController() {
     }
   }
 
-  function confirmSelectedAmazonDomain() {
+  function confirmSelectedAmazonDomain(nextDomain = selectedAmazonDomain) {
+    const normalizedDomain = normalizeAmazonDomain(nextDomain) || DEFAULT_AMAZON_DOMAIN;
+    const domainChanged = normalizedDomain !== selectedAmazonDomain;
+
     selectedAmazonDomainTouchedRef.current = true;
-    saveAmazonDomainPreference(selectedAmazonDomain);
-    saveAmazonMarketplacePromptSeen();
+    setSelectedAmazonDomainState(normalizedDomain);
+    saveAmazonMarketplaceSelection(normalizedDomain);
     setShowMarketplacePrompt(false);
+
+    if (domainChanged && hasMarketplaceScopedSearchState()) {
+      resetSearchAfterMarketplaceChange(normalizedDomain);
+    }
   }
 
   return {

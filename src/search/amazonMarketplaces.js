@@ -62,11 +62,18 @@ export async function saveAmazonDomainPreference(domain) {
 
   try {
     await AsyncStorage.setItem(AMAZON_MARKETPLACE_STORAGE_KEY, normalizedDomain);
+    return {
+      domain: normalizedDomain,
+      saved: true,
+    };
   } catch {
     // Search should keep working even if device storage is unavailable.
   }
 
-  return normalizedDomain;
+  return {
+    domain: normalizedDomain,
+    saved: false,
+  };
 }
 
 export async function loadAmazonMarketplacePreference() {
@@ -97,7 +104,25 @@ export async function hasSeenAmazonMarketplacePrompt() {
 export async function saveAmazonMarketplacePromptSeen() {
   try {
     await AsyncStorage.setItem(AMAZON_MARKETPLACE_PROMPT_SEEN_KEY, "true");
+    return true;
   } catch {
     // The prompt can safely reappear if storage is unavailable.
   }
+
+  return false;
+}
+
+export async function saveAmazonMarketplaceSelection(domain) {
+  const preference = await saveAmazonDomainPreference(domain);
+  let promptSeenSaved = false;
+
+  if (preference.saved) {
+    promptSeenSaved = await saveAmazonMarketplacePromptSeen();
+  }
+
+  return {
+    domain: preference.domain,
+    promptSeenSaved,
+    saved: preference.saved,
+  };
 }

@@ -6,8 +6,7 @@ import {
   DEFAULT_AMAZON_DOMAIN,
   getAmazonMarketplaceLabel,
   loadAmazonMarketplacePreference,
-  saveAmazonDomainPreference,
-  saveAmazonMarketplacePromptSeen,
+  saveAmazonMarketplaceSelection,
 } from "../search/amazonMarketplaces";
 
 export default function SettingsScreen({ navigation }) {
@@ -35,9 +34,8 @@ export default function SettingsScreen({ navigation }) {
 
   async function chooseMarketplace(domain) {
     setSelectedAmazonDomain(domain);
-    await saveAmazonDomainPreference(domain);
-    await saveAmazonMarketplacePromptSeen();
-    navigation.navigate("Search", { selectedAmazonDomain: domain });
+    const result = await saveAmazonMarketplaceSelection(domain);
+    navigation.navigate("Search", { selectedAmazonDomain: result.domain });
   }
 
   return (

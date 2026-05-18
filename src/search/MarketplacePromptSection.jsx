@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Pressable, ScrollView, Text } from "react-native";
 import { Button, Surface } from "../components/MobileUI";
 import { AMAZON_MARKETPLACES, getAmazonMarketplaceLabel } from "./amazonMarketplaces";
@@ -5,8 +6,13 @@ import { AMAZON_MARKETPLACES, getAmazonMarketplaceLabel } from "./amazonMarketpl
 export function MarketplacePromptSection({
   confirmSelectedAmazonDomain,
   selectedAmazonDomain,
-  setSelectedAmazonDomain,
 }) {
+  const [draftAmazonDomain, setDraftAmazonDomain] = useState(selectedAmazonDomain);
+
+  useEffect(() => {
+    setDraftAmazonDomain(selectedAmazonDomain);
+  }, [selectedAmazonDomain]);
+
   return (
     <Surface variant="accent" className="gap-4">
       <Text className="text-sm font-semibold text-slate-900">Set your store once</Text>
@@ -21,14 +27,14 @@ export function MarketplacePromptSection({
         showsHorizontalScrollIndicator={false}
       >
         {AMAZON_MARKETPLACES.map((marketplace) => {
-          const isSelected = selectedAmazonDomain === marketplace.domain;
+          const isSelected = draftAmazonDomain === marketplace.domain;
 
           return (
             <Pressable
               key={`${marketplace.countryCode}-${marketplace.domain}`}
               accessibilityRole="button"
-              accessibilityLabel={`Use ${getAmazonMarketplaceLabel(marketplace.domain)}`}
-              onPress={() => setSelectedAmazonDomain(marketplace.domain)}
+              accessibilityLabel={`Select ${getAmazonMarketplaceLabel(marketplace.domain)}`}
+              onPress={() => setDraftAmazonDomain(marketplace.domain)}
               className={`rounded-full border px-3 py-2 ${
                 isSelected ? "border-accent bg-accent" : "border-line bg-cream"
               }`}
@@ -41,10 +47,10 @@ export function MarketplacePromptSection({
         })}
       </ScrollView>
       <Button
-        onPress={confirmSelectedAmazonDomain}
+        onPress={() => confirmSelectedAmazonDomain(draftAmazonDomain)}
         variant="dark"
       >
-        Use {getAmazonMarketplaceLabel(selectedAmazonDomain)}
+        Use {getAmazonMarketplaceLabel(draftAmazonDomain)}
       </Button>
     </Surface>
   );
