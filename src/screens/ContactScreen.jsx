@@ -1,23 +1,14 @@
-import { Linking, Pressable, ScrollView, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { Linking, Pressable, Text, View } from "react-native";
+import { ScreenContainer, ScreenIntro } from "../components/MobileUI";
 
 export default function ContactScreen() {
   return (
-    <SafeAreaView edges={["bottom"]} className="flex-1 bg-mist">
-      <ScrollView
-        className="flex-1"
-        contentContainerStyle={{ paddingHorizontal: 24, paddingVertical: 32 }}
-      >
-        <Text className="text-xs font-medium uppercase tracking-widest text-accent">
-          Contact
-        </Text>
-        <Text className="mt-3 text-3xl font-semibold leading-tight text-ink">
-          Questions, feedback, or corrections.
-        </Text>
-        <Text className="mt-3 text-base leading-6 text-slate-500">
-          If you want to get in touch about the app, content, or future partnership questions, this
-          is the starting point.
-        </Text>
+    <ScreenContainer contentContainerStyle={{ paddingHorizontal: 24, paddingVertical: 32 }}>
+      <ScreenIntro
+        eyebrow="Contact"
+        title="Questions, feedback, or corrections."
+        description="If you want to get in touch about the app, content, or future partnership questions, this is the starting point."
+      />
 
         <View className="mt-8 gap-5">
           <Pressable onPress={() => Linking.openURL("mailto:contact@focamai.com")}>
@@ -30,7 +21,6 @@ export default function ContactScreen() {
             correction requests if something needs updating.
           </Text>
         </View>
-      </ScrollView>
-    </SafeAreaView>
+    </ScreenContainer>
   );
 }

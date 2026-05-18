@@ -7,6 +7,8 @@
 ## Current state
 - Branch `restart/mobile-clean-slate` is a clean restart point for the mobile app.
 - Read `project-notes/restart-strategy.md` before rebuilding search behavior; it explains what went wrong in the earlier port and the new small-slice rebuild approach.
+- For mobile UI/UX work, read `project-notes/mobile-ui-ux-plan.md` first after this status note. It is the current implementation-order plan for polished mobile UI/UX and takes priority over `project-notes/proposed-layout.md` and the PNG mockups, which remain brainstorming references only.
+- `../web` is the Focamai product and brand baseline. Mobile should be recognizably aligned with web, but should not copy the web layout 1:1 or runtime-import assets from `../web`; any shipping brand assets need local copies under `mobile/assets/`.
 - The old guided-search/debug harness has been removed from the active mobile code.
 - The app is now only a basic Expo + React Native shell with:
   - NativeWind styling
@@ -31,6 +33,11 @@
   - `maestro/README.md` documents Windows/Android usage with Expo Go and the `EXPO_GO_URL` override.
   - `package.json` has `maestro:smoke`, `maestro:search:live`, and `check:android-export` scripts.
   - Stable test IDs were added to the Search, Settings, Follow-up, Results, first focused-pick, and detail surfaces without changing controller flow, backend contracts, marketplace preference behavior, query-quality polling, enrichment polling, retry paths, candidate-id lookup, retailer CTA/disclosure, or the 6-result cap.
+- Because the current dev setup has no practical Android phone/emulator target, the repeatable local smoke layer is now Jest + React Native Testing Library:
+  - `package.json` has a `test` script using the `jest-expo` preset.
+  - Dev dependencies are pinned around Expo/React 19.1 compatibility: `jest@29.7.0`, `jest-expo@54.0.17`, `@testing-library/react-native@13.3.3`, and `react-test-renderer@19.1.0`.
+  - Initial smoke tests cover `SearchEntrySection` input/button/settings actions and `SearchResultsSection` focused-pick rendering/open handling.
+  - This does not replace manual Expo Go testing for live backend behavior, navigation/device quirks, retailer links, enrichment timing, retry advice, marketplace behavior, or final UX judgment.
 - The backend remains shared with the web app, and mobile now has a minimal discovery/refine/finalize request path.
 - The discovery-only slice has been verified in Expo Go against the local backend using a LAN API base URL.
 - The tiny capped preview has also been verified in Expo Go.
@@ -130,6 +137,27 @@
 - The native detail parity slice passed `node --check index.js`, `node --check App.js`, and `npx expo export --platform android --output-dir .expo-export-check`; the temporary export directory was removed afterward. Direct `node --check` on touched `.jsx` files is not supported by this Node setup, so the Expo Android export is the JSX parse/bundle check.
 - The detail enrichment fix now polls the active web/backend `GET /api/search/enrichment` endpoint instead of the non-existent `/api/search/enrich` path, preserves finalize `fitReason`/`featureBullets` camelCase data during normalization, and merges enrichment entries by `candidate_id`, `candidateId`, or `id`. This is the fix for detail screens not showing AI fit reasons, caveats, or feature bullets after the native detail parity pass.
 - The detail enrichment fix passed `node --check src/search/searchApi.js`, `node --check src/search/useMobileSearchController.js`, `node --check index.js`, `node --check App.js`, and `npx expo export --platform android --output-dir .expo-export-check`; the temporary export directory was removed afterward.
+- Slice 0/Slice 1 UI/UX work is complete:
+  - Baseline code review confirmed the current stack screens, shared search controller, explicit store preference, candidate-id detail lookup, query-quality polling, retry advice, retailer CTA/disclosure, and 6-result cap remain the active implementation shape.
+  - Maestro shell smoke could not be run in this environment because the `maestro` CLI is not installed on PATH; use manual Expo Go for device behavior until Maestro is available locally.
+  - `src/components/MobileUI.jsx` now provides the shared mobile surface foundation: screen container, screen intro/section header, primary/secondary/dark button, pill/chip, quiet status panel, and product image frame.
+  - `tailwind.config.js` and `RootNavigator.jsx` now use a warmer mist/cream surface palette with deep green action color and restrained orange accent token.
+  - Search, Follow-up, Results, detail, Settings, and static screens now share the new screen/surface primitives without changing controller flow, backend contracts, marketplace behavior, retry behavior, query-quality polling, candidate-id lookup, retailer CTA/disclosure, or the 6-result cap.
+- The shared mobile surface/visual system slice passed `node --check tailwind.config.js`, `node --check App.js`, `node --check index.js`, and `npx expo export --platform android --output-dir .expo-export-check`; the temporary export directory was removed afterward. Direct `node --check` on touched `.jsx` files is not supported by this Node setup, so the Expo Android export is the JSX parse/bundle check.
+- UI/UX Slice 2, the ranked results list, is now implemented:
+  - `SearchResultsSection.jsx` no longer uses the scaffold/debug-feeling `Results checkpoint` framing.
+  - Focused picks now lead the Results screen as a calm ranked shortlist with user-facing copy and up to 6 cards.
+  - Discovery preview is visually secondary behind a small early-preview reveal.
+  - `FocusedPickRow` now uses the shared product image frame/surface primitives, rank badge, title, optional provider, price fallback, rating/review metadata, one short fit/caveat/feature preview, clear `View details` affordance, and the existing retailer CTA/disclosure area.
+  - The first card is only slightly richer through image sizing; all six remain credible ranked cards.
+  - Backend contracts, controller flow, marketplace behavior, retry behavior, enrichment hydration, candidate-id detail lookup, retailer CTA/disclosure, and the 6-result cap are unchanged.
+- The ranked results list slice passed `npm test -- --runInBand src/search/__tests__/SearchResultsSection.test.jsx` and `npx expo export --platform android --output-dir .expo-export-check`; the temporary export directory was removed afterward. No touched `.js` files required direct `node --check`; touched implementation files were `.jsx`.
+- A small pre-Slice-3 branding alignment slice is implemented:
+  - `assets/wordmark.png` is a local copy of the web PNG wordmark; mobile owns this shipping asset and does not import it from `../web`.
+  - The Search screen now renders the local wordmark image above the search-first intro copy.
+  - NativeWind and navigation colors are closer to the web brand family: deep teal, secondary teal, orange accent, warm cream/mist backgrounds, and warm borders.
+  - This is brand alignment only, not a web layout copy. Controller flow, backend contracts, explicit store preference behavior, query-quality polling, retry advice, enrichment hydration, candidate-id detail lookup, retailer CTA/disclosure, and the 6-result cap are unchanged.
+- The branding alignment slice passed `node --check tailwind.config.js` and `npx expo export --platform android --output-dir .expo-export-check`; the temporary export directory was removed afterward. Direct `node --check` on touched `.jsx` files is not supported by this Node setup, so the Expo Android export is the JSX parse/bundle check.
 - Current work is proving the core staged endpoint flow and native rendering safety first; final mobile UI/UX can deliberately diverge from the web layout after that foundation is stable. This does not mean mobile has web feature parity.
 - Mobile UI/UX is expected to be redesigned after endpoint flow is proven; do not treat the web UI as the target layout, only as the product behavior reference.
 - Settings now exists and should be used for secondary preferences, app info, and legal/support links when doing so keeps Search focused on search.
@@ -168,6 +196,7 @@
   - `src/search/SearchProgressStatus.jsx` renders those phase events inside the existing progress scaffold.
   - `src/screens/SearchResultDetailScreen.jsx` shows a non-rich detail view for a focused pick using only the normalized result fields already returned by finalize and enrichment.
   - `src/search/SearchResultDetailMetadata.jsx` owns the detail snapshot, metadata rows, explanation/caveat fallback sections, feature-note rendering, and fallback formatting.
+  - `src/components/MobileUI.jsx` owns the shared mobile visual primitives for the UI/UX polish phase: screen container, intro/header text, surfaces, buttons, pills, quiet panels, and product image frame.
   - `src/navigation/RootNavigator.jsx` includes the `SearchResultDetail` stack route.
   - `src/search/searchApi.js` now owns the temporary search endpoint calls, JSON/HTML response guard, API base URL check, and preview/final result normalization.
 - Removed from active mobile code:
@@ -188,6 +217,7 @@
   - TanStack Query provider at the app root, currently available but not used by search logic
   - Expo Font with Manrope loaded before the app tree renders
   - React Native Reanimated
+  - React Native Worklets, required by the installed Reanimated 4 package
   - Safe Area Context
   - AsyncStorage for saved marketplace-domain preference
 - Removed old Phase 3/debug dependencies for now:
@@ -210,14 +240,44 @@
 
 The small-slice core staged endpoint foundation is mostly complete in code. Discovery, refinement, finalize, explicit marketplace-domain selection with saved preference, first-run prompt, Settings change path, marketplace-change invalidation, session hardening, stale-response guards, enrichment polling, temporary same-session retry fallback, product-card/detail CTAs, affiliate disclosure near CTAs, query-quality suggestion polling, web-style retry advice, and the first native detail parity pass are working through the mobile controller/UI. This is not full web/mobile behavior parity. Mobile geolocation marketplace detection is intentionally not planned; mobile should keep explicit store choice instead. Analytics, broader persistence, and the full web guided-flow ergonomics are still missing or deferred.
 
-The current phase is mobile-native search/refine/results work. The first detail parity pass is implemented in code, and the next step is device verification of the detail screen's image fallback, overview metadata, feature fallback, retailer CTA/disclosure, pricing caveat, and late enrichment hydration through `candidateId` lookup.
+The current phase is mobile UI/UX Slice 7 complete. The shared mobile surface, ranked results list, local wordmark/brand-token alignment, polished native product detail screen, focused search entry screen, follow-up/refine screen, retry/recovery surface, and calm loading/empty/error states are now in code, while behavior remains on the existing staged controller. Device verification of the live flow is still useful.
+
+The Slice 3 detail polish passed `node --check App.js`, `node --check index.js`, and `npx expo export --platform android --output-dir .expo-export-check`; the temporary export directory was removed afterward. Direct `node --check` on the touched `.jsx` files is not supported by this Node setup, so the Expo Android export is the JSX parse/bundle check.
+
+The Slice 4 search entry polish keeps the Search screen search-first with the local PNG wordmark, one natural-language input, quiet example chips that fill the query, a clearer `Find focused picks` action, secondary Settings access, keyboard submit behavior, and extra scroll padding for smaller screens. The first-run store prompt remains inline only when needed and now uses calmer copy. No controller flow, backend contracts, explicit store preference behavior, query-quality polling, retry advice, candidate-id lookup, retailer CTA/disclosure, or 6-result cap changed.
+
+The Slice 4 search entry polish passed `npm test -- --runInBand src/search/__tests__/SearchEntrySection.test.jsx`, `node --check App.js`, `node --check index.js`, and `npx expo export --platform android --output-dir .expo-export-check`; the temporary export directory was removed afterward. During verification, `react-native-worklets` was added because the installed Reanimated 4 package imports it as a peer dependency and Metro could not bundle without it.
+
+The Slice 5 follow-up/refine polish keeps the existing Search -> Follow-up -> Results stack flow and controller behavior, but makes the Follow-up screen feel like one optional assistant question instead of a form. `SearchRefineSection` now owns the prominent AI question, natural multiline answer field, primary `Get focused picks` action, secondary `Skip and show results` action, and readable prompt-loading/fallback states. `QuerySuggestionPrompt` remains visible as a quiet secondary prompt without interrupting the answer flow.
+
+The Slice 5 follow-up/refine polish passed `npm test -- --runInBand src/search/__tests__/SearchRefineSection.test.jsx`, `node --check App.js`, `node --check index.js`, and `npx expo export --platform android --output-dir .expo-export-check`; the temporary export directory was removed afterward. Direct `node --check` on touched `.jsx` files is not supported by this Node setup, so the Expo Android export is the JSX parse/bundle check.
+
+The Slice 6 retry/recovery polish keeps retry under results and preserves the existing retry-advice and same-session retry behavior. `SearchRetrySection` now frames recovery as `Want to correct the direction?`, keeps quick correction chips visually quiet, shows suggested-query rationale and editable search as the primary path, keeps `Keeping` tags as reassurance only, and labels same-session replacement picks as the fallback from the current candidate pool. No backend contracts, controller flow, explicit store preference behavior, query-quality polling, enrichment hydration, candidate-id lookup, retailer CTA/disclosure, or 6-result cap changed.
+
+The Slice 6 retry/recovery polish passed `npm test -- --runInBand src/search/__tests__/SearchRetrySection.test.jsx`, `node --check App.js`, `node --check index.js`, and `npx expo export --platform android --output-dir .expo-export-check`; the temporary export directory was removed afterward. Direct `node --check` on touched `.jsx` files is not supported by this Node setup, so the Expo Android export is the JSX parse/bundle check.
+
+The Slice 7 loading/empty/error-state polish keeps diagnostics expandable and secondary while making status copy user-facing. `SearchProgressStatus` now shows calm stage titles such as `Finding options`, `Preparing one question`, `Narrowing to six`, `Checking details`, and `Shortlist ready`; rewrites API-base/HTML backend mistakes into readable app-level copy; and keeps raw technical messages as secondary context. `SearchResultsSection` now shows an intentional empty state on the Results screen and calls out fewer-than-six credible results without implying the search broke. No backend contracts, controller flow, explicit store preference behavior, query-quality polling, enrichment hydration, candidate-id lookup, retailer CTA/disclosure, or 6-result cap changed.
+
+The Slice 7 loading/empty/error-state polish passed `npm test -- --runInBand src/search/__tests__/SearchProgressStatus.test.jsx src/search/__tests__/SearchResultsSection.test.jsx`, `node --check App.js`, `node --check index.js`, and `npx expo export --platform android --output-dir .expo-export-check`; the temporary export directory was removed afterward. Direct `node --check` on touched `.jsx` files is not supported by this Node setup, so the Expo Android export is the JSX parse/bundle check.
+
+The follow-up hard-constraint refresh product-completeness slice is implemented. `src/search/searchConstraints.js` mirrors the web hard-constraint detector for kosher/Jewish-use, dietary/allergy, safety/material, and compatibility/exclusion notes. When the Follow-up answer contains those hard constraints, `src/search/useMobileSearchController.js` performs one pre-finalize refreshed discovery request with the original query plus notes and `cacheMode=refresh`; finalize and post-finalize enrichment then use the refreshed token, candidate pool, marketplace domain, and combined query. Soft preferences still finalize from the existing discovery token, query-quality polling is stopped for the old token after a successful refresh, stale response guards still apply, and the Search -> Follow-up -> Results -> Detail stack flow is unchanged.
+
+The follow-up hard-constraint refresh slice passed `npm test -- --runInBand src/search/__tests__/searchConstraints.test.js`, `node --check src/search/useMobileSearchController.js`, `node --check src/search/searchApi.js`, `node --check src/search/searchConstraints.js`, `node --check src/search/searchPhaseEvents.js`, and `npx expo export --platform android --output-dir .expo-export-check`; the temporary export directory was removed afterward.
+
+A small live-verification bug fix now makes `SearchEntrySection` keep a local draft query and submit that exact draft to the controller. This prevents example-chip or fast TextInput changes from racing parent state and accidentally starting a new search with the previous query, such as returning stroller results after changing the input to white chocolate chips. `SearchScreen` passes explicit query overrides into `startDiscoverySearch`, while the existing Search -> Follow-up -> Results -> Detail stack flow and backend contracts are unchanged.
+
+The stale-query submit fix passed `npm test -- --runInBand src/search/__tests__/SearchEntrySection.test.jsx` and Android Expo export; `.expo-export-check` was removed afterward.
+
+A query-quality suggestion display fix now normalizes object-shaped `originalQuery`, `suggestedQuery`, and `reason` values before they reach the Follow-up prompt. This prevents the mobile UI from showing `We searched for "[object Object]"` or starting a suggested search from a raw object string if the backend returns a richer query-quality payload shape. `QuerySuggestionPrompt` is also defensive at render time, hides malformed suggested queries, and replaces malformed reason copy with a calm fallback message. The fix preserves the existing query-quality polling endpoint, suggestion accept/dismiss behavior, and Search -> Follow-up flow.
+
+The query-quality display fix passed `npm test -- --runInBand src/search/__tests__/searchApi.test.js src/search/__tests__/QuerySuggestionPrompt.test.jsx`, direct `node --check` on touched `.js` files, and Android Expo export; `.expo-export-check` was removed afterward.
 
 ## Recommended next step
 
-Next planned slice: run the new Maestro shell smoke locally on Android/Expo Go, then verify the native detail parity and retry-advice passes in Expo Go before returning to follow-up hard-constraint refresh or broader mobile-native flow polish.
-- Keep the native stack detail screen pattern.
-- Preserve the current controller flow, backend contracts, candidate-id lookup, retailer CTA/disclosure, query-quality polling, retry behavior, and 6-result cap.
-- Add only detail content/behavior that already exists in normalized finalize/enrichment data or can be safely derived on device.
+Next planned step: re-run manual Expo Go verification of the polished Search -> Follow-up -> Results -> Detail flow against a reachable backend, including a chip-started search followed by a different typed query, plus a hard-constraint follow-up such as `kosher pareve` or `non dairy`.
+- Verify loading, empty/error, stale-query prevention, query-quality suggestion copy, hard-constraint refresh, retry advice, retailer CTA/disclosure, and late enrichment hydration on device.
+- Preserve the current controller flow, backend contracts, candidate-id lookup, retailer CTA/disclosure, query-quality polling, enrichment hydration, explicit store preference behavior, and 6-result cap.
+- Build on `src/components/MobileUI.jsx` rather than adding one-off visual wrappers.
 
 ## Environment notes
 - `EXPO_PUBLIC_API_BASE_URL` must point to the backend API, not the public frontend site.

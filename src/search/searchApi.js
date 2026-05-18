@@ -1,6 +1,18 @@
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || "";
 const FINAL_RESULT_LIMIT = 6;
 const PREVIEW_RESULT_LIMIT = 3;
+const TEXT_FIELD_KEYS = [
+  "query",
+  "text",
+  "value",
+  "suggestion",
+  "suggestedQuery",
+  "originalQuery",
+  "message",
+  "reason",
+  "rationale",
+];
+const UNEXPECTED_QUERY_SUGGESTION_CHARACTERS = /[\u0000-\u001F\u007F\uFFFD\u3400-\u9FFF]/;
 
 export function getApiBaseUrl() {
   return API_BASE_URL;
@@ -139,6 +151,57 @@ export async function pollQueryQuality({ amazonDomain, query, token }) {
   const response = await fetch(`${API_BASE_URL}/api/search/query-quality?${params.toString()}`);
 
   return readJsonResponse(response, requestStartedAt, "Query-quality request failed.");
+}
+
+export function coerceDisplayText(value, fallback = "") {
+  if (typeof value === "string") {
+    return value.trim();
+  }
+
+  if (typeof value === "number" || typeof value === "boolean") {
+    return String(value);
+  }
+
+  if (!value || typeof value !== "object") {
+    return fallback;
+  }
+
+  for (const key of TEXT_FIELD_KEYS) {
+    const nextValue = coerceDisplayText(value[key], "");
+
+    if (nextValue) {
+      return nextValue;
+    }
+  }
+
+  return fallback;
+}
+
+export function isSafeQuerySuggestionText(value) {
+  const text = coerceDisplayText(value);
+
+  return Boolean(text && !UNEXPECTED_QUERY_SUGGESTION_CHARACTERS.test(text));
+}
+
+export function normalizeQueryQualitySuggestion(payload, fallbackQuery = "") {
+  const suggestedQuery = coerceDisplayText(payload?.suggestedQuery);
+
+  if (!isSafeQuerySuggestionText(suggestedQuery)) {
+    return null;
+  }
+
+  const originalQuery = coerceDisplayText(payload?.originalQuery, fallbackQuery);
+  const reason = coerceDisplayText(payload?.reason);
+
+  return {
+    classification: coerceDisplayText(payload?.classification),
+    confidence: coerceDisplayText(payload?.confidence),
+    originalQuery: isSafeQuerySuggestionText(originalQuery) ? originalQuery : fallbackQuery,
+    reason: isSafeQuerySuggestionText(reason)
+      ? reason
+      : "This may be a clearer way to phrase the search.",
+    suggestedQuery,
+  };
 }
 
 export async function getRetryAdvice({

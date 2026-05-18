@@ -1,23 +1,14 @@
-import { ScrollView, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { Text, View } from "react-native";
+import { ScreenContainer, ScreenIntro } from "../components/MobileUI";
 
 export default function AffiliateDisclosureScreen() {
   return (
-    <SafeAreaView edges={["bottom"]} className="flex-1 bg-mist">
-      <ScrollView
-        className="flex-1"
-        contentContainerStyle={{ paddingHorizontal: 24, paddingVertical: 32 }}
-      >
-        <Text className="text-xs font-medium uppercase tracking-widest text-accent">
-          Affiliate Disclosure
-        </Text>
-        <Text className="mt-3 text-3xl font-semibold leading-tight text-ink">
-          How affiliate links work in this app.
-        </Text>
-        <Text className="mt-3 text-base leading-6 text-slate-500">
-          Focamai participates in the Amazon Associates program. This page explains what that means
-          for you.
-        </Text>
+    <ScreenContainer contentContainerStyle={{ paddingHorizontal: 24, paddingVertical: 32 }}>
+      <ScreenIntro
+        eyebrow="Affiliate Disclosure"
+        title="How affiliate links work in this app."
+        description="Focamai participates in the Amazon Associates program. This page explains what that means for you."
+      />
 
         <View className="mt-8 gap-5">
           <Text className="text-base leading-7 text-slate-600">
@@ -34,13 +25,12 @@ export default function AffiliateDisclosureScreen() {
             selected by the AI based on your search and refinement input — not by commission
             potential or advertiser relationships.
           </Text>
-          <View className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
+          <View className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
             <Text className="text-sm leading-6 text-slate-700">
               As an Amazon Associate I earn from qualifying purchases.
             </Text>
           </View>
         </View>
-      </ScrollView>
-    </SafeAreaView>
+    </ScreenContainer>
   );
 }

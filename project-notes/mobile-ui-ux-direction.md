@@ -6,6 +6,11 @@
 - Use the current mockups as mood and structure inspiration, not as fixed screens.
 - Keep this separate from endpoint verification work.
 
+## Implementation note
+- For actual UI/UX build order, use `mobile-ui-ux-plan.md`.
+- This file remains the principles and visual-direction reference.
+- `proposed-layout.md` and the PNG mockups remain brainstorming inputs, not final specs.
+
 ## Current stance
 - First prove the mobile endpoint flow works reliably:
   - discovery

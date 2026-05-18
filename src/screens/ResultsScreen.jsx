@@ -1,5 +1,4 @@
-import { ScrollView, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { ScreenContainer, ScreenIntro } from "../components/MobileUI";
 import { SearchProgressStatus } from "../search/SearchProgressStatus";
 import { SearchRetrySection } from "../search/SearchRetrySection";
 import { SearchResultsSection } from "../search/SearchResultsSection";
@@ -32,35 +31,29 @@ export default function ResultsScreen({ navigation }) {
   } = useSearchFlow();
 
   return (
-    <SafeAreaView edges={["bottom"]} className="flex-1 bg-mist" testID="results.screen">
-      <ScrollView
-        className="flex-1"
-        contentContainerStyle={{ paddingHorizontal: 20, paddingVertical: 24, gap: 18 }}
-        keyboardShouldPersistTaps="handled"
-      >
-        <View>
-          <Text className="text-[12px] font-medium uppercase tracking-[2px] text-accent">
-            Results
-          </Text>
-          <Text className="mt-2 text-3xl font-semibold text-ink">Your focused picks</Text>
-          <Text className="mt-3 text-base leading-6 text-slate-600">
-            Review the shortlist, then open a pick for the details behind it.
-          </Text>
-        </View>
+    <ScreenContainer testID="results.screen" keyboardShouldPersistTaps="handled">
+      <ScreenIntro
+        eyebrow="Results"
+        title="Your focused picks"
+        description="Review the shortlist, then open a pick for the details behind it."
+      />
 
         <SearchProgressStatus
           discoverySummary={discoverySummary}
           errorMessage={errorMessage}
+          finalResults={finalResults}
           hasStartedSearch={hasStartedSearch}
           isFinalizing={isFinalizing}
           isGeneratingPrompt={isGeneratingPrompt}
           phaseEvents={phaseEvents}
+          previewItems={previewItems}
           productQuery={productQuery}
           refinementPrompt={refinementPrompt}
         />
 
         <SearchResultsSection
           finalResults={finalResults}
+          isFinalizing={isFinalizing}
           onOpenResult={(item, index) =>
             navigation.navigate("SearchResultDetail", {
               candidateId: item.id,
@@ -68,6 +61,7 @@ export default function ResultsScreen({ navigation }) {
             })
           }
           previewItems={previewItems}
+          showEmptyState
         />
 
         <SearchRetrySection
@@ -86,7 +80,6 @@ export default function ResultsScreen({ navigation }) {
           setRetryFeedback={setRetryFeedback}
           submitRetry={submitRetry}
         />
-      </ScrollView>
-    </SafeAreaView>
+    </ScreenContainer>
   );
 }

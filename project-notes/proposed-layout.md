@@ -1,5 +1,7 @@
 # Proposed Mobile Layout
 
+> Current status: brainstorming reference only. For actual UI/UX implementation order and screen decisions, use `mobile-ui-ux-plan.md`. This file and the PNG mockups are useful inputs, but they are not final specs.
+
 ## Overview
 
 The app has four screens connected in a simple stack. No bottom tabs, no side nav, no extra surfaces in v1.

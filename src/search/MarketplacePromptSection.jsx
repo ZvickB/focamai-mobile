@@ -1,4 +1,5 @@
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { Pressable, ScrollView, Text } from "react-native";
+import { Button, Surface } from "../components/MobileUI";
 import { AMAZON_MARKETPLACES, getAmazonMarketplaceLabel } from "./amazonMarketplaces";
 
 export function MarketplacePromptSection({
@@ -7,14 +8,14 @@ export function MarketplacePromptSection({
   setSelectedAmazonDomain,
 }) {
   return (
-    <View className="rounded-2xl border border-accent bg-white px-4 py-4">
-      <Text className="text-sm font-semibold text-slate-900">Choose your Amazon store</Text>
+    <Surface variant="accent" className="gap-4">
+      <Text className="text-sm font-semibold text-slate-900">Set your store once</Text>
       <Text className="mt-2 text-sm leading-5 text-slate-600">
-        Focama uses this to search the right marketplace. You can change it later in Settings.
+        Focamai uses this for retailer availability and regional pricing. You can change it later
+        in Settings.
       </Text>
       <ScrollView
         horizontal
-        className="mt-3"
         contentContainerStyle={{ gap: 8, paddingRight: 8 }}
         keyboardShouldPersistTaps="handled"
         showsHorizontalScrollIndicator={false}
@@ -25,9 +26,11 @@ export function MarketplacePromptSection({
           return (
             <Pressable
               key={`${marketplace.countryCode}-${marketplace.domain}`}
+              accessibilityRole="button"
+              accessibilityLabel={`Use ${getAmazonMarketplaceLabel(marketplace.domain)}`}
               onPress={() => setSelectedAmazonDomain(marketplace.domain)}
               className={`rounded-full border px-3 py-2 ${
-                isSelected ? "border-accent bg-accent" : "border-line bg-mist"
+                isSelected ? "border-accent bg-accent" : "border-line bg-cream"
               }`}
             >
               <Text className={`text-xs font-semibold ${isSelected ? "text-white" : "text-slate-700"}`}>
@@ -37,14 +40,12 @@ export function MarketplacePromptSection({
           );
         })}
       </ScrollView>
-      <Pressable
+      <Button
         onPress={confirmSelectedAmazonDomain}
-        className="mt-4 rounded-2xl bg-slate-800 px-4 py-3"
+        variant="dark"
       >
-        <Text className="text-center text-sm font-semibold text-white">
-          Use {getAmazonMarketplaceLabel(selectedAmazonDomain)}
-        </Text>
-      </Pressable>
-    </View>
+        Use {getAmazonMarketplaceLabel(selectedAmazonDomain)}
+      </Button>
+    </Surface>
   );
 }

@@ -1,4 +1,5 @@
 import { Text, View } from "react-native";
+import { ProductImageFrame, Surface } from "../components/MobileUI";
 
 export function detailValue(value, fallback) {
   if (value === null || value === undefined || value === "") {
@@ -40,7 +41,7 @@ function getRatingValue(value) {
 
 function SnapshotPill({ label, value }) {
   return (
-    <View className="min-w-[120px] flex-1 rounded-2xl border border-line bg-white px-3 py-3">
+    <View className="min-w-[120px] flex-1 rounded-lg border border-line bg-cream px-3 py-3">
       <Text className="text-xs font-medium uppercase tracking-[1.2px] text-slate-500">{label}</Text>
       <Text className="mt-1 text-sm font-semibold leading-5 text-slate-900">{value}</Text>
     </View>
@@ -60,8 +61,8 @@ function FeatureBulletList({ bullets }) {
   if (!bullets.length) {
     return (
       <Text className="mt-2 text-base leading-6 text-slate-900">
-        Feature notes are not available for this pick yet. Use the retailer page to confirm the
-        current listing details.
+        Feature notes may still be catching up. Confirm the latest specs, sizing, and included
+        parts on the retailer page before buying.
       </Text>
     );
   }
@@ -78,7 +79,7 @@ function FeatureBulletList({ bullets }) {
   );
 }
 
-function DetailRatingStars({ rating }) {
+export function DetailRatingStars({ rating }) {
   const ratingValue = getRatingValue(rating);
   const roundedRating = ratingValue === null ? 0 : Math.round(ratingValue);
 
@@ -100,28 +101,41 @@ function DetailRatingStars({ rating }) {
   );
 }
 
-export function SearchResultDetailOverview({ item, rank }) {
+export function SearchResultDetailHero({ item, rank }) {
   const provider = detailValue(item.provider, "Unknown source");
   const price = detailValue(item.price, "Price not shown");
   const rating = formatRating(item.rating);
   const reviews = formatReviews(item.reviewCount);
 
   return (
-    <View className="rounded-2xl border border-line bg-white px-4 py-4">
-      <View className="flex-row flex-wrap items-center gap-2">
-        <View className="rounded-full bg-accent px-3 py-1">
-          <Text className="text-xs font-semibold text-white">
-            {rank === 1 ? "Best match" : rank ? `Pick #${rank}` : "Focused pick"}
-          </Text>
+    <View className="gap-4">
+      <ProductImageFrame
+        containerClassName="h-64 w-full"
+        image={item.image}
+        imageClassName="rounded-md"
+        title={detailValue(item.title, "Focused pick")}
+      />
+      <View>
+        <View className="flex-row flex-wrap items-center gap-2">
+          <View className="rounded-full bg-accent px-3 py-1">
+            <Text className="text-xs font-semibold text-white">
+              {rank ? `Pick #${rank}` : "Focused pick"}
+            </Text>
+          </View>
+          <Text className="text-sm font-medium text-stone-600">{provider}</Text>
         </View>
-        <Text className="text-sm font-medium text-slate-600">{provider}</Text>
-      </View>
-      <Text className="mt-3 text-2xl font-semibold text-accent">{price}</Text>
-      <View className="mt-3 flex-row flex-wrap items-center gap-2">
-        <DetailRatingStars rating={item.rating} />
-        <Text className="text-sm font-medium text-slate-600">
-          {rating} - {reviews}
+        <Text className="mt-3 text-[26px] font-semibold leading-[33px] text-ink">
+          {detailValue(item.title, "Untitled product")}
         </Text>
+        <View className="mt-3 flex-row flex-wrap items-center gap-3">
+          <Text className="text-2xl font-semibold text-accent">{price}</Text>
+          <View className="flex-row items-center gap-2">
+            <DetailRatingStars rating={item.rating} />
+            <Text className="text-sm font-medium text-stone-600">
+              {rating} - {reviews}
+            </Text>
+          </View>
+        </View>
       </View>
     </View>
   );
@@ -131,16 +145,16 @@ export function SearchResultFeatureHighlights({ item }) {
   const featureBullets = getFeatureBullets(item);
 
   return (
-    <View className="rounded-2xl border border-line bg-white px-4 py-4">
-      <Text className="text-sm font-semibold text-slate-900">What stands out</Text>
+    <Surface>
+      <Text className="text-sm font-semibold text-slate-900">Feature notes</Text>
       <FeatureBulletList bullets={featureBullets} />
-    </View>
+    </Surface>
   );
 }
 
 export function SearchResultDetailSnapshot({ item, rank }) {
   return (
-    <View className="rounded-2xl border border-line bg-white px-4 py-4">
+    <Surface>
       <Text className="text-sm font-semibold text-slate-900">At a glance</Text>
       <View className="mt-3 flex-row flex-wrap gap-2">
         <SnapshotPill label="Shortlist" value={rank ? `Pick #${rank}` : "Focused pick"} />
@@ -149,7 +163,7 @@ export function SearchResultDetailSnapshot({ item, rank }) {
         <SnapshotPill label="Rating" value={formatRating(item.rating)} />
         <SnapshotPill label="Reviews" value={formatReviews(item.reviewCount)} />
       </View>
-    </View>
+    </Surface>
   );
 }
 
@@ -158,28 +172,28 @@ export function SearchResultDetailMetadata({ item }) {
   const hasReasoning = Boolean(item.fit_reason || item.caveat || featureBullets.length);
 
   return (
-    <View className="rounded-2xl border border-line bg-white px-4 py-2">
+    <Surface className="py-2">
       <Text className="py-3 text-sm font-semibold text-slate-900">Decision notes</Text>
       <DetailTextSection
         label="Why this pick"
         value={detailValue(
           item.fit_reason,
-          "The assistant has not added a specific fit reason for this pick yet.",
+          "The assistant may still be adding the specific fit reason. For now, use the product facts and retailer listing to judge whether it matches your needs.",
         )}
       />
       <DetailTextSection
         label="Worth knowing"
         value={detailValue(
           item.caveat,
-          "No specific caveat is available for this pick yet. Treat the retailer listing as the final source for availability, sizing, seller, and shipping details.",
+          "No specific caveat is available yet. Treat the retailer listing as the final source for availability, sizing, seller, and shipping details.",
         )}
       />
       {!hasReasoning ? (
         <Text className="border-t border-line py-4 text-sm leading-5 text-slate-500">
-          Extra analysis was not available on this pick yet, so this screen is staying close to the
-          finalized product data already on your device.
+          If extra analysis finishes while this page is open, these notes can fill in without
+          changing the shortlist order.
         </Text>
       ) : null}
-    </View>
+    </Surface>
   );
 }

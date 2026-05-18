@@ -1,6 +1,5 @@
 import { useEffect } from "react";
-import { ScrollView, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { BrandWordmark, ScreenContainer, ScreenIntro } from "../components/MobileUI";
 import { MarketplacePromptSection } from "../search/MarketplacePromptSection";
 import { SearchEntrySection } from "../search/SearchEntrySection";
 import { SearchProgressStatus } from "../search/SearchProgressStatus";
@@ -34,10 +33,11 @@ export default function SearchScreen({ navigation, route }) {
     }
   }, [navigation, route?.params?.selectedAmazonDomain, setSelectedAmazonDomain]);
 
-  function submitSearch() {
-    const hasQuery = productQuery.trim().length > 0;
+  function submitSearch(queryOverride) {
+    const nextQuery = String(queryOverride ?? productQuery).trim();
+    const hasQuery = nextQuery.length > 0;
 
-    startDiscoverySearch();
+    startDiscoverySearch(queryOverride === undefined ? undefined : { queryOverride: nextQuery });
 
     if (hasQuery) {
       navigation.navigate("FollowUp");
@@ -45,51 +45,45 @@ export default function SearchScreen({ navigation, route }) {
   }
 
   return (
-    <SafeAreaView edges={["bottom"]} className="flex-1 bg-mist" testID="search.screen">
-      <ScrollView
-        className="flex-1"
-        contentContainerStyle={{ paddingHorizontal: 20, paddingVertical: 24, gap: 18 }}
-        keyboardShouldPersistTaps="handled"
-      >
-        <View>
-          <Text className="text-[12px] font-medium uppercase tracking-[2px] text-accent">
-            Focama Mobile
-          </Text>
-          <Text className="mt-2 text-3xl font-semibold text-ink" testID="search.title">
-            What are you looking for?
-          </Text>
-          <Text className="mt-3 text-base leading-6 text-slate-600">
-            Search once, add a little context, then ask for a short list.
-          </Text>
-        </View>
+    <ScreenContainer
+      testID="search.screen"
+      keyboardShouldPersistTaps="handled"
+      contentContainerStyle={{ paddingBottom: 40 }}
+    >
+      <BrandWordmark />
+      <ScreenIntro
+        eyebrow="Calm buying guidance"
+        title="What are you looking for today?"
+        description="Describe the product in your own words. We'll narrow it to six focused picks."
+        testID="search.title"
+      />
 
-        {showMarketplacePrompt ? (
-          <MarketplacePromptSection
-            confirmSelectedAmazonDomain={confirmSelectedAmazonDomain}
-            selectedAmazonDomain={selectedAmazonDomain}
-            setSelectedAmazonDomain={setSelectedAmazonDomain}
-          />
-        ) : null}
-
-        <SearchEntrySection
-          isDiscovering={isDiscovering}
-          onSettingsPress={() => navigation.navigate("Settings")}
-          productQuery={productQuery}
-          setProductQuery={setProductQuery}
-          startDiscoverySearch={submitSearch}
+      {showMarketplacePrompt ? (
+        <MarketplacePromptSection
+          confirmSelectedAmazonDomain={confirmSelectedAmazonDomain}
+          selectedAmazonDomain={selectedAmazonDomain}
+          setSelectedAmazonDomain={setSelectedAmazonDomain}
         />
+      ) : null}
 
-        <SearchProgressStatus
-          discoverySummary={discoverySummary}
-          errorMessage={errorMessage}
-          hasStartedSearch={hasStartedSearch}
-          isFinalizing={isFinalizing}
-          isGeneratingPrompt={isGeneratingPrompt}
-          phaseEvents={phaseEvents}
-          productQuery={productQuery}
-          refinementPrompt={refinementPrompt}
-        />
-      </ScrollView>
-    </SafeAreaView>
+      <SearchEntrySection
+        isDiscovering={isDiscovering}
+        onSettingsPress={() => navigation.navigate("Settings")}
+        productQuery={productQuery}
+        setProductQuery={setProductQuery}
+        startDiscoverySearch={submitSearch}
+      />
+
+      <SearchProgressStatus
+        discoverySummary={discoverySummary}
+        errorMessage={errorMessage}
+        hasStartedSearch={hasStartedSearch}
+        isFinalizing={isFinalizing}
+        isGeneratingPrompt={isGeneratingPrompt}
+        phaseEvents={phaseEvents}
+        productQuery={productQuery}
+        refinementPrompt={refinementPrompt}
+      />
+    </ScreenContainer>
   );
 }

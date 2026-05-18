@@ -1,4 +1,6 @@
-import { Pressable, Text, View } from "react-native";
+import { Text, View } from "react-native";
+import { Button, Surface } from "../components/MobileUI";
+import { coerceDisplayText, isSafeQuerySuggestionText } from "./searchApi";
 
 export function QuerySuggestionPrompt({
   isApplying,
@@ -6,48 +8,58 @@ export function QuerySuggestionPrompt({
   onTrySuggestedSearch,
   suggestion,
 }) {
-  if (!suggestion?.suggestedQuery) {
+  const suggestedQuery = coerceDisplayText(suggestion?.suggestedQuery);
+
+  if (!isSafeQuerySuggestionText(suggestedQuery)) {
     return null;
   }
 
-  const originalQuery = suggestion.originalQuery || suggestion.query || "your search";
+  const originalQueryCandidate =
+    coerceDisplayText(suggestion.originalQuery) ||
+    coerceDisplayText(suggestion.query) ||
+    "your search";
+  const originalQuery = isSafeQuerySuggestionText(originalQueryCandidate)
+    ? originalQueryCandidate
+    : "your search";
+  const reasonCandidate = coerceDisplayText(suggestion.reason);
+  const reason = isSafeQuerySuggestionText(reasonCandidate)
+    ? reasonCandidate
+    : "This may be a clearer way to phrase the search.";
 
   return (
-    <View
+    <Surface
       accessibilityLiveRegion="polite"
-      className="rounded-2xl border border-line bg-white px-4 py-4"
+      variant="quiet"
     >
-      <Text className="text-sm font-medium leading-5 text-slate-600">
+      <Text className="text-xs font-semibold uppercase tracking-[1.2px] text-stone-500">
+        Suggested search tweak
+      </Text>
+      <Text className="mt-2 text-sm font-medium leading-5 text-slate-600">
         We searched for "{originalQuery}".
       </Text>
-      <Text className="mt-1 text-base font-semibold leading-6 text-accent">
-        Try "{suggestion.suggestedQuery}" instead?
+      <Text className="mt-1 text-base font-semibold leading-6 text-ink">
+        Try "{suggestedQuery}" instead?
       </Text>
-      {suggestion.reason ? (
-        <Text className="mt-2 text-sm leading-5 text-slate-600">{suggestion.reason}</Text>
+      {reason ? (
+        <Text className="mt-2 text-sm leading-5 text-slate-600">{reason}</Text>
       ) : null}
       <View className="mt-4 gap-2">
-        <Pressable
+        <Button
           accessibilityRole="button"
           disabled={isApplying}
           onPress={onTrySuggestedSearch}
-          className={`rounded-2xl px-4 py-3 ${isApplying ? "bg-slate-300" : "bg-accent"}`}
         >
-          <Text className="text-center text-sm font-semibold text-white">
-            {isApplying ? "Starting..." : "Try suggested search"}
-          </Text>
-        </Pressable>
-        <Pressable
+          {isApplying ? "Starting..." : "Try suggested search"}
+        </Button>
+        <Button
           accessibilityRole="button"
           disabled={isApplying}
           onPress={onKeepResults}
-          className="rounded-2xl border border-line px-4 py-3"
+          variant="secondary"
         >
-          <Text className="text-center text-sm font-semibold text-slate-700">
-            Keep these results
-          </Text>
-        </Pressable>
+          Keep these results
+        </Button>
       </View>
-    </View>
+    </Surface>
   );
 }

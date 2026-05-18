@@ -1,23 +1,14 @@
-import { Linking, Pressable, ScrollView, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { Linking, Pressable, Text, View } from "react-native";
+import { ScreenContainer, ScreenIntro } from "../components/MobileUI";
 
 export default function PrivacyScreen() {
   return (
-    <SafeAreaView edges={["bottom"]} className="flex-1 bg-mist">
-      <ScrollView
-        className="flex-1"
-        contentContainerStyle={{ paddingHorizontal: 24, paddingVertical: 32 }}
-      >
-        <Text className="text-xs font-medium uppercase tracking-widest text-accent">
-          Privacy Policy
-        </Text>
-        <Text className="mt-3 text-3xl font-semibold leading-tight text-ink">
-          How information is handled in this app.
-        </Text>
-        <Text className="mt-3 text-base leading-6 text-slate-500">
-          This is a simple privacy policy for the current version of Focamai and will be updated as
-          the app adds more features.
-        </Text>
+    <ScreenContainer contentContainerStyle={{ paddingHorizontal: 24, paddingVertical: 32 }}>
+      <ScreenIntro
+        eyebrow="Privacy Policy"
+        title="How information is handled in this app."
+        description="This is a simple privacy policy for the current version of Focamai and will be updated as the app adds more features."
+      />
 
         <View className="mt-8 gap-5">
           <Text className="text-base leading-7 text-slate-600">
@@ -52,7 +43,6 @@ export default function PrivacyScreen() {
             payment information through the app.
           </Text>
         </View>
-      </ScrollView>
-    </SafeAreaView>
+    </ScreenContainer>
   );
 }

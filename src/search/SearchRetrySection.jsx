@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Pressable, Text, TextInput, View } from "react-native";
+import { Button, Pill, QuietStatusPanel, Surface } from "../components/MobileUI";
 
 const RETRY_CORRECTION_CHIPS = [
   "Wrong brand",
@@ -175,12 +176,15 @@ export function SearchRetrySection({
   }
 
   return (
-    <View className="rounded-2xl border border-line bg-white px-4 py-4">
-      <Text className="text-sm font-semibold text-slate-900">
-        Not seeing what you had in mind?
+    <Surface className="px-5 py-5">
+      <Text className="text-xs font-semibold uppercase tracking-[1.2px] text-accent">
+        Recovery
       </Text>
-      <Text className="mt-2 text-sm leading-5 text-slate-600">
-        Tell Focamai what to keep or change, and it can suggest a better search direction.
+      <Text className="mt-2 text-xl font-semibold leading-7 text-ink">
+        Want to correct the direction?
+      </Text>
+      <Text className="mt-2 text-sm leading-5 text-stone-600">
+        Say what felt off. Focamai can suggest a sharper next search, or fall back to replacement picks from this search.
       </Text>
 
       <View className="mt-4 flex-row flex-wrap gap-2">
@@ -191,12 +195,12 @@ export function SearchRetrySection({
             <Pressable
               key={chipLabel}
               onPress={() => toggleChip(chipLabel)}
-              className={`rounded-full border px-3 py-2 ${
-                isSelected ? "border-accent bg-accent/10" : "border-line bg-white"
+              className={`rounded-full border px-3 py-1.5 ${
+                isSelected ? "border-accent bg-cream" : "border-line bg-white"
               }`}
             >
               <Text
-                className={`text-sm ${isSelected ? "font-semibold text-accent" : "text-slate-600"}`}
+                className={`text-xs font-semibold ${isSelected ? "text-accent" : "text-stone-600"}`}
               >
                 {chipLabel}
               </Text>
@@ -209,72 +213,72 @@ export function SearchRetrySection({
         value={retryFeedback}
         onChangeText={setRetryFeedback}
         placeholder="Example: Keep the budget, but avoid bulky options."
+        placeholderTextColor="#8B8175"
         multiline
         textAlignVertical="top"
-        className="mt-3 min-h-[88px] rounded-2xl border border-line bg-mist px-4 py-3 text-base text-ink"
+        className="mt-4 min-h-[104px] rounded-lg border border-line bg-cream px-4 py-4 text-base leading-6 text-ink"
       />
-      <Pressable
+      <Button
         disabled={!canAskForAdvice}
         onPress={handleRequestAdvice}
-        className={`mt-3 rounded-2xl px-4 py-3 ${canAskForAdvice ? "bg-slate-800" : "bg-slate-300"}`}
+        className="mt-4"
+        variant="dark"
       >
-        <Text className="text-center text-sm font-semibold text-white">
-          {isGeneratingRetryAdvice ? "Finding a better search..." : "Suggest a better search"}
-        </Text>
-      </Pressable>
+        {isGeneratingRetryAdvice ? "Finding a better search..." : "Suggest a better search"}
+      </Button>
 
       {retryAdvice ? (
-        <View className="mt-4 rounded-2xl border border-line bg-mist px-4 py-4">
+        <QuietStatusPanel className="mt-4 bg-white">
+          <Text className="text-xs font-semibold uppercase tracking-[1.2px] text-stone-500">
+            Suggested next search
+          </Text>
           {retryAdvice.rationale ? (
-            <Text className="text-sm leading-5 text-slate-700">{retryAdvice.rationale}</Text>
+            <Text className="mt-2 text-sm leading-5 text-stone-600">{retryAdvice.rationale}</Text>
           ) : null}
 
           {suggestedQuery ? (
-            <View className="mt-3 rounded-2xl border border-line bg-white px-3 py-3">
-              <Text className="text-sm font-semibold text-slate-900">
-                Try this search instead:
-              </Text>
+            <View className="mt-3 rounded-lg border border-line bg-cream px-3 py-3">
               {isEditingSuggestion ? (
                 <TextInput
                   value={editableSuggestion}
                   onChangeText={setEditableSuggestion}
+                  placeholder="Edit the suggested search"
+                  placeholderTextColor="#8B8175"
                   multiline
                   textAlignVertical="top"
-                  className="mt-2 min-h-[72px] rounded-2xl border border-line bg-white px-3 py-3 text-base text-ink"
+                  className="mt-2 min-h-[72px] rounded-lg border border-line bg-white px-3 py-3 text-base text-ink"
                 />
               ) : (
-                <Text className="mt-2 rounded-2xl bg-mist px-3 py-3 text-base font-semibold leading-6 text-ink">
+                <Text className="text-base font-semibold leading-6 text-ink">
                   {suggestedQuery}
                 </Text>
               )}
 
               {constraintTags.length > 0 ? (
                 <View className="mt-3 flex-row flex-wrap items-center gap-2">
-                  <Text className="text-sm text-slate-500">Keeping:</Text>
+                  <Text className="text-xs font-semibold uppercase tracking-[1px] text-stone-500">
+                    Keeping
+                  </Text>
                   {constraintTags.map((tag) => (
-                    <View key={tag} className="rounded-full border border-line bg-white px-2 py-1">
-                      <Text className="text-xs text-slate-600">{tag}</Text>
-                    </View>
+                    <Pill key={tag}>{tag}</Pill>
                   ))}
                 </View>
               ) : null}
 
-              <View className="mt-3 flex-row flex-wrap gap-2">
-                <Pressable
+              <View className="mt-4 gap-2">
+                <Button
                   disabled={!canSearchSuggestion}
                   onPress={handleSearchSuggestion}
-                  className={`rounded-full px-4 py-3 ${
-                    canSearchSuggestion ? "bg-slate-800" : "bg-slate-300"
-                  }`}
+                  variant="dark"
                 >
-                  <Text className="text-sm font-semibold text-white">Search this</Text>
-                </Pressable>
-                <Pressable
+                  Search this suggestion
+                </Button>
+                <Button
                   onPress={handleEditFirst}
-                  className="rounded-full border border-line bg-white px-4 py-3"
+                  variant="secondary"
                 >
-                  <Text className="text-sm font-semibold text-slate-700">Edit first</Text>
-                </Pressable>
+                  Edit first
+                </Button>
               </View>
             </View>
           ) : (
@@ -282,11 +286,11 @@ export function SearchRetrySection({
               No suggested query came back yet. You can still retry these picks below.
             </Text>
           )}
-        </View>
+        </QuietStatusPanel>
       ) : null}
 
       {retryAdviceError ? (
-        <View className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
+        <View className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
           <Text className="text-sm leading-5 text-amber-800">{retryAdviceError}</Text>
           <Text className="mt-1 text-sm leading-5 text-amber-800">
             You can still ask for replacement picks from this search.
@@ -294,23 +298,27 @@ export function SearchRetrySection({
         </View>
       ) : null}
 
-      {retryCount > 0 ? (
-        <Text className="mt-2 text-sm leading-5 text-slate-600">
-          {retryCount} of 2 retries used
+      <QuietStatusPanel className="mt-4">
+        <Text className="text-sm font-semibold text-ink">
+          Need replacements from this search?
         </Text>
-      ) : null}
-
-      <Pressable
-        disabled={!canRetry}
-        onPress={submitRetry}
-        className={`mt-3 rounded-2xl border px-4 py-3 ${
-          canRetry ? "border-line bg-white" : "border-line bg-slate-100"
-        }`}
-      >
-        <Text className={`text-center text-sm font-semibold ${canRetry ? "text-slate-700" : "text-slate-400"}`}>
+        <Text className="mt-1 text-sm leading-5 text-stone-600">
+          This keeps the current candidate pool and asks for a different shortlist. Add a note above so the retry has direction.
+        </Text>
+        {retryCount > 0 ? (
+          <Text className="mt-2 text-sm leading-5 text-stone-600">
+            {retryCount} of 2 retries used
+          </Text>
+        ) : null}
+        <Button
+          disabled={!canRetry}
+          onPress={submitRetry}
+          className="mt-3"
+          variant="secondary"
+        >
           Retry these picks instead
-        </Text>
-      </Pressable>
-    </View>
+        </Button>
+      </QuietStatusPanel>
+    </Surface>
   );
 }

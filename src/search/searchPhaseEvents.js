@@ -1,6 +1,7 @@
 const MAX_PHASE_EVENTS = 6;
 
 const PHASE_LABELS = {
+  constraintRefresh: "Refresh",
   discover: "Discover",
   enrich: "Enrich",
   finalize: "Finalize",

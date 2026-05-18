@@ -5,10 +5,13 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        ink: "#172033",
-        mist: "#f4f7fb",
-        line: "#d8e0ea",
-        accent: "#3d7ef0",
+        ink: "#14222b",
+        mist: "#f7f2ea",
+        cream: "#fcf9f3",
+        line: "#e4d7c6",
+        accent: "#0F6175",
+        secondary: "#2F7F8A",
+        ember: "#E59B26",
       },
       fontFamily: {
         sans: ["Manrope_400Regular"],

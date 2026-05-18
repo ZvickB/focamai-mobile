@@ -31,11 +31,14 @@ Read this file first at the start of every chat in `mobile/`.
 - `../web/project-notes/app_flow.md`: current product behavior.
 - `../web/project-notes/current-status.md`: current web/backend reality.
 - `../web/project-notes/doc_briefs.md`: product intent, UX direction, and trust/compliance tone.
+- `../web/src/assets/` and current web layout styling: brand baseline only. Mobile should ship local copies of any brand assets it uses, not runtime-import from `../web`.
 
 ## Working rules
 - Treat web product truth and mobile implementation work as different things.
+- Treat `../web` as the Focamai product and brand baseline, not a mobile layout mandate.
 - Do not silently change the product while "porting" it.
 - If the mobile app intentionally diverges from the web app, call that out clearly and record it in mobile notes.
+- Do not runtime-import assets from `../web`; copy approved shipping assets into `mobile/assets/` so the mobile app owns what it ships.
 - Keep the backend unchanged unless the user explicitly asks to work outside `mobile/`.
 - Keep changes scoped. Finish one phase or one clear migration slice before starting another.
 - Prefer copying small stable pure logic and rewriting the UI/platform layer that truly needs React Native primitives.
@@ -54,6 +57,7 @@ Read this file first at the start of every chat in `mobile/`.
 - The homepage remains search-first with one strong main input and a refinement step that appears after submit.
 - AI copy should sound like a trusted assistant with honest caveats, not marketing.
 - Keep the product vendor-agnostic in UI and response shape even if provider choices change later.
+- Keep mobile recognizably aligned with web through the local PNG wordmark, Manrope, teal/orange/warm-neutral brand family, and calm trusted-assistant voice, while allowing native-specific screen layout and simpler mobile surfaces.
 - Prefer the PNG wordmark for now unless branding is being revisited on purpose.
 
 ## React Native migration guardrails

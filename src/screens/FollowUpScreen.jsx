@@ -1,5 +1,4 @@
-import { Pressable, ScrollView, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { ScreenContainer, ScreenIntro } from "../components/MobileUI";
 import { QuerySuggestionPrompt } from "../search/QuerySuggestionPrompt";
 import { SearchProgressStatus } from "../search/SearchProgressStatus";
 import { SearchRefineSection } from "../search/SearchRefineSection";
@@ -36,61 +35,41 @@ export default function FollowUpScreen({ navigation }) {
   }
 
   return (
-    <SafeAreaView edges={["bottom"]} className="flex-1 bg-mist" testID="followup.screen">
-      <ScrollView
-        className="flex-1"
-        contentContainerStyle={{ paddingHorizontal: 20, paddingVertical: 24, gap: 18 }}
-        keyboardShouldPersistTaps="handled"
-      >
-        <View>
-          <Text className="text-[12px] font-medium uppercase tracking-[2px] text-accent">
-            One quick question
-          </Text>
-          <Text className="mt-2 text-3xl font-semibold text-ink">Help narrow the picks</Text>
-          <Text className="mt-3 text-base leading-6 text-slate-600">
-            Add what matters, or skip and build the shortlist from your original search.
-          </Text>
-        </View>
+    <ScreenContainer testID="followup.screen" keyboardShouldPersistTaps="handled">
+      <ScreenIntro
+        eyebrow="One quick question"
+        title="Answer if it helps"
+        description="One optional note can sharpen the shortlist. Skipping still keeps the search moving."
+      />
 
-        <SearchProgressStatus
-          discoverySummary={discoverySummary}
-          errorMessage={errorMessage}
-          hasStartedSearch={hasStartedSearch}
-          isFinalizing={isFinalizing}
-          isGeneratingPrompt={isGeneratingPrompt}
-          phaseEvents={phaseEvents}
-          productQuery={productQuery}
-          refinementPrompt={refinementPrompt}
-        />
+      <SearchRefineSection
+        canFinalize={canFinalize}
+        finalizeFocusedPicks={finalizeAndOpenResults}
+        followUpNotes={followUpNotes}
+        isFinalizing={isFinalizing}
+        isGeneratingPrompt={isGeneratingPrompt}
+        refinementPrompt={refinementPrompt}
+        setFollowUpNotes={setFollowUpNotes}
+        skipFocusedPicks={skipAndOpenResults}
+      />
 
-        <QuerySuggestionPrompt
-          isApplying={isApplyingQuerySuggestion}
-          onKeepResults={dismissQuerySuggestion}
-          onTrySuggestedSearch={applyQuerySuggestion}
-          suggestion={querySuggestion}
-        />
+      <QuerySuggestionPrompt
+        isApplying={isApplyingQuerySuggestion}
+        onKeepResults={dismissQuerySuggestion}
+        onTrySuggestedSearch={applyQuerySuggestion}
+        suggestion={querySuggestion}
+      />
 
-        <SearchRefineSection
-          canFinalize={canFinalize}
-          finalizeFocusedPicks={finalizeAndOpenResults}
-          followUpNotes={followUpNotes}
-          isFinalizing={isFinalizing}
-          refinementPrompt={refinementPrompt}
-          setFollowUpNotes={setFollowUpNotes}
-        />
-
-        {refinementPrompt ? (
-          <Pressable
-            disabled={!canFinalize}
-            onPress={skipAndOpenResults}
-            className="rounded-2xl border border-line bg-white px-4 py-3"
-          >
-            <Text className="text-center text-sm font-semibold text-slate-800">
-              Skip - show results
-            </Text>
-          </Pressable>
-        ) : null}
-      </ScrollView>
-    </SafeAreaView>
+      <SearchProgressStatus
+        discoverySummary={discoverySummary}
+        errorMessage={errorMessage}
+        hasStartedSearch={hasStartedSearch}
+        isFinalizing={isFinalizing}
+        isGeneratingPrompt={isGeneratingPrompt}
+        phaseEvents={phaseEvents}
+        productQuery={productQuery}
+        refinementPrompt={refinementPrompt}
+      />
+    </ScreenContainer>
   );
 }

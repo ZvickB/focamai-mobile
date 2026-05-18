@@ -20,11 +20,11 @@ const navigationTheme = {
   ...DefaultTheme,
   colors: {
     ...DefaultTheme.colors,
-    background: "#f4f7fb",
-    card: "#ffffff",
-    text: "#172033",
-    border: "#d8e0ea",
-    primary: "#3d7ef0",
+    background: "#f7f2ea",
+    card: "#f7f2ea",
+    text: "#14222b",
+    border: "#e4d7c6",
+    primary: "#0F6175",
   },
 };
 
@@ -37,22 +37,22 @@ export default function RootNavigator() {
             screenOptions={{
               headerShadowVisible: false,
               headerStyle: {
-                backgroundColor: "#f4f7fb",
+                backgroundColor: "#f7f2ea",
               },
               headerTitleStyle: {
-                color: "#172033",
+                color: "#14222b",
                 fontFamily: "Manrope_600SemiBold",
                 fontWeight: "600",
               },
               contentStyle: {
-                backgroundColor: "#f4f7fb",
+                backgroundColor: "#f7f2ea",
               },
             }}
           >
             <Stack.Screen
               name="Search"
               component={SearchScreen}
-              options={{ title: "Focama" }}
+              options={{ title: "Focamai" }}
             />
             <Stack.Screen
               name="FollowUp"
@@ -67,7 +67,7 @@ export default function RootNavigator() {
             <Stack.Screen
               name="Home"
               component={HomeScreen}
-              options={{ title: "Focama" }}
+              options={{ title: "Focamai" }}
             />
             <Stack.Screen name="About" component={AboutScreen} />
             <Stack.Screen name="Contact" component={ContactScreen} />
