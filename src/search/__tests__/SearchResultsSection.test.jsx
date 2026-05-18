@@ -24,6 +24,19 @@ describe("SearchResultsSection", () => {
     expect(toJSON()).toBeNull();
   });
 
+  it("treats malformed result props as empty arrays", () => {
+    const { getByText } = render(
+      <SearchResultsSection
+        finalResults={null}
+        onOpenResult={jest.fn()}
+        previewItems={{}}
+        showEmptyState
+      />,
+    );
+
+    expect(getByText("No focused picks yet")).toBeTruthy();
+  });
+
   it("shows an intentional empty state on the Results screen", () => {
     const { getByText } = render(
       <SearchResultsSection
@@ -57,6 +70,27 @@ describe("SearchResultsSection", () => {
     expect(getByText("Your focused picks")).toBeTruthy();
     expect(getByText("Compact Travel Stroller")).toBeTruthy();
     expect(onOpenResult).toHaveBeenCalledWith(focusedPick, 0);
+  });
+
+  it("uses unavailable copy for missing rating and malformed reviews", () => {
+    const { getAllByText, queryByText } = render(
+      <SearchResultsSection
+        finalResults={[
+          {
+            ...focusedPick,
+            rating: null,
+            reviewCount: { total: 128 },
+          },
+        ]}
+        onOpenResult={jest.fn()}
+        previewItems={[]}
+      />,
+    );
+
+    expect(getAllByText("Rating not shown").length).toBeGreaterThan(0);
+    expect(getAllByText("Reviews not shown").length).toBeGreaterThan(0);
+    expect(queryByText(/\[object Object\]/)).toBeNull();
+    expect(queryByText(/0\.0 rating/)).toBeNull();
   });
 
   it("calls out when fewer than six credible options come back", () => {
