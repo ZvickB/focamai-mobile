@@ -14,7 +14,6 @@ export default function FollowUpScreen({ navigation }) {
     finalizeFocusedPicks,
     followUpNotes,
     hasStartedSearch,
-    isApplyingQuerySuggestion,
     isFinalizing,
     isGeneratingPrompt,
     phaseEvents,
@@ -54,7 +53,6 @@ export default function FollowUpScreen({ navigation }) {
       />
 
       <QuerySuggestionPrompt
-        isApplying={isApplyingQuerySuggestion}
         onKeepResults={dismissQuerySuggestion}
         onTrySuggestedSearch={applyQuerySuggestion}
         suggestion={querySuggestion}

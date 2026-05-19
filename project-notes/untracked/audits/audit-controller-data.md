@@ -1,6 +1,6 @@
 # React Native/Expo Mobile App Audit: Controller & Data Safety
 
-Status: partially addressed. The highest-priority query-quality/hard-constraint refresh race is fixed in `src/search/useMobileSearchController.js` by stopping query-quality polling and clearing any existing suggestion before the hard-constraint discovery refresh starts. Rating/review label null-safety, array-safe result/detail rendering, detail snapshot fallback, and enrichment copy normalization are now addressed. Remaining lower-priority items are fallback candidate-id identity and the `isApplyingQuerySuggestion` lifecycle.
+Status: addressed. The highest-priority query-quality/hard-constraint refresh race is fixed in `src/search/useMobileSearchController.js` by stopping query-quality polling and clearing any existing suggestion before the hard-constraint discovery refresh starts. Rating/review label null-safety, array-safe result/detail rendering, detail snapshot fallback, enrichment copy normalization, scoped fallback final-result IDs, and the suggested-query applying lifecycle are now addressed.
 
 ## Summary
 This audit reviews controller race conditions, polling behavior, and result-data identity safety in the current mobile search flow.
@@ -23,7 +23,7 @@ Recommended fix: Stop query-quality polling and clear any existing suggestion be
 ### 2. `applyQuerySuggestion()` Clears Its Loading Flag Immediately
 File: `src/search/useMobileSearchController.js`
 
-Issue: `setIsApplyingQuerySuggestion(false)` runs immediately after `startDiscoverySearch({ queryOverride })`. Since `startDiscoverySearch` starts async work and returns synchronously, the applying state does not represent the actual new-search transition.
+Issue: `setIsApplyingQuerySuggestion(false)` ran immediately after `startDiscoverySearch({ queryOverride })`. Since `startDiscoverySearch` starts async work and returns synchronously, the applying state did not represent the actual new-search transition.
 
 What can go wrong: UI flicker or a misleading ready state while the suggested search is still starting.
 
@@ -31,7 +31,7 @@ Severity: Low
 
 Recommended fix: Either remove this flag if it is not buying much, or reset it from the new search lifecycle after the handoff is complete.
 
-Status: still open.
+Status: addressed. The controller-owned `isApplyingQuerySuggestion` flag was removed because accepting a suggestion immediately hands off to `startDiscoverySearch()`, which clears the suggestion and starts the new discovery/refine lifecycle. `QuerySuggestionPrompt` keeps an optional presentational `isApplying` prop, but `FollowUpScreen` no longer depends on a misleading controller flag.
 
 ### 3. Enrichment/Data Merge Should Normalize More Aggressively
 File: `src/search/useMobileSearchController.js`
@@ -57,7 +57,7 @@ Severity: Medium
 
 Recommended fix: Prefer stable backend ids whenever possible. If fallback ids are unavoidable, include a session/request component or avoid using fallback ids as durable navigation identity.
 
-Status: still open. The detail fallback is safer now because route navigation carries a tapped item snapshot, but fallback id generation itself has not been changed.
+Status: addressed. Backend/candidate IDs still win when present, but fallback final-result IDs are now scoped with the current request/discovery-token identity before being used for detail lookup. Route snapshots still provide an additional fallback if the live shortlist changes.
 
 ### 5. Review/Rating Label Helpers Need Defensive Coercion
 Files:
@@ -115,5 +115,5 @@ Current assessment: Possible but low priority. The function snapshots state and 
 2. Fix rating/review null safety in result rows and detail metadata. Addressed.
 3. Make `SearchResultsSection` and `SearchResultDetailScreen` array-safe. Addressed.
 4. Normalize enrichment string fields before merge. Addressed.
-5. Rework fallback candidate ids or detail navigation identity. Partially addressed through detail snapshot fallback; fallback id generation remains open.
-6. Simplify or correctly lifecycle `isApplyingQuerySuggestion`. Still open.
+5. Rework fallback candidate ids or detail navigation identity. Addressed with route snapshots plus scoped fallback IDs.
+6. Simplify or correctly lifecycle `isApplyingQuerySuggestion`. Addressed by removing the misleading controller flag.

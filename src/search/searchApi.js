@@ -247,6 +247,20 @@ function getCandidateId(item, fallbackId = "") {
   return String(item?.id || item?.candidate_id || item?.candidateId || item?.asin || fallbackId);
 }
 
+function sanitizeIdPart(value) {
+  return String(value || "")
+    .trim()
+    .replace(/[^a-zA-Z0-9_-]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 48);
+}
+
+function buildFinalFallbackId(index, identityScope = "") {
+  const scope = sanitizeIdPart(identityScope);
+
+  return scope ? `final-${scope}-${index}` : `final-${index}`;
+}
+
 function getFeatureBullets(item) {
   if (Array.isArray(item?.feature_bullets)) {
     return item.feature_bullets;
@@ -284,7 +298,7 @@ function mergeFinalResultsWithCandidatePool(results, candidatePool) {
   });
 }
 
-export function normalizeFinalResults(results, candidatePool) {
+export function normalizeFinalResults(results, candidatePool, identityScope = "") {
   if (!Array.isArray(results)) {
     return [];
   }
@@ -293,7 +307,7 @@ export function normalizeFinalResults(results, candidatePool) {
     caveat: item?.caveat || "",
     feature_bullets: getFeatureBullets(item),
     fit_reason: item?.fit_reason || item?.fitReason || "",
-    id: getCandidateId(item, `final-${index}`),
+    id: getCandidateId(item, buildFinalFallbackId(index, identityScope)),
     image: item?.image || "",
     link: item?.link || "",
     price: item?.price || "Price not shown",

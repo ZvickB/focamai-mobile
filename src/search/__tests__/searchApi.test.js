@@ -1,6 +1,7 @@
 import {
   coerceDisplayText,
   isSafeQuerySuggestionText,
+  normalizeFinalResults,
   normalizeQueryQualitySuggestion,
 } from "../searchApi";
 
@@ -72,5 +73,37 @@ describe("isSafeQuerySuggestionText", () => {
   it("rejects unexpected characters from user-facing suggestion copy", () => {
     expect(isSafeQuerySuggestionText("simple white chocolate chips")).toBe(true);
     expect(isSafeQuerySuggestionText("simple white chocolate chips 漢")).toBe(false);
+  });
+});
+
+describe("normalizeFinalResults", () => {
+  it("keeps stable backend candidate IDs when present", () => {
+    expect(
+      normalizeFinalResults(
+        [
+          {
+            candidate_id: "candidate-123",
+            title: "Known Product",
+          },
+        ],
+        null,
+        "search-1-token",
+      )[0].id,
+    ).toBe("candidate-123");
+  });
+
+  it("scopes fallback IDs to the active search identity", () => {
+    const malformedResults = [
+      {
+        title: "Untitled fallback pick",
+      },
+    ];
+
+    expect(normalizeFinalResults(malformedResults, null, "search 1/token")[0].id).toBe(
+      "final-search-1-token-0",
+    );
+    expect(normalizeFinalResults(malformedResults, null, "search 2/token")[0].id).toBe(
+      "final-search-2-token-0",
+    );
   });
 });

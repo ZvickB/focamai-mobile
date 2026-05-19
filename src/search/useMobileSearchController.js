@@ -173,7 +173,6 @@ export function useMobileSearchController() {
   const [isFinalizing, setIsFinalizing] = useState(false);
   const [isGeneratingPrompt, setIsGeneratingPrompt] = useState(false);
   const [isGeneratingRetryAdvice, setIsGeneratingRetryAdvice] = useState(false);
-  const [isApplyingQuerySuggestion, setIsApplyingQuerySuggestion] = useState(false);
   const [isCheckingQueryQuality, setIsCheckingQueryQuality] = useState(false);
   const [phaseEvents, setPhaseEvents] = useState([]);
   const [querySuggestion, setQuerySuggestion] = useState(null);
@@ -229,7 +228,6 @@ export function useMobileSearchController() {
 
     if (clearSuggestion) {
       setQuerySuggestion(null);
-      setIsApplyingQuerySuggestion(false);
     }
   }
 
@@ -948,7 +946,11 @@ export function useMobileSearchController() {
         return;
       }
 
-      const nextFinalResults = normalizeFinalResults(payload.results, finalizeCandidatePool);
+      const nextFinalResults = normalizeFinalResults(
+        payload.results,
+        finalizeCandidatePool,
+        `${requestId}-${session.discoveryToken}`,
+      );
 
       setFinalResults(nextFinalResults);
       updateSessionForRequest(requestId, (currentSession) => ({
@@ -1170,7 +1172,11 @@ export function useMobileSearchController() {
         return;
       }
 
-      const nextFinalResults = normalizeFinalResults(payload.results, session.candidatePool);
+      const nextFinalResults = normalizeFinalResults(
+        payload.results,
+        session.candidatePool,
+        `${requestId}-${session.discoveryToken}`,
+      );
 
       setFinalResults(nextFinalResults);
       setRetryCount(nextRetryCount);
@@ -1237,7 +1243,6 @@ export function useMobileSearchController() {
 
   function dismissQuerySuggestion() {
     setQuerySuggestion(null);
-    setIsApplyingQuerySuggestion(false);
   }
 
   function updateRetryFeedback(nextValue) {
@@ -1268,9 +1273,7 @@ export function useMobileSearchController() {
       return;
     }
 
-    setIsApplyingQuerySuggestion(true);
     startDiscoverySearch({ queryOverride: nextQuery });
-    setIsApplyingQuerySuggestion(false);
   }
 
   const previewItems = Array.isArray(discoverySummary?.previewItems)
@@ -1376,7 +1379,6 @@ export function useMobileSearchController() {
     finalizeFocusedPicks,
     followUpNotes,
     applyQuerySuggestion,
-    isApplyingQuerySuggestion,
     isCheckingQueryQuality,
     isDiscovering,
     isFinalizing,

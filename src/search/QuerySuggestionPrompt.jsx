@@ -3,7 +3,7 @@ import { Button, Surface } from "../components/MobileUI";
 import { coerceDisplayText, isSafeQuerySuggestionText } from "./searchApi";
 
 export function QuerySuggestionPrompt({
-  isApplying,
+  isApplying = false,
   onKeepResults,
   onTrySuggestedSearch,
   suggestion,

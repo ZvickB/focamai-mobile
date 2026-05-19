@@ -7,7 +7,6 @@ describe("QuerySuggestionPrompt", () => {
     const onTrySuggestedSearch = jest.fn();
     const { getByText, queryByText } = render(
       <QuerySuggestionPrompt
-        isApplying={false}
         onKeepResults={onKeepResults}
         onTrySuggestedSearch={onTrySuggestedSearch}
         suggestion={{

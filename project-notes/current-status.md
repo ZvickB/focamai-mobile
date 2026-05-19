@@ -5,7 +5,7 @@
 - Keep this focused on what is true now and where to read details.
 
 ## Current state
-- Branch `restart/mobile-clean-slate` is a clean restart point for the mobile app.
+- The current working version has been moved to `main`; verify the branch before future Git work because older notes may still mention the `restart/mobile-clean-slate` restart branch.
 - Read `project-notes/restart-strategy.md` before rebuilding search behavior; it explains what went wrong in the earlier port and the new small-slice rebuild approach.
 - For mobile UI/UX work, read `project-notes/mobile-ui-ux-plan.md` first after this status note. It is the current implementation-order plan for polished mobile UI/UX and takes priority over `project-notes/proposed-layout.md` and the PNG mockups, which remain brainstorming references only.
 - `../web` is the Focamai product and brand baseline. Mobile should be recognizably aligned with web, but should not copy the web layout 1:1 or runtime-import assets from `../web`; any shipping brand assets need local copies under `mobile/assets/`.
@@ -248,7 +248,7 @@ The Slice 3 detail polish passed `node --check App.js`, `node --check index.js`,
 
 The Slice 4 search entry polish keeps the Search screen search-first with the local PNG wordmark, one natural-language input, quiet example chips that fill the query, a clearer `Find focused picks` action, secondary Settings access, keyboard submit behavior, and extra scroll padding for smaller screens. The first-run store prompt remains inline only when needed and now uses calmer copy. No controller flow, backend contracts, explicit store preference behavior, query-quality polling, retry advice, candidate-id lookup, retailer CTA/disclosure, or 6-result cap changed.
 
-The Slice 4 search entry polish passed `npm test -- --runInBand src/search/__tests__/SearchEntrySection.test.jsx`, `node --check App.js`, `node --check index.js`, and `npx expo export --platform android --output-dir .expo-export-check`; the temporary export directory was removed afterward. During verification, `react-native-worklets` was added because the installed Reanimated 4 package imports it as a peer dependency and Metro could not bundle without it.
+The Slice 4 search entry polish passed `npm test -- --runInBand src/search/__tests__/SearchEntrySection.test.jsx`, `node --check App.js`, `node --check index.js`, and `npx expo export --platform android --output-dir .expo-export-check`; the temporary export directory was removed afterward. During verification, `react-native-worklets` was added because the installed Reanimated 4 package imports it as a peer dependency and Metro could not bundle without it. A later Expo Go prep pass aligned `react-native-worklets` to the Expo SDK 54 expected version `0.5.1` after `npx expo start --lan` warned that `0.8.3` was incompatible; Android export still passes after the alignment.
 
 The Slice 5 follow-up/refine polish keeps the existing Search -> Follow-up -> Results stack flow and controller behavior, but makes the Follow-up screen feel like one optional assistant question instead of a form. `SearchRefineSection` now owns the prominent AI question, natural multiline answer field, primary `Get focused picks` action, secondary `Skip and show results` action, and readable prompt-loading/fallback states. `QuerySuggestionPrompt` remains visible as a quiet secondary prompt without interrupting the answer flow.
 
@@ -284,9 +284,16 @@ A focused audit-hardening slice is implemented for result/detail safety. `Search
 
 The audit-hardening slice passed `npm test -- --runInBand src/search/__tests__/SearchResultsSection.test.jsx src/search/__tests__/SearchResultDetailMetadata.test.jsx src/screens/__tests__/SearchResultDetailScreen.test.jsx`, `node --check src/search/useMobileSearchController.js`, `node --check App.js`, `node --check index.js`, and `npx expo export --platform android --output-dir .expo-export-check`; `.expo-export-check` was removed afterward. Direct `node --check` on touched `.jsx` files is not supported by this Node setup, so the Expo Android export remains the JSX parse/bundle check.
 
+A small fallback candidate-id hardening slice is implemented. `normalizeFinalResults()` still preserves backend/candidate IDs whenever they exist, but client-generated fallback final IDs now include the current request/discovery-token identity passed from `useMobileSearchController.js`. This prevents malformed no-id results from different searches or retries from all sharing durable IDs like `final-0`. Detail navigation still carries a tapped item snapshot as an additional fallback, and backend contracts, controller phase order, enrichment hydration, retry advice, retailer CTA/disclosure, and the 6-result cap are unchanged.
+
+The fallback candidate-id hardening slice passed `npm test -- --runInBand src/search/__tests__/searchApi.test.js src/screens/__tests__/SearchResultDetailScreen.test.jsx`, `node --check src/search/searchApi.js`, `node --check src/search/useMobileSearchController.js`, `node --check App.js`, `node --check index.js`, and `npx expo export --platform android --output-dir .expo-export-check`; `.expo-export-check` was removed afterward.
+
+The remaining controller audit item is addressed. `useMobileSearchController.js` no longer exposes `isApplyingQuerySuggestion`, because accepting a query-quality suggestion immediately clears the suggestion and hands off to the normal `startDiscoverySearch()` discovery/refine lifecycle. `QuerySuggestionPrompt` keeps an optional presentational `isApplying` prop, but `FollowUpScreen` no longer depends on a misleading controller loading flag. Backend contracts, controller phase order, query-quality polling, hard-constraint refresh, retry advice, enrichment hydration, candidate-id lookup, retailer CTA/disclosure, and the 6-result cap are unchanged.
+
 ## Recommended next step
 
 Next planned step: run manual Expo Go verification of the detail trust/CTA polish during a polished Search -> Follow-up -> Results -> Detail flow against a reachable backend.
+- Use `project-notes/untracked/things-to check.md` as the concise manual Expo Go checklist for Search -> Follow-up -> Results -> Detail after the controller/data audit fixes.
 - Verify that `Why this pick`, caveats, and feature notes read correctly while enrichment is still checking and after enrichment fills in or settles without extra notes.
 - Verify the fixed detail footer stays visible, opens the retailer link when available, does not appear when the link is unavailable, and does not crowd the bottom safe area.
 - Also keep an eye on retry advice, retailer CTA/disclosure, stale-query prevention, query-quality suggestion copy, and hard-constraint refresh during the same pass.

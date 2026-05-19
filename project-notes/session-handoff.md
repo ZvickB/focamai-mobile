@@ -152,7 +152,7 @@
   - The first-run store prompt remains inline only when needed, with calmer store-preference copy and accessible marketplace chips.
   - Backend contracts, controller flow, explicit store preference behavior, query-quality polling, retry advice, enrichment hydration, candidate-id lookup, retailer CTA/disclosure, and 6-result cap are unchanged.
   - The Slice 4 search entry polish passed `npm test -- --runInBand src/search/__tests__/SearchEntrySection.test.jsx`, `node --check App.js`, `node --check index.js`, and `npx expo export --platform android --output-dir .expo-export-check`; `.expo-export-check` was removed afterward.
-  - `react-native-worklets` is now installed because the installed Reanimated 4 package imports it as a peer dependency; Metro Android export failed without it.
+  - `react-native-worklets` is now installed because the installed Reanimated 4 package imports it as a peer dependency; it is pinned to the Expo SDK 54 expected version `0.5.1` after Expo LAN startup warned that `0.8.3` was incompatible.
 - UI/UX Slice 5 is complete:
   - `FollowUpScreen` keeps the existing native stack flow but now leads with the optional refine question instead of status/diagnostics.
   - `SearchRefineSection` owns both actions in one shared surface: primary `Get focused picks` and secondary `Skip and show results`.
@@ -213,7 +213,8 @@
   - Results now passes the tapped item snapshot to detail navigation
   - detail prefers the live matched rank, falls back to a normalized route snapshot with a stale-snapshot note, and shows a clear unavailable state when neither live item nor snapshot exists
   - enrichment merge now trims primitive copy and drops object-shaped `fit_reason`/`caveat` values before hydrating focused picks
-  - the fallback candidate-id generation and `isApplyingQuerySuggestion` lifecycle audit items remain open
+  - fallback final-result IDs are scoped to the current request/discovery-token identity when backend IDs are missing, so malformed no-id results from different searches no longer all reuse durable IDs like `final-0`
+  - the `isApplyingQuerySuggestion` lifecycle audit item is addressed by removing the misleading controller-owned flag; accepting a suggestion now simply hands off to the normal new-search discovery/refine lifecycle
   - verification passed with focused Jest tests, direct `node --check` for touched `.js` entry/controller files, and Android Expo export; `.expo-export-check` was removed afterward
 - Temporary same-session retry with feedback exists in code:
   - `src/search/searchApi.js` sends retry finalize requests with `requestMode: "guided_retry"`, feedback, retry count, and excluded current focused-pick IDs
@@ -268,7 +269,8 @@
 ## Next step
 - Continue building mobile search in bounded vertical slices against `src/search/useMobileSearchController.js`.
 - Do not keep doing micro-extractions unless they directly support a real mobile UX/data slice.
-- Next planned step: manually verify the polished Search -> Follow-up -> Results -> Detail flow in Expo Go against a reachable backend, including the status-aware detail fallback copy and the fixed detail retailer footer.
+- Next planned step: manually verify the polished Search -> Follow-up -> Results -> Detail flow in Expo Go against a reachable backend, using `project-notes/untracked/things-to check.md` as the concise checklist.
+- Include the status-aware detail fallback copy, fixed detail retailer footer, query-quality suggestion copy, hard-constraint refresh behavior, retry advice, retailer CTA/disclosure, and stale-query prevention in that pass.
 - Keep the current controller flow, backend contracts, candidate-id lookup, retailer CTA/disclosure, query-quality polling, retry behavior, and 6-result cap while improving detail content/behavior.
 - Keep result count capped at 6 and do not add analytics or broad persistence yet.
 - `EXPO_PUBLIC_API_BASE_URL` must point to the backend API, not the public frontend site.
