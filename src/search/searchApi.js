@@ -1,6 +1,8 @@
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || "";
 const FINAL_RESULT_LIMIT = 6;
 const PREVIEW_RESULT_LIMIT = 3;
+const REFINEMENT_SUGGESTION_LIMIT = 3;
+const REFINEMENT_SUGGESTION_MAX_LENGTH = 22;
 const TEXT_FIELD_KEYS = [
   "query",
   "text",
@@ -202,6 +204,21 @@ export function normalizeQueryQualitySuggestion(payload, fallbackQuery = "") {
       : "This may be a clearer way to phrase the search.",
     suggestedQuery,
   };
+}
+
+export function normalizeRefinementSuggestions(payload) {
+  const rawSuggestions = Array.isArray(payload?.refinementSuggestions)
+    ? payload.refinementSuggestions
+    : Array.isArray(payload?.refinement_suggestions)
+      ? payload.refinement_suggestions
+      : [];
+
+  return rawSuggestions
+    .filter((item) => typeof item === "string")
+    .map((item) => item.trim().replace(/\s+/g, " "))
+    .filter(Boolean)
+    .filter((item) => item.length <= REFINEMENT_SUGGESTION_MAX_LENGTH)
+    .slice(0, REFINEMENT_SUGGESTION_LIMIT);
 }
 
 export async function getRetryAdvice({

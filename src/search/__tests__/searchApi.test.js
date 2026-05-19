@@ -3,6 +3,7 @@ import {
   isSafeQuerySuggestionText,
   normalizeFinalResults,
   normalizeQueryQualitySuggestion,
+  normalizeRefinementSuggestions,
 } from "../searchApi";
 
 describe("coerceDisplayText", () => {
@@ -66,6 +67,40 @@ describe("normalizeQueryQualitySuggestion", () => {
       reason: "This may be a clearer way to phrase the search.",
       suggestedQuery: "kosher white chocolate chips",
     });
+  });
+});
+
+describe("normalizeRefinementSuggestions", () => {
+  it("normalizes short string suggestions and caps at 3", () => {
+    expect(
+      normalizeRefinementSuggestions({
+        refinementSuggestions: [
+          "  Easy   cleaning ",
+          "Quiet operation",
+          "Small batches",
+          "Extra valid",
+        ],
+      }),
+    ).toEqual(["Easy cleaning", "Quiet operation", "Small batches"]);
+  });
+
+  it("drops malformed, empty, and overlong suggestions", () => {
+    expect(
+      normalizeRefinementSuggestions({
+        refinement_suggestions: [
+          "Easy cleaning",
+          "",
+          "This label is much too long for a chip",
+          { label: "Ignored object" },
+          123,
+          "Small space",
+        ],
+      }),
+    ).toEqual(["Easy cleaning", "Small space"]);
+  });
+
+  it("returns an empty array when suggestions are missing", () => {
+    expect(normalizeRefinementSuggestions({ prompt: "What matters most?" })).toEqual([]);
   });
 });
 

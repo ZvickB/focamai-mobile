@@ -13,10 +13,11 @@ export function ScreenContainer({
   contentContainerStyle,
   footer,
   keyboardShouldPersistTaps,
+  safeAreaEdges = ["bottom"],
   testID,
 }) {
   return (
-    <SafeAreaView edges={["bottom"]} className="flex-1 bg-mist" testID={testID}>
+    <SafeAreaView edges={safeAreaEdges} className="flex-1 bg-mist" testID={testID}>
       <ScrollView
         className="flex-1"
         contentContainerStyle={[
@@ -50,12 +51,12 @@ export function ScreenIntro({ eyebrow, title, description, testID }) {
   );
 }
 
-export function BrandWordmark({ className = "" }) {
+export function BrandWordmark({ className = "", imageClassName = "h-12 w-52" }) {
   return (
     <View className={cx("items-start", className)}>
       <Image
         accessibilityLabel="Focamai"
-        className="h-12 w-52"
+        className={imageClassName}
         resizeMode="contain"
         source={wordmarkImage}
       />

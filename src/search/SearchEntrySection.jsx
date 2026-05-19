@@ -1,16 +1,10 @@
 import { useEffect, useState } from "react";
+import { Mic, Search } from "lucide-react-native";
 import { Pressable, Text, TextInput, View } from "react-native";
-import { Button, Pill, Surface } from "../components/MobileUI";
-
-const EXAMPLE_QUERIES = [
-  "travel stroller",
-  "quiet air purifier",
-  "beginner espresso machine",
-];
+import { Button, cx } from "../components/MobileUI";
 
 export function SearchEntrySection({
   isDiscovering,
-  onSettingsPress,
   productQuery,
   setProductQuery,
   startDiscoverySearch,
@@ -26,69 +20,64 @@ export function SearchEntrySection({
     setProductQuery(nextQuery);
   }
 
-  function chooseExample(query) {
-    updateQuery(query);
-  }
-
   function submitDraftQuery() {
     startDiscoverySearch(draftQuery);
   }
 
   return (
-    <Surface className="gap-4">
-      <View>
-        <Text className="text-sm font-semibold text-ink">Start with the product you need</Text>
-        <Text className="mt-1 text-sm leading-5 text-stone-600">
-          A plain description works best. Add constraints in the next step.
-        </Text>
-      </View>
-      <TextInput
-        testID="search.queryInput"
-        value={draftQuery}
-        onChangeText={updateQuery}
-        onSubmitEditing={submitDraftQuery}
-        placeholder="Example: compact stroller for city trips"
-        placeholderTextColor="#8C8174"
-        returnKeyType="search"
-        className="min-h-[56px] rounded-lg border border-line bg-cream px-4 py-3 text-base leading-6 text-ink"
-      />
-
-      <View>
-        <Text className="text-xs font-semibold uppercase tracking-[1px] text-stone-500">
-          Examples
-        </Text>
-        <View className="mt-2 flex-row flex-wrap gap-2">
-          {EXAMPLE_QUERIES.map((query) => (
-            <Pressable
-              key={query}
-              accessibilityRole="button"
-              accessibilityLabel={`Use example search ${query}`}
-              onPress={() => chooseExample(query)}
-            >
-              <Pill>{query}</Pill>
-            </Pressable>
-          ))}
+    <View className="gap-4">
+      <View
+        className="rounded-[32px] bg-white px-4 py-4 shadow-md"
+        style={{
+          elevation: 4,
+          shadowColor: "#78573f",
+          shadowOffset: { width: 0, height: 18 },
+          shadowOpacity: 0.14,
+          shadowRadius: 28,
+        }}
+      >
+        <View className="min-h-[82px] flex-row items-center gap-3">
+          <View className="h-11 w-11 items-center justify-center rounded-full bg-cream">
+            <Search color="#0F6175" size={25} strokeWidth={2.2} />
+          </View>
+          <TextInput
+            testID="search.queryInput"
+            value={draftQuery}
+            onChangeText={updateQuery}
+            onSubmitEditing={submitDraftQuery}
+            placeholder="What are you shopping for?"
+            placeholderTextColor="#B4ADA4"
+            returnKeyType="search"
+            className="min-h-[62px] flex-1 py-3 text-[18px] leading-7 text-ink"
+          />
+          <Pressable
+            accessibilityLabel="Voice input coming later"
+            accessibilityRole="button"
+            className="h-12 w-12 items-center justify-center rounded-full bg-cream"
+            disabled
+            testID="search.voiceButton"
+          >
+            <Mic color="#0F6175" size={24} strokeWidth={2.2} />
+          </Pressable>
         </View>
       </View>
 
-      <View className="gap-3">
-        <Button
-          testID="search.submitButton"
-          disabled={isDiscovering}
-          onPress={submitDraftQuery}
-          accessibilityLabel="Start product search"
-        >
-          {isDiscovering ? "Searching..." : "Find focused picks"}
-        </Button>
-        <Button
-          testID="search.settingsButton"
-          onPress={onSettingsPress}
-          variant="secondary"
-          accessibilityLabel="Open settings"
-        >
-          Settings
-        </Button>
-      </View>
-    </Surface>
+      <Button
+        testID="search.submitButton"
+        disabled={isDiscovering}
+        onPress={submitDraftQuery}
+        accessibilityLabel="Start product search"
+        className={cx(
+          "min-h-[58px] rounded-[17px] shadow-sm",
+          isDiscovering ? "" : "bg-accent",
+        )}
+      >
+        {isDiscovering ? "Searching..." : "Find picks"}
+      </Button>
+      <View
+        className="h-[2px] self-center rounded-full bg-ember opacity-60"
+        style={{ width: 44 }}
+      />
+    </View>
   );
 }

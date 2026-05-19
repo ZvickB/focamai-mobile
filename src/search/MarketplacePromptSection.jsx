@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Pressable, ScrollView, Text } from "react-native";
+import { Pressable, ScrollView, Text, View } from "react-native";
 import { Button, Surface } from "../components/MobileUI";
 import { AMAZON_MARKETPLACES, getAmazonMarketplaceLabel } from "./amazonMarketplaces";
 
@@ -14,12 +14,23 @@ export function MarketplacePromptSection({
   }, [selectedAmazonDomain]);
 
   return (
-    <Surface variant="accent" className="gap-4">
-      <Text className="text-sm font-semibold text-slate-900">Set your store once</Text>
-      <Text className="mt-2 text-sm leading-5 text-slate-600">
-        Focamai uses this for retailer availability and regional pricing. You can change it later
-        in Settings.
-      </Text>
+    <Surface variant="quiet" className="gap-4 rounded-[22px] px-4 py-4">
+      <View className="flex-row items-start justify-between gap-3">
+        <View className="flex-1">
+          <Text className="text-[12px] font-semibold uppercase tracking-[1.3px] text-secondary">
+            Store region
+          </Text>
+          <Text className="mt-2 text-base font-semibold text-ink">Choose where prices should come from</Text>
+          <Text className="mt-1 text-sm leading-5 text-stone-600">
+            This is saved for future searches and can be changed later in Settings.
+          </Text>
+        </View>
+        <View className="rounded-full bg-white px-3 py-1.5">
+          <Text className="text-[11px] font-semibold uppercase tracking-[1px] text-stone-500">
+            First run
+          </Text>
+        </View>
+      </View>
       <ScrollView
         horizontal
         contentContainerStyle={{ gap: 8, paddingRight: 8 }}
@@ -36,11 +47,11 @@ export function MarketplacePromptSection({
               accessibilityLabel={`Select ${getAmazonMarketplaceLabel(marketplace.domain)}`}
               onPress={() => setDraftAmazonDomain(marketplace.domain)}
               className={`rounded-full border px-3 py-2 ${
-                isSelected ? "border-accent bg-accent" : "border-line bg-cream"
+                isSelected ? "border-secondary bg-secondary" : "border-line bg-white"
               }`}
             >
-              <Text className={`text-xs font-semibold ${isSelected ? "text-white" : "text-slate-700"}`}>
-                {marketplace.countryCode}
+              <Text className={`text-xs font-semibold ${isSelected ? "text-white" : "text-stone-700"}`}>
+                {marketplace.label}
               </Text>
             </Pressable>
           );
@@ -48,10 +59,14 @@ export function MarketplacePromptSection({
       </ScrollView>
       <Button
         onPress={() => confirmSelectedAmazonDomain(draftAmazonDomain)}
-        variant="dark"
+        variant="secondary"
+        className="rounded-[16px] bg-white"
       >
         Use {getAmazonMarketplaceLabel(draftAmazonDomain)}
       </Button>
+      <Text className="text-center text-xs leading-4 text-stone-500">
+        Focamai does not request location permission for this choice.
+      </Text>
     </Surface>
   );
 }

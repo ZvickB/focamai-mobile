@@ -52,12 +52,12 @@ export default function RootNavigator() {
             <Stack.Screen
               name="Search"
               component={SearchScreen}
-              options={{ title: "Focamai" }}
+              options={{ headerShown: false }}
             />
             <Stack.Screen
               name="FollowUp"
               component={FollowUpScreen}
-              options={{ title: "Follow-up" }}
+              options={{ headerShown: false }}
             />
             <Stack.Screen
               name="Results"
@@ -67,7 +67,7 @@ export default function RootNavigator() {
             <Stack.Screen
               name="Home"
               component={HomeScreen}
-              options={{ title: "Focamai" }}
+              options={{ headerShown: false }}
             />
             <Stack.Screen name="About" component={AboutScreen} />
             <Stack.Screen name="Contact" component={ContactScreen} />

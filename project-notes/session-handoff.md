@@ -161,6 +161,19 @@
   - Hard-constraint discovery refresh was intentionally not part of this visual slice, but it has since been implemented as a separate product-completeness slice.
   - Backend contracts, controller flow, explicit store preference behavior, query-quality polling, retry advice, enrichment hydration, candidate-id lookup, retailer CTA/disclosure, and the 6-result cap are unchanged.
   - The Slice 5 follow-up/refine polish passed `npm test -- --runInBand src/search/__tests__/SearchRefineSection.test.jsx`, `node --check App.js`, `node --check index.js`, and `npx expo export --platform android --output-dir .expo-export-check`; `.expo-export-check` was removed afterward.
+- The May 19 Follow-up/Refine direction is implemented as a continuity pass from the calmer Search base:
+  - `FollowUpScreen` adds a thin `Search / Refine / Picks` progress cue only after search has started, keeps the original query as a compact orientation pill, and constrains the main column for tablet/iPad.
+  - `SearchRefineSection` now reads as one soft elevated assistant-question surface instead of an intro plus form, with less visible copy, a generous native answer field, `Get focused picks`, and calm `Skip and show results`.
+  - `QuerySuggestionPrompt` is quieter and secondary; `Try suggested search` remains available but visually de-emphasized.
+  - Backend contracts, controller props/actions, skip behavior, query-quality suggestion behavior, hard-constraint refresh behavior, and the 6-result cap are unchanged.
+  - This pass verified with `npm test -- --runInBand src/search/__tests__/SearchRefineSection.test.jsx src/search/__tests__/QuerySuggestionPrompt.test.jsx`, `node --check App.js`, `node --check index.js`, and Android Expo export; `.expo-export-check` was removed afterward.
+- The Refine mockup redesign pass is now implemented:
+  - `FollowUpScreen` uses a small custom header with back/search navigation, centered local PNG wordmark, and quiet icon-only Settings access, and the native stack header is hidden on this route. `SearchScreen` also uses quiet icon-only Settings access instead of a floating circular settings button.
+  - The `Search / Refine / Picks` progress cue remains, but the lower Search Status/diagnostics panel is removed from Refine.
+  - `SearchRefineSection` now frames the step as collaborative user-driven refinement: product-agnostic heading (`What should Focamai keep in mind?`), support copy, three text-only fallback chips (`Good value`, `Easy to use`, `Fits my space`), search-style notes input with disabled mic affordance, `Update my picks`, and text-only `Skip for now`. The query/orientation pill is intentionally removed to keep the primary and skip actions higher on the screen.
+  - Static chip data is intentionally local and injectable through `suggestedRefinements` so later AI-generated refinement chips can be threaded in without redesigning this component. Until AI chips exist, use useful generic fallback chips instead of shimmer/loading chips.
+  - Follow-up notes, finalize submission, skip finalize, hard-constraint refresh, backend contracts, controller ownership, and the 6-result cap are unchanged.
+  - This pass verified with `npm test -- --runInBand src/search/__tests__/SearchRefineSection.test.jsx`, direct `node --check` on `App.js` and `index.js`, and Android Expo export; `.expo-export-check` was removed afterward.
 - UI/UX Slice 6 is complete:
   - `SearchRetrySection` remains below results as recovery, not endless browsing.
   - The retry copy now asks what felt wrong in plain language and makes correction chips quieter so they read as shortcuts, not filters.
@@ -176,6 +189,23 @@
   - `SearchResultsSection` now has a Results-screen empty state and fewer-than-six credible result copy.
   - Backend contracts, controller flow, explicit store preference behavior, query-quality polling, retry advice, enrichment hydration, candidate-id lookup, retailer CTA/disclosure, and the 6-result cap are unchanged.
   - The Slice 7 loading/empty/error-state polish passed `npm test -- --runInBand src/search/__tests__/SearchProgressStatus.test.jsx src/search/__tests__/SearchResultsSection.test.jsx`, `node --check App.js`, `node --check index.js`, and `npx expo export --platform android --output-dir .expo-export-check`; `.expo-export-check` was removed afterward.
+- The Search-page V1 Visual Credibility Pass has been redone using the May 13 PNG as vibe reference, not an exact mockup:
+  - `SearchScreen` now leads with a larger centered local PNG wordmark, stronger search-first headline, warm supporting copy, and a restrained narrowing-to-six cue.
+  - `SearchEntrySection` now reads as a premium search module rather than a generic form card, while preserving draft-query submission, example-chip behavior, Settings navigation, and controller calls.
+  - `MarketplacePromptSection` remains below the search module and keeps first-run region selection calm, saved-preference-oriented, and explicit about not using location permission.
+  - Backend contracts, controller flow, explicit marketplace behavior, saved store preference, first-run prompt behavior, query submission, query-quality polling, retry advice, enrichment hydration, candidate-id lookup, retailer CTA/disclosure, and the 6-result cap are unchanged.
+  - The redone pass passed focused Jest tests, `node --check App.js`, `node --check index.js`, and Android Expo export; `.expo-export-check` was removed afterward.
+- The May 19 Search base simplifies that Search-page pass toward a calmer native utility:
+  - Search/Home hide the native stack header and use top safe area inside the screen, so the local PNG wordmark can be the primary brand moment.
+  - Settings is a quiet Lucide icon in the top corner of the search composition rather than a text button; it is intentionally not sticky/pinned and should scroll away with page content.
+  - The Search status/progress panel is intentionally not rendered on Search anymore, so backing out from Refine returns to a clean search entry surface instead of stale status copy.
+  - The entry screen now removes the bordered teal module/card feel, suggestion chips, `Search first` label, helper paragraph, bottom metadata row, and the separate narrowing-to-six cue.
+  - The hero/search column is max-width constrained for tablet/iPad so the input and CTA stay phone-native instead of stretching across the screen.
+  - `SearchEntrySection` centers the experience on one soft elevated input, placeholder-driven guidance, Lucide search/mic icons, one `Find picks` CTA, and a disabled mic affordance reserved for later voice input.
+  - The subtle orange/ember cue is only a thin accent under the CTA, keeping the wordmark's orange present without making the screen decorative.
+  - Keep future additions one at a time; do not reintroduce chips, onboarding sections, or dashboard-like modules as the default base.
+  - The May 19 base passed `npm test -- --runInBand src/search/__tests__/SearchEntrySection.test.jsx`, `node --check App.js`, `node --check index.js`, and Android Expo export; `.expo-export-check` was removed afterward.
+  - `metro.config.js` appends `"mjs"` to `resolver.sourceExts` because Lucide's current package exports ESM `.mjs` icon files; this fixed the iOS Metro resolver error and passed iOS export.
 - Query-quality suggestion polling is now implemented as a bounded mobile product-behavior slice:
   - `src/search/searchApi.js` calls `GET /api/search/query-quality` with discovery token, submitted query, and Amazon domain
   - `src/search/searchApi.js` normalizes object-shaped query-quality display fields so `originalQuery`, `suggestedQuery`, and `reason` render as readable strings instead of `[object Object]`; malformed suggested queries are hidden and malformed reason copy falls back to calm generic text
@@ -232,6 +262,7 @@
 - Discovery-only backend access has been verified in Expo Go against the local backend using a LAN API base URL.
 - Tiny preview rendering has been verified in Expo Go.
 - Refinement prompt rendering has been verified in Expo Go.
+- The shared `/api/search/refine` response now includes optional AI refinement chip suggestions in addition to the existing follow-up question fields. Mobile normalizes those suggestions in `src/search/searchApi.js`, exposes them through the existing `refinementPrompt` object, passes them from `FollowUpScreen` into `SearchRefineSection`, and falls back to `Good value`, `Easy to use`, and `Fits my space` when suggestions are missing or invalid. Suggestion labels are capped at 3 and must be non-empty strings no longer than 22 characters; object-shaped or overlong labels are dropped rather than truncated.
 - Minimal finalize rendering has been verified in Expo Go and is ahead of the previous unstable Phase 3/debug-harness attempt.
 - Lightweight final-result metadata rows are implemented and now sit under a plainer focused-picks section.
 - Discovery and refinement requests launch together and now update the UI independently; a slow follow-up should no longer delay discovery summary/preview rendering.

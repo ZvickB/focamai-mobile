@@ -7,6 +7,7 @@ import {
   normalizeFinalResults,
   normalizeQueryQualitySuggestion,
   normalizePreviewResults,
+  normalizeRefinementSuggestions,
   pollEnrichment,
   pollQueryQuality,
 } from "./searchApi";
@@ -90,6 +91,7 @@ function buildRefinementPrompt(refinementPayload) {
       "Add budget, size, must-haves, dealbreakers, or how you plan to use it.",
     helperText: refinementPayload.helperText || "",
     prompt: refinementPayload.prompt || "What should we optimize for?",
+    suggestedRefinements: normalizeRefinementSuggestions(refinementPayload).map((label) => ({ label })),
     timingMs: refinementPayload.clientTimingMs,
   };
 }

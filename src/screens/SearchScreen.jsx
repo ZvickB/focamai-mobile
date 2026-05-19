@@ -1,22 +1,49 @@
 import { useEffect } from "react";
-import { BrandWordmark, ScreenContainer, ScreenIntro } from "../components/MobileUI";
+import { Settings } from "lucide-react-native";
+import { Pressable, Text, View } from "react-native";
+import { BrandWordmark, ScreenContainer } from "../components/MobileUI";
 import { MarketplacePromptSection } from "../search/MarketplacePromptSection";
 import { SearchEntrySection } from "../search/SearchEntrySection";
-import { SearchProgressStatus } from "../search/SearchProgressStatus";
 import { useSearchFlow } from "../search/SearchFlowContext";
+
+function SearchFocusHero() {
+  return (
+    <View className="gap-4">
+      <BrandWordmark className="items-center" imageClassName="h-14 w-64" />
+      <View className="items-center px-3">
+        <Text
+          className="text-center text-[31px] font-semibold leading-[38px] text-ink"
+          testID="search.title"
+        >
+          Find the right{"\u00A0"}pick.
+        </Text>
+        <Text className="mt-2 max-w-[285px] text-center text-[15px] leading-6 text-stone-600">
+          Tell Focamai what you need. It narrows the noise to six focused options.
+        </Text>
+      </View>
+    </View>
+  );
+}
+
+function SettingsIconButton({ onPress }) {
+  return (
+    <Pressable
+      accessibilityLabel="Open settings"
+      accessibilityRole="button"
+      className="h-11 w-11 items-center justify-center rounded-full"
+      onPress={onPress}
+      testID="search.settingsButton"
+    >
+      <Settings color="#0F6175" size={21} strokeWidth={2.1} />
+    </Pressable>
+  );
+}
 
 export default function SearchScreen({ navigation, route }) {
   const {
     confirmSelectedAmazonDomain,
-    discoverySummary,
-    errorMessage,
-    hasStartedSearch,
     isDiscovering,
-    isFinalizing,
-    isGeneratingPrompt,
-    phaseEvents,
     productQuery,
-    refinementPrompt,
     selectedAmazonDomain,
     showMarketplacePrompt,
     setProductQuery,
@@ -48,15 +75,30 @@ export default function SearchScreen({ navigation, route }) {
     <ScreenContainer
       testID="search.screen"
       keyboardShouldPersistTaps="handled"
-      contentContainerStyle={{ paddingBottom: 40 }}
+      safeAreaEdges={["top", "bottom"]}
+      contentContainerStyle={{
+        gap: 18,
+        justifyContent: "center",
+        minHeight: "100%",
+        paddingHorizontal: 28,
+        paddingTop: 18,
+        paddingBottom: 34,
+      }}
     >
-      <BrandWordmark />
-      <ScreenIntro
-        eyebrow="Calm buying guidance"
-        title="What are you looking for today?"
-        description="Describe the product in your own words. We'll narrow it to six focused picks."
-        testID="search.title"
-      />
+      <View className="w-full max-w-[430px] self-center gap-6">
+        <View className="items-end">
+          <SettingsIconButton onPress={() => navigation.navigate("Settings")} />
+        </View>
+
+        <SearchFocusHero />
+
+        <SearchEntrySection
+          isDiscovering={isDiscovering}
+          productQuery={productQuery}
+          setProductQuery={setProductQuery}
+          startDiscoverySearch={submitSearch}
+        />
+      </View>
 
       {showMarketplacePrompt ? (
         <MarketplacePromptSection
@@ -64,25 +106,6 @@ export default function SearchScreen({ navigation, route }) {
           selectedAmazonDomain={selectedAmazonDomain}
         />
       ) : null}
-
-      <SearchEntrySection
-        isDiscovering={isDiscovering}
-        onSettingsPress={() => navigation.navigate("Settings")}
-        productQuery={productQuery}
-        setProductQuery={setProductQuery}
-        startDiscoverySearch={submitSearch}
-      />
-
-      <SearchProgressStatus
-        discoverySummary={discoverySummary}
-        errorMessage={errorMessage}
-        hasStartedSearch={hasStartedSearch}
-        isFinalizing={isFinalizing}
-        isGeneratingPrompt={isGeneratingPrompt}
-        phaseEvents={phaseEvents}
-        productQuery={productQuery}
-        refinementPrompt={refinementPrompt}
-      />
     </ScreenContainer>
   );
 }

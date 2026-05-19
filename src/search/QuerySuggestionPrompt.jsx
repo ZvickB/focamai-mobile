@@ -1,5 +1,5 @@
 import { Text, View } from "react-native";
-import { Button, Surface } from "../components/MobileUI";
+import { Button } from "../components/MobileUI";
 import { coerceDisplayText, isSafeQuerySuggestionText } from "./searchApi";
 
 export function QuerySuggestionPrompt({
@@ -27,32 +27,35 @@ export function QuerySuggestionPrompt({
     : "This may be a clearer way to phrase the search.";
 
   return (
-    <Surface
+    <View
       accessibilityLiveRegion="polite"
-      variant="quiet"
+      className="rounded-[24px] bg-cream px-4 py-4"
     >
       <Text className="text-xs font-semibold uppercase tracking-[1.2px] text-stone-500">
-        Suggested search tweak
+        Search suggestion
       </Text>
-      <Text className="mt-2 text-sm font-medium leading-5 text-slate-600">
+      <Text className="mt-2 text-sm leading-5 text-stone-600">
         We searched for "{originalQuery}".
       </Text>
-      <Text className="mt-1 text-base font-semibold leading-6 text-ink">
+      <Text className="mt-1 text-[15px] font-semibold leading-6 text-ink">
         Try "{suggestedQuery}" instead?
       </Text>
       {reason ? (
-        <Text className="mt-2 text-sm leading-5 text-slate-600">{reason}</Text>
+        <Text className="mt-1 text-sm leading-5 text-stone-600">{reason}</Text>
       ) : null}
       <View className="mt-4 gap-2">
         <Button
           accessibilityRole="button"
+          className="min-h-[44px]"
           disabled={isApplying}
           onPress={onTrySuggestedSearch}
+          variant="secondary"
         >
           {isApplying ? "Starting..." : "Try suggested search"}
         </Button>
         <Button
           accessibilityRole="button"
+          className="min-h-[44px]"
           disabled={isApplying}
           onPress={onKeepResults}
           variant="secondary"
@@ -60,6 +63,6 @@ export function QuerySuggestionPrompt({
           Keep these results
         </Button>
       </View>
-    </Surface>
+    </View>
   );
 }
