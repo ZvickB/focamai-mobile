@@ -25,15 +25,15 @@ export function SearchEntrySection({
   }
 
   return (
-    <View className="gap-4">
+    <View className="gap-5">
       <View
-        className="rounded-[32px] bg-white px-4 py-4 shadow-md"
+        className="rounded-[22px] border border-line bg-white px-5 py-5 shadow-sm"
         style={{
-          elevation: 4,
+          elevation: 2,
           shadowColor: "#78573f",
-          shadowOffset: { width: 0, height: 18 },
-          shadowOpacity: 0.14,
-          shadowRadius: 28,
+          shadowOffset: { width: 0, height: 10 },
+          shadowOpacity: 0.08,
+          shadowRadius: 18,
         }}
       >
         <View className="min-h-[82px] flex-row items-center gap-3">
@@ -68,7 +68,7 @@ export function SearchEntrySection({
         onPress={submitDraftQuery}
         accessibilityLabel="Start product search"
         className={cx(
-          "min-h-[58px] rounded-[17px] shadow-sm",
+          "min-h-[56px] shadow-sm",
           isDiscovering ? "" : "bg-accent",
         )}
       >

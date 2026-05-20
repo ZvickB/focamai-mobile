@@ -77,13 +77,13 @@ export function FeaturedPickCard({ item, onPress }) {
   const reason = getPickReason(item, featureBullets);
 
   return (
-    <Surface className="overflow-hidden rounded-[24px] border-transparent bg-white px-0 py-0 shadow-sm">
+    <Surface className="overflow-hidden bg-white px-0 py-0">
       <Pressable
         testID="results.focusedPick.1"
         accessibilityRole="button"
         accessibilityLabel={`Open focused pick 1: ${item.title}`}
         onPress={onPress}
-        className="px-4 py-4"
+        className="px-5 py-5"
       >
         <View className="flex-row gap-4">
           <View className="items-center gap-3">
@@ -104,7 +104,7 @@ export function FeaturedPickCard({ item, onPress }) {
             {attributeChips.length > 0 ? (
               <View className="mt-3 flex-row flex-wrap gap-2">
                 {attributeChips.map((chip) => (
-                  <View className="rounded-full bg-cream px-2.5 py-1.5" key={chip}>
+                  <View className="rounded-full border border-line bg-cream px-2.5 py-1.5" key={chip}>
                     <Text className="text-[11px] font-semibold text-stone-700" numberOfLines={1}>
                       {chip}
                     </Text>
@@ -118,7 +118,7 @@ export function FeaturedPickCard({ item, onPress }) {
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="View details for pick 1"
-              className="mt-4 min-h-[46px] items-center justify-center rounded-full bg-accent px-4"
+              className="mt-4 min-h-[46px] items-center justify-center rounded-[18px] bg-accent px-4"
               onPress={onPress}
             >
               <Text className="text-sm font-semibold text-white">View details</Text>
@@ -138,20 +138,25 @@ export function CompactPickRow({ item, index, onPress }) {
   const priceLabel = item.price || "Price not shown";
 
   return (
-    <Surface className="overflow-hidden rounded-[20px] border-transparent bg-white px-0 py-0 shadow-sm">
+    <Surface className="overflow-hidden bg-white px-0 py-0">
       <Pressable
         testID={`results.focusedPick.${index + 1}`}
         accessibilityRole="button"
         accessibilityLabel={`Open focused pick ${index + 1}: ${item.title}`}
         onPress={onPress}
-        className="px-4 py-3"
+        className="px-5 py-4"
       >
         <View className="flex-row items-center gap-3">
-          <ProductImageFrame
-            containerClassName="h-16 w-16"
-            image={item.image}
-            title={item.title}
-          />
+          <View className="items-center gap-2">
+            <View className="h-7 w-7 items-center justify-center rounded-full bg-cream">
+              <Text className="text-xs font-semibold text-accent">{index + 1}</Text>
+            </View>
+            <ProductImageFrame
+              containerClassName="h-16 w-16"
+              image={item.image}
+              title={item.title}
+            />
+          </View>
           <View className="min-w-0 flex-1">
             <Text className="text-base font-semibold leading-5 text-ink" numberOfLines={2}>
               {item.title}

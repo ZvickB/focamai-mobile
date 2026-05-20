@@ -14,13 +14,15 @@ export function MarketplacePromptSection({
   }, [selectedAmazonDomain]);
 
   return (
-    <Surface variant="quiet" className="gap-4 rounded-[22px] px-4 py-4">
+    <Surface variant="quiet" className="gap-5">
       <View className="flex-row items-start justify-between gap-3">
         <View className="flex-1">
           <Text className="text-[12px] font-semibold uppercase tracking-[1.3px] text-secondary">
             Store region
           </Text>
-          <Text className="mt-2 text-base font-semibold text-ink">Choose where prices should come from</Text>
+          <Text className="mt-2 text-base font-semibold leading-6 text-ink">
+            Choose where prices should come from
+          </Text>
           <Text className="mt-1 text-sm leading-5 text-stone-600">
             This is saved for future searches and can be changed later in Settings.
           </Text>
@@ -60,7 +62,7 @@ export function MarketplacePromptSection({
       <Button
         onPress={() => confirmSelectedAmazonDomain(draftAmazonDomain)}
         variant="secondary"
-        className="rounded-[16px] bg-white"
+        className="bg-white"
       >
         Use {getAmazonMarketplaceLabel(draftAmazonDomain)}
       </Button>

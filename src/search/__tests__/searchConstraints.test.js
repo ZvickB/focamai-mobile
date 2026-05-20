@@ -41,4 +41,14 @@ describe("buildConstraintRefreshQuery", () => {
       "white chocolate chips kosher pareve",
     );
   });
+
+  it("keeps hard-constraint refresh queries within the discovery query limit", () => {
+    const refreshQuery = buildConstraintRefreshQuery(
+      "white chocolate chips",
+      `kosher certified and clearly labeled dairy free ${"x".repeat(120)}`,
+    );
+
+    expect(refreshQuery.length).toBeLessThanOrEqual(80);
+    expect(refreshQuery).toMatch(/^white chocolate chips kosher certified/);
+  });
 });

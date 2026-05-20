@@ -1,5 +1,5 @@
 import { Pressable, Text, View } from "react-native";
-import { ScreenContainer, Surface } from "../components/MobileUI";
+import { ScreenContainer, ScreenIntro, Surface } from "../components/MobileUI";
 
 export default function SettingsScreen({ navigation }) {
   const menuItems = [
@@ -11,16 +11,24 @@ export default function SettingsScreen({ navigation }) {
   ];
 
   return (
-    <ScreenContainer testID="settings.screen">
+    <ScreenContainer
+      testID="settings.screen"
+      contentContainerStyle={{ gap: 32, paddingHorizontal: 24, paddingVertical: 32 }}
+    >
+      <ScreenIntro
+        eyebrow="Settings"
+        title="Preferences and app details."
+        description="Manage your shopping region and find the core app information in one place."
+      />
       <Surface>
-        <View className="gap-2">
+        <View className="gap-3">
           {menuItems.map((item) => (
             <Pressable
               key={item.routeName}
               onPress={() => navigation.navigate(item.routeName)}
-              className="min-h-[48px] justify-center rounded-lg border border-line bg-cream px-4 py-3"
+              className="min-h-[52px] justify-center rounded-[18px] border border-line bg-cream px-4 py-3"
             >
-              <Text className="text-sm font-semibold text-slate-800">{item.label}</Text>
+              <Text className="text-sm font-semibold text-ink">{item.label}</Text>
             </Pressable>
           ))}
         </View>

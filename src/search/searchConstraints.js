@@ -88,6 +88,7 @@ const HARD_CONSTRAINT_PATTERNS = [
     ],
   },
 ];
+const DISCOVERY_QUERY_MAX_LENGTH = 80;
 
 const HARD_CONSTRAINT_COMPACT_TERMS = new Set(
   HARD_CONSTRAINT_PATTERNS.flatMap(({ terms }) =>
@@ -153,5 +154,19 @@ export function detectHardConstraint(text) {
 }
 
 export function buildConstraintRefreshQuery(query, followUpNotes) {
-  return `${query || ""} ${followUpNotes || ""}`.replace(/\s+/g, " ").trim();
+  const normalizedQuery = String(query || "").replace(/\s+/g, " ").trim();
+  const normalizedNotes = String(followUpNotes || "").replace(/\s+/g, " ").trim();
+  const combinedQuery = `${normalizedQuery} ${normalizedNotes}`.replace(/\s+/g, " ").trim();
+
+  if (combinedQuery.length <= DISCOVERY_QUERY_MAX_LENGTH) {
+    return combinedQuery;
+  }
+
+  if (normalizedQuery.length >= DISCOVERY_QUERY_MAX_LENGTH) {
+    return normalizedQuery.slice(0, DISCOVERY_QUERY_MAX_LENGTH).trim();
+  }
+
+  const noteBudget = DISCOVERY_QUERY_MAX_LENGTH - normalizedQuery.length - 1;
+
+  return `${normalizedQuery} ${normalizedNotes.slice(0, noteBudget)}`.trim();
 }

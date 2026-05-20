@@ -60,7 +60,7 @@ export function SearchResultsSection({
             ))}
           </View>
 
-          <Surface variant="quiet" className="rounded-[22px] border-transparent">
+          <Surface variant="quiet">
             <Text className="text-base font-semibold text-ink">Why these picks?</Text>
             <Text className="mt-1 text-sm leading-5 text-stone-600">
               Focamai narrows the list around your search and notes, then keeps the set short so
@@ -77,7 +77,7 @@ export function SearchResultsSection({
       ) : null}
 
       {hasPreview ? (
-        <Surface variant="quiet" className={hasFocusedPicks ? "py-3" : ""}>
+        <Surface variant="quiet" className={hasFocusedPicks ? "py-4" : ""}>
           <View className="flex-row items-center justify-between gap-3">
             <View className="flex-1">
               <Text className="text-xs font-semibold uppercase tracking-[1px] text-stone-500">

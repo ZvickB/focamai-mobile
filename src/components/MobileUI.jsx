@@ -1,6 +1,7 @@
 import { Image, Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
+import { ChevronLeft } from "lucide-react-native";
 
 const wordmarkImage = require("../../assets/wordmark.png");
 
@@ -21,31 +22,31 @@ export function ScreenContainer({
       <ScrollView
         className="flex-1"
         contentContainerStyle={[
-          { gap: 20, paddingHorizontal: 20, paddingVertical: 24 },
+          { gap: 20, paddingHorizontal: 24, paddingVertical: 24 },
           contentContainerStyle,
         ]}
         keyboardShouldPersistTaps={keyboardShouldPersistTaps}
       >
         {children}
       </ScrollView>
-      {footer ? <View className="border-t border-line bg-white px-5 py-3">{footer}</View> : null}
+      {footer ? <View className="border-t border-line bg-cream px-6 py-3">{footer}</View> : null}
     </SafeAreaView>
   );
 }
 
 export function ScreenIntro({ eyebrow, title, description, testID }) {
   return (
-    <View>
+    <View className="gap-3">
       {eyebrow ? (
-        <Text className="text-[12px] font-semibold uppercase tracking-[1.8px] text-accent">
+        <Text className="text-[12px] font-semibold uppercase tracking-[1.2px] text-accent">
           {eyebrow}
         </Text>
       ) : null}
-      <Text className="mt-2 text-[30px] font-semibold leading-[37px] text-ink" testID={testID}>
+      <Text className="text-[30px] font-semibold leading-[38px] text-ink" testID={testID}>
         {title}
       </Text>
       {description ? (
-        <Text className="mt-3 text-base leading-6 text-stone-600">{description}</Text>
+        <Text className="text-base leading-7 text-stone-600">{description}</Text>
       ) : null}
     </View>
   );
@@ -64,6 +65,58 @@ export function BrandWordmark({ className = "", imageClassName = "h-12 w-52" }) 
   );
 }
 
+export function IconButton({
+  accessibilityLabel,
+  children,
+  className = "",
+  onPress,
+  testID,
+}) {
+  return (
+    <Pressable
+      accessibilityLabel={accessibilityLabel}
+      accessibilityRole="button"
+      className={cx("h-11 w-11 items-center justify-center rounded-full", className)}
+      onPress={onPress}
+      testID={testID}
+    >
+      {children}
+    </Pressable>
+  );
+}
+
+export function HeaderBackButton({ label, onPress, testID }) {
+  return (
+    <Pressable
+      accessibilityLabel={`Back to ${label.toLowerCase()}`}
+      accessibilityRole="button"
+      className="min-h-[44px] flex-row items-center gap-1 rounded-full pr-3"
+      onPress={onPress}
+      testID={testID}
+    >
+      <ChevronLeft color="#14222b" size={24} strokeWidth={2.3} />
+      <Text className="text-base font-semibold text-ink">{label}</Text>
+    </Pressable>
+  );
+}
+
+export function AppHeader({
+  left,
+  right,
+  wordmarkClassName = "h-9 w-36",
+}) {
+  return (
+    <View className="relative min-h-[44px] w-full flex-row items-center justify-between">
+      <View className="z-10 min-w-[96px] flex-row items-center justify-start">{left}</View>
+      <BrandWordmark
+        className="absolute inset-x-0 items-center"
+        imageClassName={wordmarkClassName}
+      />
+      <View className="z-10 min-w-[96px] flex-row items-center justify-end gap-2">{right}</View>
+    </View>
+  );
+}
+
 export function Surface({ children, className = "", variant = "default", ...props }) {
   const variantClassName =
     variant === "quiet"
@@ -75,7 +128,7 @@ export function Surface({ children, className = "", variant = "default", ...prop
   return (
     <View
       className={cx(
-        "rounded-lg border px-4 py-4 shadow-sm",
+        "rounded-[20px] border px-5 py-5 shadow-sm",
         variantClassName,
         className,
       )}
@@ -88,15 +141,15 @@ export function Surface({ children, className = "", variant = "default", ...prop
 
 export function SectionHeader({ eyebrow, title, description }) {
   return (
-    <View>
+    <View className="gap-1">
       {eyebrow ? (
-        <Text className="text-xs font-semibold uppercase tracking-[1.3px] text-stone-500">
+        <Text className="text-xs font-semibold uppercase tracking-[1.1px] text-stone-500">
           {eyebrow}
         </Text>
       ) : null}
-      <Text className="text-sm font-semibold text-ink">{title}</Text>
+      <Text className="text-base font-semibold leading-6 text-ink">{title}</Text>
       {description ? (
-        <Text className="mt-1 text-sm leading-5 text-stone-600">{description}</Text>
+        <Text className="text-sm leading-6 text-stone-600">{description}</Text>
       ) : null}
     </View>
   );
@@ -138,7 +191,7 @@ export function Button({
       accessibilityLabel={accessibilityLabel}
       accessibilityRole={accessibilityRole}
       className={cx(
-        "min-h-[48px] items-center justify-center rounded-lg px-4 py-3",
+        "min-h-[52px] items-center justify-center rounded-[18px] px-5 py-3",
         variant === "secondary" ? "border" : "",
         buttonClassName,
         className,
@@ -170,7 +223,7 @@ export function Pill({ children, selected, className = "" }) {
 
 export function QuietStatusPanel({ children, className = "" }) {
   return (
-    <View className={cx("rounded-lg border border-line bg-cream px-3 py-3", className)}>
+    <View className={cx("rounded-[18px] border border-line bg-cream px-4 py-4", className)}>
       {children}
     </View>
   );
@@ -188,7 +241,7 @@ export function ProductImageFrame({
     return (
       <View
         className={cx(
-          "items-center justify-center rounded-lg border border-line bg-cream px-3",
+          "items-center justify-center rounded-[18px] border border-line bg-cream px-3",
           containerClassName,
         )}
       >
@@ -200,7 +253,7 @@ export function ProductImageFrame({
   }
 
   return (
-    <View className={cx("rounded-lg border border-line bg-white p-2", containerClassName)}>
+    <View className={cx("rounded-[18px] border border-line bg-white p-2", containerClassName)}>
       <Image
         accessibilityLabel={title}
         className={cx("h-full w-full", imageClassName)}

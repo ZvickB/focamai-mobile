@@ -1,35 +1,23 @@
-import { ChevronLeft, Check, Settings } from "lucide-react-native";
+import { Check, Settings } from "lucide-react-native";
 import { Pressable, Text, View } from "react-native";
-import { BrandWordmark, Button, ScreenContainer } from "../components/MobileUI";
+import { AppHeader, Button, HeaderBackButton, IconButton, ScreenContainer } from "../components/MobileUI";
 import { SearchRefineSection } from "../search/SearchRefineSection";
 import { useSearchFlow } from "../search/SearchFlowContext";
 
 function RefineHeader({ onBack, onSettings }) {
   return (
-    <View className="flex-row items-center justify-between">
-      <Pressable
-        accessibilityLabel="Back to search"
-        accessibilityRole="button"
-        className="min-h-[44px] flex-row items-center gap-1 rounded-full pr-3"
-        onPress={onBack}
-        testID="followup.backButton"
-      >
-        <ChevronLeft color="#14222b" size={24} strokeWidth={2.3} />
-        <Text className="text-base font-semibold text-ink">Search</Text>
-      </Pressable>
-
-      <BrandWordmark className="items-center" imageClassName="h-9 w-36" />
-
-      <Pressable
-        accessibilityLabel="Open settings"
-        accessibilityRole="button"
-        className="h-11 w-11 items-center justify-center rounded-full"
-        onPress={onSettings}
-        testID="followup.settingsButton"
-      >
-        <Settings color="#0F6175" size={21} strokeWidth={2.1} />
-      </Pressable>
-    </View>
+    <AppHeader
+      left={<HeaderBackButton label="Search" onPress={onBack} testID="followup.backButton" />}
+      right={
+        <IconButton
+          accessibilityLabel="Open settings"
+          onPress={onSettings}
+          testID="followup.settingsButton"
+        >
+          <Settings color="#0F6175" size={21} strokeWidth={2.1} />
+        </IconButton>
+      }
+    />
   );
 }
 
@@ -121,10 +109,10 @@ export default function FollowUpScreen({ navigation }) {
       keyboardShouldPersistTaps="handled"
       safeAreaEdges={["top", "bottom"]}
       contentContainerStyle={{
-        gap: 22,
-        paddingHorizontal: 28,
+        gap: 20,
+        paddingHorizontal: 24,
         paddingTop: 14,
-        paddingBottom: 16,
+        paddingBottom: 20,
       }}
       footer={
         <View className="w-full max-w-[430px] self-center gap-3 py-1">
@@ -132,7 +120,7 @@ export default function FollowUpScreen({ navigation }) {
             testID="followup.showFocusedPicksButton"
             disabled={!canFinalize}
             onPress={finalizeAndOpenResults}
-            className="min-h-[58px] rounded-[17px] bg-accent shadow-sm"
+            className="min-h-[56px] bg-accent shadow-sm"
           >
             {isFinalizing ? "Updating picks..." : "Update my picks"}
           </Button>
@@ -160,7 +148,7 @@ export default function FollowUpScreen({ navigation }) {
         </View>
       }
     >
-      <View className="w-full max-w-[430px] self-center gap-8">
+        <View className="w-full max-w-[430px] self-center gap-8">
         <RefineHeader
           onBack={() => navigation.navigate("Search")}
           onSettings={() => navigation.navigate("Settings")}

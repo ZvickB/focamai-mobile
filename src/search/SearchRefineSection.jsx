@@ -8,19 +8,24 @@ const DEFAULT_REFINEMENT_CHIPS = [
   { label: "Fits my space" },
 ];
 const MAX_REFINEMENT_CHIPS = 3;
+export const MAX_FOLLOW_UP_NOTES_LENGTH = 500;
+
+function clampFollowUpNotes(value) {
+  return String(value ?? "").slice(0, MAX_FOLLOW_UP_NOTES_LENGTH);
+}
 
 function addChipToNotes(currentNotes, chipLabel) {
   const trimmedNotes = String(currentNotes ?? "").trim();
 
   if (!trimmedNotes) {
-    return chipLabel;
+    return clampFollowUpNotes(chipLabel);
   }
 
   if (trimmedNotes.toLowerCase().includes(chipLabel.toLowerCase())) {
     return currentNotes;
   }
 
-  return `${trimmedNotes}, ${chipLabel}`;
+  return clampFollowUpNotes(`${trimmedNotes}, ${chipLabel}`);
 }
 
 function normalizeRefinementChips(suggestedRefinements) {
@@ -79,10 +84,14 @@ export function SearchRefineSection({
 
   function handleChipPress(chip) {
     if (chip.prompt) {
-      setFollowUpNotes(chip.prompt);
+      setFollowUpNotes(clampFollowUpNotes(chip.prompt));
     } else {
       setFollowUpNotes(addChipToNotes(followUpNotes, chip.label));
     }
+  }
+
+  function handleNotesChange(nextNotes) {
+    setFollowUpNotes(clampFollowUpNotes(nextNotes));
   }
 
   return (
@@ -126,13 +135,13 @@ export function SearchRefineSection({
 
       <View className="gap-3">
         <View
-          className="rounded-[31px] bg-white px-4 py-4 shadow-md"
+          className="rounded-[22px] border border-line bg-white px-5 py-5 shadow-sm"
           style={{
-            elevation: 4,
+            elevation: 2,
             shadowColor: "#78573f",
-            shadowOffset: { width: 0, height: 18 },
-            shadowOpacity: 0.12,
-            shadowRadius: 28,
+            shadowOffset: { width: 0, height: 10 },
+            shadowOpacity: 0.08,
+            shadowRadius: 18,
           }}
         >
           <View className="min-h-[72px] flex-row items-center gap-3">
@@ -142,7 +151,8 @@ export function SearchRefineSection({
             <TextInput
               testID="followup.notesInput"
               value={followUpNotes}
-              onChangeText={setFollowUpNotes}
+              maxLength={MAX_FOLLOW_UP_NOTES_LENGTH}
+              onChangeText={handleNotesChange}
               placeholder="Tell Focamai anything that's important..."
               placeholderTextColor="#B4ADA4"
               multiline

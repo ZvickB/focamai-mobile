@@ -1,8 +1,8 @@
-import { ChevronLeft } from "lucide-react-native";
 import { Linking, Pressable, Text, View } from "react-native";
 import {
-  BrandWordmark,
+  AppHeader,
   Button,
+  HeaderBackButton,
   ScreenContainer,
   Surface,
   QuietStatusPanel,
@@ -39,7 +39,7 @@ function DetailRetailerCta({ item }) {
         <Button
           accessibilityRole="link"
           accessibilityLabel={`View ${detailValue(item.title, "this product")} on ${provider}`}
-          className="mt-4 flex-row"
+        className="mt-4 flex-row"
           onPress={() => openRetailerLink(item.link)}
         >
           View retailer
@@ -97,22 +97,16 @@ function DetailRetailerFooter({ item }) {
 
 function DetailHeader({ onBack }) {
   return (
-    <View className="flex-row items-center justify-between">
-      <Pressable
-        accessibilityLabel="Back to picks"
-        accessibilityRole="button"
-        className="min-h-[44px] flex-row items-center gap-1 rounded-full pr-3"
-        onPress={onBack}
-        testID="detail.backButton"
-      >
-        <ChevronLeft color="#14222b" size={24} strokeWidth={2.3} />
-        <Text className="text-base font-semibold text-ink">Picks</Text>
-      </Pressable>
-
-      <BrandWordmark className="items-center" imageClassName="h-9 w-36" />
-
-      <View accessibilityElementsHidden className="h-11 w-11" importantForAccessibility="no" />
-    </View>
+    <AppHeader
+      left={<HeaderBackButton label="Picks" onPress={onBack} testID="detail.backButton" />}
+      right={
+        <View
+          accessibilityElementsHidden
+          className="h-11 w-11"
+          importantForAccessibility="no"
+        />
+      }
+    />
   );
 }
 
@@ -163,8 +157,8 @@ function UnavailableDetailState({ onBack }) {
       safeAreaEdges={["top", "bottom"]}
       testID="detail.screen"
       contentContainerStyle={{
-        gap: 22,
-        paddingHorizontal: 28,
+        gap: 20,
+        paddingHorizontal: 24,
         paddingTop: 14,
         paddingBottom: 32,
       }}
@@ -219,8 +213,8 @@ export default function SearchResultDetailScreen({ navigation, route }) {
       safeAreaEdges={["top", "bottom"]}
       testID="detail.screen"
       contentContainerStyle={{
-        gap: 22,
-        paddingHorizontal: 28,
+        gap: 20,
+        paddingHorizontal: 24,
         paddingTop: 14,
         paddingBottom: 32,
       }}

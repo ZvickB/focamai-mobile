@@ -1,5 +1,5 @@
 import { fireEvent, render } from "@testing-library/react-native";
-import { SearchRefineSection } from "../SearchRefineSection";
+import { MAX_FOLLOW_UP_NOTES_LENGTH, SearchRefineSection } from "../SearchRefineSection";
 
 const refinementPrompt = {
   followUpPlaceholder: "Budget, must-haves, or dealbreakers",
@@ -92,6 +92,34 @@ describe("SearchRefineSection", () => {
     fireEvent.press(getByTestId("followup.refinementChip.Easy cleaning"));
 
     expect(setFollowUpNotes).toHaveBeenCalledWith("under $200, Easy cleaning");
+  });
+
+  it("allows long AI chip prompts up to the refine note limit", () => {
+    const setFollowUpNotes = jest.fn();
+    const longPrompt = `I need this to be kosher certified and clearly labeled for a dairy-free kitchen. ${"x".repeat(120)}`;
+    const { getByTestId } = renderRefineSection({
+      setFollowUpNotes,
+      suggestedRefinements: [{ label: "Dietary fit", prompt: longPrompt }],
+    });
+
+    fireEvent.press(getByTestId("followup.refinementChip.Dietary fit"));
+
+    expect(setFollowUpNotes).toHaveBeenCalledWith(longPrompt);
+  });
+
+  it("clamps chip prompts above 500 characters", () => {
+    const setFollowUpNotes = jest.fn();
+    const oversizedPrompt = `I need a very specific fit. ${"x".repeat(600)}`;
+    const { getByTestId } = renderRefineSection({
+      setFollowUpNotes,
+      suggestedRefinements: [{ label: "Specific fit", prompt: oversizedPrompt }],
+    });
+
+    fireEvent.press(getByTestId("followup.refinementChip.Specific fit"));
+
+    expect(setFollowUpNotes).toHaveBeenCalledWith(
+      oversizedPrompt.slice(0, MAX_FOLLOW_UP_NOTES_LENGTH),
+    );
   });
 
   it("shows a loading message while prompt details are still generating", () => {

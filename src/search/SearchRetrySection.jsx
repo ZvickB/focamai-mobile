@@ -176,7 +176,7 @@ export function SearchRetrySection({
   }
 
   return (
-    <Surface className="px-5 py-5">
+    <Surface>
       <Text className="text-xs font-semibold uppercase tracking-[1.2px] text-accent">
         Recovery
       </Text>
@@ -184,7 +184,8 @@ export function SearchRetrySection({
         Want to correct the direction?
       </Text>
       <Text className="mt-2 text-sm leading-5 text-stone-600">
-        Say what felt off. Focamai can suggest a sharper next search, or fall back to replacement picks from this search.
+        Say what felt off. Focamai can suggest a sharper next search, or fall back to replacement
+        picks from this search.
       </Text>
 
       <View className="mt-4 flex-row flex-wrap gap-2">
@@ -216,13 +217,13 @@ export function SearchRetrySection({
         placeholderTextColor="#8B8175"
         multiline
         textAlignVertical="top"
-        className="mt-4 min-h-[104px] rounded-lg border border-line bg-cream px-4 py-4 text-base leading-6 text-ink"
+        className="mt-4 min-h-[104px] rounded-[18px] border border-line bg-cream px-4 py-4 text-base leading-6 text-ink"
       />
       <Button
         disabled={!canAskForAdvice}
         onPress={handleRequestAdvice}
         className="mt-4"
-        variant="dark"
+        variant="primary"
       >
         {isGeneratingRetryAdvice ? "Finding a better search..." : "Suggest a better search"}
       </Button>
@@ -237,7 +238,7 @@ export function SearchRetrySection({
           ) : null}
 
           {suggestedQuery ? (
-            <View className="mt-3 rounded-lg border border-line bg-cream px-3 py-3">
+          <View className="mt-3 rounded-[18px] border border-line bg-cream px-4 py-4">
               {isEditingSuggestion ? (
                 <TextInput
                   value={editableSuggestion}
@@ -246,7 +247,7 @@ export function SearchRetrySection({
                   placeholderTextColor="#8B8175"
                   multiline
                   textAlignVertical="top"
-                  className="mt-2 min-h-[72px] rounded-lg border border-line bg-white px-3 py-3 text-base text-ink"
+                  className="mt-2 min-h-[72px] rounded-[18px] border border-line bg-white px-4 py-3 text-base text-ink"
                 />
               ) : (
                 <Text className="text-base font-semibold leading-6 text-ink">
@@ -269,7 +270,7 @@ export function SearchRetrySection({
                 <Button
                   disabled={!canSearchSuggestion}
                   onPress={handleSearchSuggestion}
-                  variant="dark"
+                  variant="primary"
                 >
                   Search this suggestion
                 </Button>
@@ -290,9 +291,9 @@ export function SearchRetrySection({
       ) : null}
 
       {retryAdviceError ? (
-        <View className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
-          <Text className="text-sm leading-5 text-amber-800">{retryAdviceError}</Text>
-          <Text className="mt-1 text-sm leading-5 text-amber-800">
+        <View className="mt-4 rounded-[18px] border border-line bg-cream px-4 py-3">
+          <Text className="text-sm leading-5 text-stone-700">{retryAdviceError}</Text>
+          <Text className="mt-1 text-sm leading-5 text-stone-700">
             You can still ask for replacement picks from this search.
           </Text>
         </View>
@@ -303,7 +304,8 @@ export function SearchRetrySection({
           Need replacements from this search?
         </Text>
         <Text className="mt-1 text-sm leading-5 text-stone-600">
-          This keeps the current candidate pool and asks for a different shortlist. Add a note above so the retry has direction.
+          This keeps the current candidate pool and asks for a different shortlist. Add a note
+          above so the retry has direction.
         </Text>
         {retryCount > 0 ? (
           <Text className="mt-2 text-sm leading-5 text-stone-600">

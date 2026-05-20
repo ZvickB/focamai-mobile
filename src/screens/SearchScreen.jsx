@@ -77,15 +77,15 @@ export default function SearchScreen({ navigation, route }) {
       keyboardShouldPersistTaps="handled"
       safeAreaEdges={["top", "bottom"]}
       contentContainerStyle={{
-        gap: 18,
+        gap: 20,
         justifyContent: "center",
         minHeight: "100%",
-        paddingHorizontal: 28,
+        paddingHorizontal: 24,
         paddingTop: 18,
-        paddingBottom: 34,
+        paddingBottom: 32,
       }}
     >
-      <View className="w-full max-w-[430px] self-center gap-6">
+      <View className="w-full max-w-[430px] self-center gap-8">
         <View className="items-end">
           <SettingsIconButton onPress={() => navigation.navigate("Settings")} />
         </View>

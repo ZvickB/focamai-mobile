@@ -1,5 +1,5 @@
 import { Text, View } from "react-native";
-import { Button } from "../components/MobileUI";
+import { Button, Surface } from "../components/MobileUI";
 import { coerceDisplayText, isSafeQuerySuggestionText } from "./searchApi";
 
 export function QuerySuggestionPrompt({
@@ -27,9 +27,9 @@ export function QuerySuggestionPrompt({
     : "This may be a clearer way to phrase the search.";
 
   return (
-    <View
+    <Surface
       accessibilityLiveRegion="polite"
-      className="rounded-[24px] bg-cream px-4 py-4"
+      variant="quiet"
     >
       <Text className="text-xs font-semibold uppercase tracking-[1.2px] text-stone-500">
         Search suggestion
@@ -63,6 +63,6 @@ export function QuerySuggestionPrompt({
           Keep these results
         </Button>
       </View>
-    </View>
+    </Surface>
   );
 }

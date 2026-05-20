@@ -118,7 +118,7 @@ function getEnrichmentCopy(enrichmentStatus) {
 
 function SnapshotPill({ label, value }) {
   return (
-    <View className="min-w-[120px] flex-1 rounded-lg border border-line bg-cream px-3 py-3">
+    <View className="min-w-[120px] flex-1 rounded-[18px] border border-line bg-cream px-3 py-3">
       <Text className="text-xs font-medium uppercase tracking-[1.2px] text-stone-500">{label}</Text>
       <Text className="mt-1 text-sm font-semibold leading-5 text-ink">{value}</Text>
     </View>
@@ -190,7 +190,7 @@ export function DetailRatingStars({ rating }) {
 
 function HeroFact({ label, value }) {
   return (
-    <View className="rounded-full border border-line bg-white px-3 py-2">
+    <View className="rounded-full border border-line bg-cream px-3 py-2">
       <Text className="text-xs font-semibold text-stone-500">{label}</Text>
       <Text className="mt-0.5 text-sm font-semibold text-ink">{value}</Text>
     </View>
@@ -280,7 +280,7 @@ export function SearchResultDetailMetadata({ enrichmentStatus = "idle", item }) 
   const hasReasoning = Boolean(item.fit_reason || item.caveat || featureBullets.length);
 
   return (
-    <Surface className="py-2">
+    <Surface className="py-4">
       <DetailTextSection
         icon={Sparkles}
         label="Why this pick"

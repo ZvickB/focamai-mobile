@@ -1,6 +1,6 @@
-import { ChevronLeft, Search, Settings } from "lucide-react-native";
+import { Search, Settings } from "lucide-react-native";
 import { Pressable, Text, View } from "react-native";
-import { BrandWordmark, ScreenContainer } from "../components/MobileUI";
+import { AppHeader, HeaderBackButton, IconButton, ScreenContainer } from "../components/MobileUI";
 import { SearchProgressStatus } from "../search/SearchProgressStatus";
 import { SearchRetrySection } from "../search/SearchRetrySection";
 import { SearchResultsSection } from "../search/SearchResultsSection";
@@ -8,42 +8,34 @@ import { useSearchFlow } from "../search/SearchFlowContext";
 
 function ResultsTopBar({ onBack, onNewSearch, onSettings }) {
   return (
-    <View className="flex-row items-center justify-between">
-      <Pressable
-        accessibilityLabel="Back to refine"
-        accessibilityRole="button"
-        className="min-h-[44px] flex-row items-center gap-1 rounded-full pr-2"
-        onPress={onBack}
-        testID="results.backButton"
-      >
-        <ChevronLeft color="#14222b" size={24} strokeWidth={2.3} />
-        <Text className="text-base font-semibold text-ink">Refine</Text>
-      </Pressable>
+    <View className="w-full max-w-[430px] self-center">
+      <AppHeader
+        left={<HeaderBackButton label="Refine" onPress={onBack} testID="results.backButton" />}
+        wordmarkClassName="h-9 w-32"
+      right={
+        <>
+          <Pressable
+            accessibilityLabel="Start a new search"
+            accessibilityRole="button"
+            className="min-h-[38px] flex-row items-center gap-1 rounded-full bg-white px-3 shadow-sm"
+            onPress={onNewSearch}
+            testID="results.newSearchButton"
+          >
+            <Search color="#14222b" size={16} strokeWidth={2.2} />
+            <Text className="text-xs font-semibold text-ink">New</Text>
+          </Pressable>
 
-      <BrandWordmark className="items-center" imageClassName="h-9 w-32" />
-
-      <View className="flex-row items-center gap-2">
-        <Pressable
-          accessibilityLabel="Start a new search"
-          accessibilityRole="button"
-          className="min-h-[38px] flex-row items-center gap-1 rounded-full bg-white px-3 shadow-sm"
-          onPress={onNewSearch}
-          testID="results.newSearchButton"
-        >
-          <Search color="#14222b" size={16} strokeWidth={2.2} />
-          <Text className="text-xs font-semibold text-ink">New</Text>
-        </Pressable>
-
-        <Pressable
-          accessibilityLabel="Open settings"
-          accessibilityRole="button"
-          className="h-[38px] w-[38px] items-center justify-center rounded-full bg-white shadow-sm"
-          onPress={onSettings}
-          testID="results.settingsButton"
-        >
-          <Settings color="#14222b" size={18} strokeWidth={2.1} />
-        </Pressable>
-      </View>
+          <IconButton
+            accessibilityLabel="Open settings"
+            className="h-[38px] w-[38px] bg-white shadow-sm"
+            onPress={onSettings}
+            testID="results.settingsButton"
+          >
+            <Settings color="#14222b" size={18} strokeWidth={2.1} />
+          </IconButton>
+        </>
+      }
+      />
     </View>
   );
 }
@@ -95,12 +87,12 @@ export default function ResultsScreen({ navigation }) {
       safeAreaEdges={["top", "bottom"]}
       contentContainerStyle={{
         gap: 20,
-        paddingHorizontal: 20,
+        paddingHorizontal: 24,
         paddingTop: 14,
-        paddingBottom: 28,
+        paddingBottom: 32,
       }}
     >
-      <View className="w-full gap-6">
+      <View className="w-full gap-8">
         <ResultsTopBar
           onBack={() => navigation.navigate("FollowUp")}
           onNewSearch={() => navigation.navigate("Search")}

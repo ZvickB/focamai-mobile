@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Pressable, Text, View } from "react-native";
-import { ScreenContainer, Surface } from "../components/MobileUI";
+import { ScreenContainer, ScreenIntro, Surface } from "../components/MobileUI";
 import {
   AMAZON_MARKETPLACES,
   DEFAULT_AMAZON_DOMAIN,
@@ -33,12 +33,20 @@ export default function RegionScreen({ navigation }) {
   }
 
   return (
-    <ScreenContainer testID="region.screen">
+    <ScreenContainer
+      testID="region.screen"
+      contentContainerStyle={{ gap: 32, paddingHorizontal: 24, paddingVertical: 32 }}
+    >
+      <ScreenIntro
+        eyebrow="Shopping region"
+        title="Choose your default store."
+        description="Focamai uses this for future searches. It does not need location permission."
+      />
       <Surface>
-        <Text className="text-sm font-semibold text-slate-900">
+        <Text className="text-sm font-semibold text-ink">
           Current store: {getAmazonMarketplaceLabel(selectedAmazonDomain)}
         </Text>
-        <View className="mt-3 gap-2">
+        <View className="mt-5 gap-3">
           {AMAZON_MARKETPLACES.map((marketplace) => {
             const isSelected = selectedAmazonDomain === marketplace.domain;
 
@@ -46,11 +54,11 @@ export default function RegionScreen({ navigation }) {
               <Pressable
                 key={`${marketplace.countryCode}-${marketplace.domain}`}
                 onPress={() => chooseMarketplace(marketplace.domain)}
-                className={`min-h-[48px] justify-center rounded-lg border px-4 py-3 ${
+                className={`min-h-[52px] justify-center rounded-[18px] border px-4 py-3 ${
                   isSelected ? "border-accent bg-accent" : "border-line bg-cream"
                 }`}
               >
-                <Text className={`text-sm font-semibold ${isSelected ? "text-white" : "text-slate-800"}`}>
+                <Text className={`text-sm font-semibold ${isSelected ? "text-white" : "text-ink"}`}>
                   {marketplace.label} ({marketplace.domain})
                 </Text>
               </Pressable>
