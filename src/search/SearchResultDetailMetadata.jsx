@@ -1,3 +1,4 @@
+import { CheckCircle2, Info, ShieldCheck, Sparkles, Star } from "lucide-react-native";
 import { Text, View } from "react-native";
 import { ProductImageFrame, Surface } from "../components/MobileUI";
 
@@ -118,17 +119,24 @@ function getEnrichmentCopy(enrichmentStatus) {
 function SnapshotPill({ label, value }) {
   return (
     <View className="min-w-[120px] flex-1 rounded-lg border border-line bg-cream px-3 py-3">
-      <Text className="text-xs font-medium uppercase tracking-[1.2px] text-slate-500">{label}</Text>
-      <Text className="mt-1 text-sm font-semibold leading-5 text-slate-900">{value}</Text>
+      <Text className="text-xs font-medium uppercase tracking-[1.2px] text-stone-500">{label}</Text>
+      <Text className="mt-1 text-sm font-semibold leading-5 text-ink">{value}</Text>
     </View>
   );
 }
 
-function DetailTextSection({ label, value }) {
+function DetailTextSection({ icon: Icon, label, tone = "accent", value }) {
+  const color = tone === "warning" ? "#dd7b2d" : "#0F6175";
+
   return (
-    <View className="border-b border-line py-4">
-      <Text className="text-xs font-medium uppercase tracking-[1.4px] text-slate-500">{label}</Text>
-      <Text className="mt-2 text-base leading-6 text-slate-900">{value}</Text>
+    <View className="flex-row gap-3 py-4">
+      <View className="mt-0.5 h-9 w-9 items-center justify-center rounded-full bg-cream">
+        <Icon color={color} size={19} strokeWidth={2.1} />
+      </View>
+      <View className="flex-1">
+        <Text className="text-base font-semibold text-ink">{label}</Text>
+        <Text className="mt-2 text-[15px] leading-6 text-stone-700">{value}</Text>
+      </View>
     </View>
   );
 }
@@ -147,9 +155,9 @@ function FeatureBulletList({ bullets, enrichmentStatus }) {
   return (
     <View className="mt-2 gap-2">
       {bullets.map((bullet, index) => (
-        <View key={`${bullet}-${index}`} className="flex-row gap-2">
-          <Text className="text-base leading-6 text-accent">-</Text>
-          <Text className="flex-1 text-base leading-6 text-slate-900">{String(bullet)}</Text>
+        <View key={`${bullet}-${index}`} className="flex-row gap-3">
+          <CheckCircle2 color="#0F6175" size={19} strokeWidth={2} />
+          <Text className="flex-1 text-[15px] leading-6 text-stone-800">{String(bullet)}</Text>
         </View>
       ))}
     </View>
@@ -168,17 +176,23 @@ export function DetailRatingStars({ rating }) {
   return (
     <View className="flex-row gap-0.5" accessibilityLabel={formatRating(rating)}>
       {Array.from({ length: 5 }).map((_, index) => (
-        <Text
+        <Star
           key={index}
-          className={
-            index < roundedRating
-              ? "text-base leading-5 text-amber-500"
-              : "text-base leading-5 text-slate-300"
-          }
-        >
-          *
-        </Text>
+          color={index < roundedRating ? "#dd7b2d" : "#d8cec0"}
+          fill={index < roundedRating ? "#dd7b2d" : "transparent"}
+          size={15}
+          strokeWidth={2}
+        />
       ))}
+    </View>
+  );
+}
+
+function HeroFact({ label, value }) {
+  return (
+    <View className="rounded-full border border-line bg-white px-3 py-2">
+      <Text className="text-xs font-semibold text-stone-500">{label}</Text>
+      <Text className="mt-0.5 text-sm font-semibold text-ink">{value}</Text>
     </View>
   );
 }
@@ -192,31 +206,36 @@ export function SearchResultDetailHero({ item, rank }) {
   return (
     <View className="gap-4">
       <ProductImageFrame
-        containerClassName="h-64 w-full"
+        containerClassName="h-72 w-full"
         image={item.image}
         imageClassName="rounded-md"
         title={detailValue(item.title, "Focused pick")}
       />
-      <View>
-        <View className="flex-row flex-wrap items-center gap-2">
-          <View className="rounded-full bg-accent px-3 py-1">
-            <Text className="text-xs font-semibold text-white">
+      <View className="gap-4">
+        <View className="flex-row flex-wrap items-center justify-between gap-2">
+          <View className="rounded-full border border-line bg-white px-3 py-1.5">
+            <Text className="text-xs font-semibold text-accent">
               {rank ? `Pick #${rank}` : "Focused pick"}
             </Text>
           </View>
-          <Text className="text-sm font-medium text-stone-600">{provider}</Text>
+          <View className="flex-row items-center gap-1.5">
+            <ShieldCheck color="#0F6175" size={17} strokeWidth={2} />
+            <Text className="text-sm font-semibold text-stone-600">{provider}</Text>
+          </View>
         </View>
-        <Text className="mt-3 text-[26px] font-semibold leading-[33px] text-ink">
+        <Text className="text-[31px] font-semibold leading-[38px] text-ink">
           {detailValue(item.title, "Untitled product")}
         </Text>
-        <View className="mt-3 flex-row flex-wrap items-center gap-3">
-          <Text className="text-2xl font-semibold text-accent">{price}</Text>
-          <View className="flex-row items-center gap-2">
-            <DetailRatingStars rating={item.rating} />
-            <Text className="text-sm font-medium text-stone-600">
-              {rating} - {reviews}
-            </Text>
-          </View>
+        <View className="flex-row flex-wrap gap-2">
+          <HeroFact label="Price" value={price} />
+          <HeroFact label="Rating" value={rating} />
+          <HeroFact label="Reviews" value={reviews} />
+        </View>
+        <View className="flex-row items-center gap-2">
+          <DetailRatingStars rating={item.rating} />
+          <Text className="text-sm font-medium text-stone-600">
+            {rating} - {reviews}
+          </Text>
         </View>
       </View>
     </View>
@@ -227,8 +246,11 @@ export function SearchResultFeatureHighlights({ enrichmentStatus = "idle", item 
   const featureBullets = getFeatureBullets(item);
 
   return (
-    <Surface>
-      <Text className="text-sm font-semibold text-slate-900">Feature notes</Text>
+    <Surface className="bg-white">
+      <View className="flex-row items-center gap-2">
+        <CheckCircle2 color="#0F6175" size={19} strokeWidth={2} />
+        <Text className="text-base font-semibold text-ink">Feature notes</Text>
+      </View>
       <FeatureBulletList bullets={featureBullets} enrichmentStatus={enrichmentStatus} />
     </Surface>
   );
@@ -236,8 +258,11 @@ export function SearchResultFeatureHighlights({ enrichmentStatus = "idle", item 
 
 export function SearchResultDetailSnapshot({ item, rank }) {
   return (
-    <Surface>
-      <Text className="text-sm font-semibold text-slate-900">At a glance</Text>
+    <Surface variant="quiet">
+      <View className="flex-row items-center gap-2">
+        <Info color="#0F6175" size={18} strokeWidth={2} />
+        <Text className="text-base font-semibold text-ink">At a glance</Text>
+      </View>
       <View className="mt-3 flex-row flex-wrap gap-2">
         <SnapshotPill label="Shortlist" value={rank ? `Pick #${rank}` : "Focused pick"} />
         <SnapshotPill label="Source" value={detailValue(item.provider, "Unknown source")} />
@@ -256,16 +281,19 @@ export function SearchResultDetailMetadata({ enrichmentStatus = "idle", item }) 
 
   return (
     <Surface className="py-2">
-      <Text className="py-3 text-sm font-semibold text-slate-900">Decision notes</Text>
       <DetailTextSection
+        icon={Sparkles}
         label="Why this pick"
         value={detailValue(
           item.fit_reason,
           enrichmentCopy.reason,
         )}
       />
+      <View className="h-px bg-line" />
       <DetailTextSection
+        icon={Info}
         label="Worth knowing"
+        tone="warning"
         value={detailValue(
           item.caveat,
           enrichmentCopy.caveat,

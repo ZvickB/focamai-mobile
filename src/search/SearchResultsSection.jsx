@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Pressable, Text, View } from "react-native";
 import { SectionHeader, Surface } from "../components/MobileUI";
+import { AffiliateDisclosureNote } from "./AffiliateDisclosureNote";
 import { FocusedPickRow, PreviewResultRow } from "./SearchResultRows";
 
 export function SearchResultsSection({
@@ -39,18 +40,15 @@ export function SearchResultsSection({
   return (
     <View className="gap-4">
       {hasFocusedPicks ? (
-        <Surface className="gap-4">
-          <SectionHeader
-            eyebrow="Shortlist"
-            title="Your focused picks"
-            description={
-              safeFinalResults.length < 6
-                ? `${safeFinalResults.length} credible option${
-                    safeFinalResults.length === 1 ? "" : "s"
-                  } came back for this search. Open any pick to see reasoning, caveats, and availability.`
-                : "Six ranked options to scan before you leave for the retailer. Open any pick to see reasoning, caveats, and availability."
-            }
-          />
+        <View className="gap-3">
+          {safeFinalResults.length < 6 ? (
+            <Text className="px-1 text-sm leading-5 text-stone-600">
+              {safeFinalResults.length} credible option
+              {safeFinalResults.length === 1 ? "" : "s"} came back for this search. That can happen
+              when fewer results look credible for your needs.
+            </Text>
+          ) : null}
+
           <View className="gap-3" testID="results.focusedPicks">
             {safeFinalResults.map((item, index) => (
               <FocusedPickRow
@@ -61,7 +59,21 @@ export function SearchResultsSection({
               />
             ))}
           </View>
-        </Surface>
+
+          <Surface variant="quiet" className="rounded-[22px] border-transparent">
+            <Text className="text-base font-semibold text-ink">Why these picks?</Text>
+            <Text className="mt-1 text-sm leading-5 text-stone-600">
+              Focamai narrows the list around your search and notes, then keeps the set short so
+              each option is worth a closer look.
+            </Text>
+            <View className="mt-3 border-t border-line pt-3">
+              <Text className="text-xs leading-4 text-stone-500">
+                Retailer availability and pricing can change.
+              </Text>
+              <AffiliateDisclosureNote />
+            </View>
+          </Surface>
+        </View>
       ) : null}
 
       {hasPreview ? (

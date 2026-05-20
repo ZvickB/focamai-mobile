@@ -1,6 +1,5 @@
-import { Linking, Pressable, Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
 import { Pill, ProductImageFrame, Surface } from "../components/MobileUI";
-import { AffiliateDisclosureNote } from "./AffiliateDisclosureNote";
 
 function formatRatingLabel(rating) {
   if (rating === null || rating === undefined || rating === "" || typeof rating === "boolean") {
@@ -22,44 +21,8 @@ function formatRatingLabel(rating) {
   return "Rating not shown";
 }
 
-function formatReviewCountLabel(reviewCount) {
-  if (reviewCount === null || reviewCount === undefined || reviewCount === "") {
-    return "Reviews not shown";
-  }
-
-  if (typeof reviewCount === "number") {
-    return `${reviewCount} reviews`;
-  }
-
-  if (typeof reviewCount === "string") {
-    const trimmedReviewCount = reviewCount.trim();
-
-    return trimmedReviewCount ? `${trimmedReviewCount} reviews` : "Reviews not shown";
-  }
-
-  return "Reviews not shown";
-}
-
-function getRatingValue(rating) {
-  if (rating === null || rating === undefined || rating === "" || typeof rating === "boolean") {
-    return null;
-  }
-
-  const value = Number(rating);
-
-  return Number.isFinite(value) ? value : null;
-}
-
 function MetadataPill({ label }) {
   return <Pill>{label}</Pill>;
-}
-
-function openRetailerLink(link) {
-  if (!link) {
-    return;
-  }
-
-  Linking.openURL(link).catch(() => {});
 }
 
 export function PreviewResultRow({ item, index }) {
@@ -82,108 +45,139 @@ export function PreviewResultRow({ item, index }) {
   );
 }
 
-export function FocusedPickRow({ item, index, onPress }) {
+function getPickReason(item, featureBullets) {
+  return item.fit_reason || item.caveat || featureBullets[0] || "A focused match for this search.";
+}
+
+function getAttributeChips(item, featureBullets) {
+  const chips = [];
+
+  if (item.caveat) {
+    chips.push("Caveat noted");
+  }
+
+  chips.push(...featureBullets);
+
+  if (item.provider) {
+    chips.push(item.provider);
+  }
+
+  return chips
+    .map((chip) => String(chip).trim())
+    .filter(Boolean)
+    .slice(0, 3);
+}
+
+export function FeaturedPickCard({ item, onPress }) {
   const featureBullets = Array.isArray(item.feature_bullets)
     ? item.feature_bullets.map((bullet) => String(bullet).trim()).filter(Boolean)
     : [];
-  const primaryFeature = featureBullets[0];
-  const ratingValue = getRatingValue(item.rating);
+  const attributeChips = getAttributeChips(item, featureBullets);
   const priceLabel = item.price || "Price not shown";
-  const fitPreview = item.fit_reason || item.caveat || primaryFeature || "";
-  const fitPreviewLabel = item.fit_reason
-    ? "Why it fits"
-    : item.caveat
-      ? "Worth knowing"
-      : primaryFeature
-        ? "Feature note"
-        : "";
-  const imageFrameClassName = index === 0 ? "h-28 w-28" : "h-24 w-24";
+  const reason = getPickReason(item, featureBullets);
 
   return (
-    <Surface className="overflow-hidden px-0 py-0">
+    <Surface className="overflow-hidden rounded-[24px] border-transparent bg-white px-0 py-0 shadow-sm">
+      <Pressable
+        testID="results.focusedPick.1"
+        accessibilityRole="button"
+        accessibilityLabel={`Open focused pick 1: ${item.title}`}
+        onPress={onPress}
+        className="px-4 py-4"
+      >
+        <View className="flex-row gap-4">
+          <View className="items-center gap-3">
+            <ProductImageFrame
+              containerClassName="h-40 w-36"
+              image={item.image}
+              title={item.title}
+            />
+          </View>
+          <View className="min-w-0 flex-1 py-1">
+            <Text className="text-[22px] font-semibold leading-[28px] text-ink" numberOfLines={3}>
+              {item.title}
+            </Text>
+            <Text className="mt-2 text-sm leading-5 text-stone-600" numberOfLines={3}>
+              {reason}
+            </Text>
+
+            {attributeChips.length > 0 ? (
+              <View className="mt-3 flex-row flex-wrap gap-2">
+                {attributeChips.map((chip) => (
+                  <View className="rounded-full bg-cream px-2.5 py-1.5" key={chip}>
+                    <Text className="text-[11px] font-semibold text-stone-700" numberOfLines={1}>
+                      {chip}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            ) : null}
+
+            <Text className="mt-4 text-[21px] font-semibold text-accent">{priceLabel}</Text>
+
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="View details for pick 1"
+              className="mt-4 min-h-[46px] items-center justify-center rounded-full bg-accent px-4"
+              onPress={onPress}
+            >
+              <Text className="text-sm font-semibold text-white">View details</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Pressable>
+    </Surface>
+  );
+}
+
+export function CompactPickRow({ item, index, onPress }) {
+  const featureBullets = Array.isArray(item.feature_bullets)
+    ? item.feature_bullets.map((bullet) => String(bullet).trim()).filter(Boolean)
+    : [];
+  const reason = getPickReason(item, featureBullets);
+  const priceLabel = item.price || "Price not shown";
+
+  return (
+    <Surface className="overflow-hidden rounded-[20px] border-transparent bg-white px-0 py-0 shadow-sm">
       <Pressable
         testID={`results.focusedPick.${index + 1}`}
         accessibilityRole="button"
         accessibilityLabel={`Open focused pick ${index + 1}: ${item.title}`}
         onPress={onPress}
-        className="px-4 py-4"
+        className="px-4 py-3"
       >
-        <View className="flex-row gap-3">
-          <View className="items-center gap-2">
-            <View className="h-8 min-w-[40px] items-center justify-center rounded-full bg-accent px-3">
-              <Text className="text-xs font-semibold text-white">#{index + 1}</Text>
-            </View>
-            <ProductImageFrame
-              containerClassName={imageFrameClassName}
-              image={item.image}
-              title={item.title}
-            />
-          </View>
-          <View className="flex-1">
-            <Text className="text-base font-semibold leading-6 text-ink" numberOfLines={3}>
+        <View className="flex-row items-center gap-3">
+          <ProductImageFrame
+            containerClassName="h-16 w-16"
+            image={item.image}
+            title={item.title}
+          />
+          <View className="min-w-0 flex-1">
+            <Text className="text-base font-semibold leading-5 text-ink" numberOfLines={2}>
               {item.title}
             </Text>
-            {item.provider ? (
-              <Text className="mt-1 text-sm leading-5 text-stone-600">{item.provider}</Text>
-            ) : null}
-            <View className="mt-2 flex-row flex-wrap items-center gap-2">
-              <Text className="text-base font-semibold text-accent">{priceLabel}</Text>
-              <Text className="text-xs font-medium text-stone-500">
-                {ratingValue === null ? "Rating not shown" : `${ratingValue.toFixed(1)} rating`}
-              </Text>
-              <Text className="text-xs font-medium text-stone-500">
-                {formatReviewCountLabel(item.reviewCount)}
-              </Text>
+            <Text className="mt-1 text-sm leading-5 text-stone-600" numberOfLines={1}>
+              {reason}
+            </Text>
+            <View className="mt-1 flex-row items-center gap-2">
+              <Text className="text-sm font-semibold text-ink">{priceLabel}</Text>
+              {item.provider ? (
+                <Text className="text-xs font-medium text-stone-500" numberOfLines={1}>
+                  {item.provider}
+                </Text>
+              ) : null}
             </View>
-
-            {fitPreview ? (
-              <View className="mt-3 rounded-lg border border-line bg-cream px-3 py-2">
-                <Text className="text-[11px] font-semibold uppercase tracking-[0.8px] text-stone-500">
-                  {fitPreviewLabel}
-                </Text>
-                <Text className="mt-1 text-sm leading-5 text-stone-800" numberOfLines={2}>
-                  {fitPreview}
-                </Text>
-              </View>
-            ) : null}
           </View>
         </View>
       </Pressable>
-
-      <View className="border-t border-line bg-cream px-4 py-3">
-        <View className="flex-row items-center justify-between gap-3">
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={`Open details for focused pick ${index + 1}`}
-            onPress={onPress}
-            className="min-h-[40px] flex-1 justify-center"
-          >
-            <Text className="text-sm font-semibold text-accent">View details</Text>
-          </Pressable>
-          {item.link ? (
-            <Pressable
-              accessibilityRole="link"
-              accessibilityLabel={`View ${item.title} on ${item.provider}`}
-              className="min-h-[40px] items-center justify-center rounded-full border border-line bg-white px-3 py-2"
-              onPress={() => openRetailerLink(item.link)}
-            >
-              <Text className="text-sm font-semibold text-slate-700">
-                View retailer
-              </Text>
-            </Pressable>
-          ) : (
-            <Text className="text-sm font-medium text-slate-500">Retailer link unavailable</Text>
-          )}
-        </View>
-        {item.link ? (
-          <>
-            <Text className="mt-2 text-xs leading-4 text-slate-500">
-              Retailer availability and pricing can change.
-            </Text>
-            <AffiliateDisclosureNote />
-          </>
-        ) : null}
-      </View>
     </Surface>
   );
+}
+
+export function FocusedPickRow({ item, index, onPress }) {
+  if (index === 0) {
+    return <FeaturedPickCard item={item} onPress={onPress} />;
+  }
+
+  return <CompactPickRow item={item} index={index} onPress={onPress} />;
 }

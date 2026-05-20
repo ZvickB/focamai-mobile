@@ -1,8 +1,9 @@
-import { Linking, Text, View } from "react-native";
+import { ChevronLeft } from "lucide-react-native";
+import { Linking, Pressable, Text, View } from "react-native";
 import {
+  BrandWordmark,
   Button,
   ScreenContainer,
-  ScreenIntro,
   Surface,
   QuietStatusPanel,
 } from "../components/MobileUI";
@@ -28,9 +29,9 @@ function DetailRetailerCta({ item }) {
   const provider = detailValue(item.provider, "the retailer");
 
   return (
-    <Surface>
-      <Text className="text-sm font-semibold text-slate-900">Check availability</Text>
-      <Text className="mt-2 text-sm leading-5 text-slate-600">
+    <Surface className="border-secondary bg-white">
+      <Text className="text-base font-semibold text-ink">Check availability</Text>
+      <Text className="mt-2 text-sm leading-5 text-stone-600">
         Confirm current price, availability, shipping, and seller details with {provider} before
         buying.
       </Text>
@@ -38,7 +39,7 @@ function DetailRetailerCta({ item }) {
         <Button
           accessibilityRole="link"
           accessibilityLabel={`View ${detailValue(item.title, "this product")} on ${provider}`}
-          className="mt-4"
+          className="mt-4 flex-row"
           onPress={() => openRetailerLink(item.link)}
         >
           View retailer
@@ -51,7 +52,7 @@ function DetailRetailerCta({ item }) {
           </Text>
         </QuietStatusPanel>
       )}
-      <Text className="mt-3 text-xs leading-5 text-slate-500">
+      <Text className="mt-3 text-xs leading-5 text-stone-500">
         Pricing, availability, shipping, and seller details can change after Focamai builds the
         shortlist.
       </Text>
@@ -90,6 +91,27 @@ function DetailRetailerFooter({ item }) {
         Confirm price, availability, and seller details with {provider}.
       </Text>
       <AffiliateDisclosureNote />
+    </View>
+  );
+}
+
+function DetailHeader({ onBack }) {
+  return (
+    <View className="flex-row items-center justify-between">
+      <Pressable
+        accessibilityLabel="Back to picks"
+        accessibilityRole="button"
+        className="min-h-[44px] flex-row items-center gap-1 rounded-full pr-3"
+        onPress={onBack}
+        testID="detail.backButton"
+      >
+        <ChevronLeft color="#14222b" size={24} strokeWidth={2.3} />
+        <Text className="text-base font-semibold text-ink">Picks</Text>
+      </Pressable>
+
+      <BrandWordmark className="items-center" imageClassName="h-9 w-36" />
+
+      <View accessibilityElementsHidden className="h-11 w-11" importantForAccessibility="no" />
     </View>
   );
 }
@@ -135,28 +157,43 @@ function normalizeDetailRouteItem(routeItem) {
   return item.id || item.title || item.link ? item : null;
 }
 
-function UnavailableDetailState() {
+function UnavailableDetailState({ onBack }) {
   return (
-    <ScreenContainer testID="detail.screen">
-      <ScreenIntro
-        eyebrow="Focused pick"
-        title="Pick details unavailable"
-        description="This pick is no longer available in the current shortlist."
-      />
-      <QuietStatusPanel>
-        <Text className="text-sm font-semibold text-slate-700">
-          Go back and select a current pick.
-        </Text>
-        <Text className="mt-1 text-sm leading-5 text-slate-500">
-          Focamai keeps detail pages tied to the latest shortlist. If the results changed or the
-          detail link opened without a saved pick snapshot, the old item cannot be shown reliably.
-        </Text>
-      </QuietStatusPanel>
+    <ScreenContainer
+      safeAreaEdges={["top", "bottom"]}
+      testID="detail.screen"
+      contentContainerStyle={{
+        gap: 22,
+        paddingHorizontal: 28,
+        paddingTop: 14,
+        paddingBottom: 32,
+      }}
+    >
+      <View className="w-full max-w-[430px] self-center gap-5">
+        <DetailHeader onBack={onBack} />
+        <View>
+          <Text className="text-[30px] font-semibold leading-[37px] text-ink">
+            Pick details unavailable
+          </Text>
+          <Text className="mt-3 text-base leading-6 text-stone-600">
+            This pick is no longer available in the current shortlist.
+          </Text>
+        </View>
+        <QuietStatusPanel>
+          <Text className="text-sm font-semibold text-slate-700">
+            Go back and select a current pick.
+          </Text>
+          <Text className="mt-1 text-sm leading-5 text-slate-500">
+            Focamai keeps detail pages tied to the latest shortlist. If the results changed or the
+            detail link opened without a saved pick snapshot, the old item cannot be shown reliably.
+          </Text>
+        </QuietStatusPanel>
+      </View>
     </ScreenContainer>
   );
 }
 
-export default function SearchResultDetailScreen({ route }) {
+export default function SearchResultDetailScreen({ navigation, route }) {
   const { activeSearchSession, finalResults } = useSearchFlow();
   const safeFinalResults = Array.isArray(finalResults) ? finalResults : [];
   const candidateId = route.params?.candidateId;
@@ -170,35 +207,44 @@ export default function SearchResultDetailScreen({ route }) {
   const rank = matchedIndex >= 0 ? matchedIndex + 1 : routeRank;
   const enrichmentStatus = activeSearchSession?.phases?.enrich || "idle";
   const isStaleSnapshot = Boolean(routeItem && !matchedItem);
+  const goBack = () => navigation?.goBack?.();
 
   if (!item) {
-    return <UnavailableDetailState />;
+    return <UnavailableDetailState onBack={goBack} />;
   }
 
   return (
-    <ScreenContainer footer={<DetailRetailerFooter item={item} />} testID="detail.screen">
-      <ScreenIntro
-        eyebrow={`Focused pick ${rank ? `#${rank}` : ""}`}
-        title="Product details"
-        description="A quick decision view before you leave for the retailer."
-      />
+    <ScreenContainer
+      footer={<DetailRetailerFooter item={item} />}
+      safeAreaEdges={["top", "bottom"]}
+      testID="detail.screen"
+      contentContainerStyle={{
+        gap: 22,
+        paddingHorizontal: 28,
+        paddingTop: 14,
+        paddingBottom: 32,
+      }}
+    >
+      <View className="w-full max-w-[430px] self-center gap-5">
+        <DetailHeader onBack={goBack} />
 
-      <SearchResultDetailHero item={item} rank={rank} />
-      {isStaleSnapshot ? (
-        <QuietStatusPanel>
-          <Text className="text-sm font-semibold text-slate-700">
-            Showing the pick you opened earlier.
-          </Text>
-          <Text className="mt-1 text-sm leading-5 text-slate-500">
-            The current shortlist has changed, so these details may no longer match the latest
-            result order.
-          </Text>
-        </QuietStatusPanel>
-      ) : null}
-      <SearchResultDetailMetadata enrichmentStatus={enrichmentStatus} item={item} />
-      <SearchResultFeatureHighlights enrichmentStatus={enrichmentStatus} item={item} />
-      <DetailRetailerCta item={item} />
-      <SearchResultDetailSnapshot item={item} rank={rank} />
+        <SearchResultDetailHero item={item} rank={rank} />
+        {isStaleSnapshot ? (
+          <QuietStatusPanel>
+            <Text className="text-sm font-semibold text-slate-700">
+              Showing the pick you opened earlier.
+            </Text>
+            <Text className="mt-1 text-sm leading-5 text-slate-500">
+              The current shortlist has changed, so these details may no longer match the latest
+              result order.
+            </Text>
+          </QuietStatusPanel>
+        ) : null}
+        <SearchResultDetailMetadata enrichmentStatus={enrichmentStatus} item={item} />
+        <SearchResultFeatureHighlights enrichmentStatus={enrichmentStatus} item={item} />
+        <DetailRetailerCta item={item} />
+        <SearchResultDetailSnapshot item={item} rank={rank} />
+      </View>
     </ScreenContainer>
   );
 }

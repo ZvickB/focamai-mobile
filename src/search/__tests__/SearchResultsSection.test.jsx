@@ -67,13 +67,13 @@ describe("SearchResultsSection", () => {
 
     fireEvent.press(getByTestId("results.focusedPick.1"));
 
-    expect(getByText("Your focused picks")).toBeTruthy();
+    expect(getByText("Why these picks?")).toBeTruthy();
     expect(getByText("Compact Travel Stroller")).toBeTruthy();
     expect(onOpenResult).toHaveBeenCalledWith(focusedPick, 0);
   });
 
   it("uses unavailable copy for missing rating and malformed reviews", () => {
-    const { getAllByText, queryByText } = render(
+    const { queryByText } = render(
       <SearchResultsSection
         finalResults={[
           {
@@ -87,8 +87,8 @@ describe("SearchResultsSection", () => {
       />,
     );
 
-    expect(getAllByText("Rating not shown").length).toBeGreaterThan(0);
-    expect(getAllByText("Reviews not shown").length).toBeGreaterThan(0);
+    expect(queryByText("0.0 rating")).toBeNull();
+    expect(queryByText("Reviews not shown")).toBeNull();
     expect(queryByText(/\[object Object\]/)).toBeNull();
     expect(queryByText(/0\.0 rating/)).toBeNull();
   });
@@ -104,7 +104,7 @@ describe("SearchResultsSection", () => {
 
     expect(
       getByText(
-        "1 credible option came back for this search. Open any pick to see reasoning, caveats, and availability.",
+        "1 credible option came back for this search. That can happen when fewer results look credible for your needs.",
       ),
     ).toBeTruthy();
   });
