@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Pressable, Text, View } from "react-native";
-import { SectionHeader, Surface } from "../components/MobileUI";
+import { GuidanceText, SectionHeader, Surface } from "../components/MobileUI";
 import { AffiliateDisclosureNote } from "./AffiliateDisclosureNote";
 import { FocusedPickRow, PreviewResultRow } from "./SearchResultRows";
 
@@ -62,10 +62,10 @@ export function SearchResultsSection({
 
           <Surface variant="quiet">
             <Text className="text-base font-semibold text-ink">Why these picks?</Text>
-            <Text className="mt-1 text-sm leading-5 text-stone-600">
+            <GuidanceText className="mt-1 text-sm leading-5">
               Focamai narrows the list around your search and notes, then keeps the set short so
               each option is worth a closer look.
-            </Text>
+            </GuidanceText>
             <View className="mt-3 border-t border-line pt-3">
               <Text className="text-xs leading-4 text-stone-500">
                 Retailer availability and pricing can change.

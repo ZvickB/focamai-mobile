@@ -2,14 +2,18 @@ import { Image, Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
 import { ChevronLeft } from "lucide-react-native";
+import { useBackgroundPalette } from "../theme/BackgroundPaletteContext";
 
 const wordmarkImage = require("../../assets/wordmark.png");
+
+export const fontGuidance = "font-guidance";
 
 export function cx(...classNames) {
   return classNames.filter(Boolean).join(" ");
 }
 
 export function ScreenContainer({
+  backgroundElement,
   children,
   contentContainerStyle,
   footer,
@@ -17,8 +21,16 @@ export function ScreenContainer({
   safeAreaEdges = ["bottom"],
   testID,
 }) {
+  const { themeTokens } = useBackgroundPalette();
+
   return (
-    <SafeAreaView edges={safeAreaEdges} className="flex-1 bg-mist" testID={testID}>
+    <SafeAreaView
+      edges={safeAreaEdges}
+      className="flex-1"
+      style={{ backgroundColor: themeTokens.appBackground }}
+      testID={testID}
+    >
+      {backgroundElement}
       <ScrollView
         className="flex-1"
         contentContainerStyle={[
@@ -29,7 +41,17 @@ export function ScreenContainer({
       >
         {children}
       </ScrollView>
-      {footer ? <View className="border-t border-line bg-cream px-6 py-3">{footer}</View> : null}
+      {footer ? (
+        <View
+          className="border-t px-6 py-3"
+          style={{
+            backgroundColor: themeTokens.cardBackground,
+            borderColor: themeTokens.borderSubtle,
+          }}
+        >
+          {footer}
+        </View>
+      ) : null}
     </SafeAreaView>
   );
 }
@@ -155,6 +177,17 @@ export function SectionHeader({ eyebrow, title, description }) {
   );
 }
 
+export function GuidanceText({ children, className = "", testID }) {
+  return (
+    <Text
+      className={cx(fontGuidance, "text-[15px] leading-6 text-stone-600", className)}
+      testID={testID}
+    >
+      {children}
+    </Text>
+  );
+}
+
 export function Button({
   accessibilityLabel,
   accessibilityRole = "button",
@@ -226,6 +259,62 @@ export function QuietStatusPanel({ children, className = "" }) {
     <View className={cx("rounded-[18px] border border-line bg-cream px-4 py-4", className)}>
       {children}
     </View>
+  );
+}
+
+export function RecoveryPanel({
+  detail,
+  message,
+  onPrimaryAction,
+  onSecondaryAction,
+  primaryActionLabel = "Try again",
+  secondaryActionLabel,
+  testID,
+  title = "Something needs attention",
+}) {
+  const [showDetails, setShowDetails] = useState(false);
+  const hasActions = Boolean(onPrimaryAction || (onSecondaryAction && secondaryActionLabel));
+
+  return (
+    <Surface className="border-secondary bg-white" testID={testID}>
+      <Text className="text-xs font-semibold uppercase tracking-[1.1px] text-accent">
+        Recovery
+      </Text>
+      <Text className="mt-2 text-lg font-semibold leading-6 text-ink">{title}</Text>
+      <Text className="mt-2 text-sm leading-5 text-stone-600">{message}</Text>
+
+      {hasActions ? (
+        <View className="mt-4 gap-2">
+          {onPrimaryAction ? (
+            <Button onPress={onPrimaryAction} variant="primary">
+              {primaryActionLabel}
+            </Button>
+          ) : null}
+          {onSecondaryAction && secondaryActionLabel ? (
+            <Button onPress={onSecondaryAction} variant="secondary">
+              {secondaryActionLabel}
+            </Button>
+          ) : null}
+        </View>
+      ) : null}
+
+      {detail ? (
+        <View className="mt-4 border-t border-line pt-3">
+          <Pressable
+            accessibilityLabel={showDetails ? "Hide recovery details" : "Show recovery details"}
+            accessibilityRole="button"
+            onPress={() => setShowDetails((currentValue) => !currentValue)}
+          >
+            <Text className="text-sm font-semibold text-accent">
+              {showDetails ? "Hide details" : "Show details"}
+            </Text>
+          </Pressable>
+          {showDetails ? (
+            <Text className="mt-2 text-xs leading-4 text-stone-500">{detail}</Text>
+          ) : null}
+        </View>
+      ) : null}
+    </Surface>
   );
 }
 

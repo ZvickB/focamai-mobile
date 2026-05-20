@@ -862,7 +862,7 @@ export function useMobileSearchController() {
     const notesForRequest = String(followUpNotesOverride ?? followUpNotes).trim();
 
     if (finalizingRequestIdRef.current) {
-      return;
+      return false;
     }
 
     if (!session?.discoveryToken || !session?.submittedQuery) {
@@ -886,7 +886,7 @@ export function useMobileSearchController() {
           }),
         );
       }
-      return;
+      return false;
     }
 
     const requestId = session.requestId;
@@ -928,7 +928,7 @@ export function useMobileSearchController() {
         });
 
         if (!refreshedDiscovery) {
-          return;
+          return false;
         }
 
         finalizeAmazonDomain = refreshedDiscovery.amazonDomain;
@@ -945,7 +945,7 @@ export function useMobileSearchController() {
       });
 
       if (!isActiveRequest(requestId) || finalizingRequestIdRef.current !== requestId) {
-        return;
+        return false;
       }
 
       const nextFinalResults = normalizeFinalResults(
@@ -982,9 +982,11 @@ export function useMobileSearchController() {
           token: finalizeDiscoveryToken,
         });
       }
+
+      return true;
     } catch (error) {
       if (!isActiveRequest(requestId) || finalizingRequestIdRef.current !== requestId) {
-        return;
+        return false;
       }
 
       updateSessionForRequest(requestId, (currentSession) => ({
@@ -1003,6 +1005,7 @@ export function useMobileSearchController() {
           status: "failed",
         }),
       );
+      return false;
     } finally {
       if (isActiveRequest(requestId) && finalizingRequestIdRef.current === requestId) {
         finalizingRequestIdRef.current = null;

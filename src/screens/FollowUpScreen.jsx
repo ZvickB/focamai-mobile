@@ -1,6 +1,14 @@
-import { Check, Settings } from "lucide-react-native";
+import { Settings } from "lucide-react-native";
 import { Pressable, Text, View } from "react-native";
-import { AppHeader, Button, HeaderBackButton, IconButton, ScreenContainer } from "../components/MobileUI";
+import {
+  AppHeader,
+  Button,
+  HeaderBackButton,
+  IconButton,
+  RecoveryPanel,
+  ScreenContainer,
+} from "../components/MobileUI";
+import { SearchFlowProgressCue } from "../search/SearchFlowProgressCue";
 import { SearchRefineSection } from "../search/SearchRefineSection";
 import { useSearchFlow } from "../search/SearchFlowContext";
 
@@ -21,68 +29,10 @@ function RefineHeader({ onBack, onSettings }) {
   );
 }
 
-function RefineProgressCue({ hasStartedSearch }) {
-  if (!hasStartedSearch) {
-    return null;
-  }
-
-  const steps = [
-    { label: "Search", state: "complete" },
-    { label: "Refine", state: "current" },
-    { label: "Picks", state: "upcoming" },
-  ];
-
-  return (
-    <View
-      accessibilityLabel="Search progress: refine step"
-      className="flex-row items-start justify-center"
-    >
-      {steps.map((step, index) => {
-        const isCurrent = step.state === "current";
-        const isComplete = step.state === "complete";
-        const isMuted = step.state === "upcoming";
-
-        return (
-          <View className="flex-row items-start" key={step.label}>
-            <View className="items-center">
-              <View
-                className={
-                  isMuted
-                    ? "h-7 w-7 items-center justify-center rounded-full border border-line bg-mist"
-                    : isCurrent
-                      ? "h-7 w-7 items-center justify-center rounded-full bg-ember"
-                      : "h-7 w-7 items-center justify-center rounded-full bg-accent"
-                }
-              >
-                {isComplete ? <Check color="#ffffff" size={15} strokeWidth={2.5} /> : null}
-              </View>
-              <Text
-                className={
-                  isMuted
-                    ? "mt-2 text-xs font-semibold text-stone-400"
-                    : isCurrent
-                      ? "mt-2 text-xs font-semibold text-ember"
-                      : "mt-2 text-xs font-semibold text-accent"
-                }
-              >
-                {step.label}
-              </Text>
-            </View>
-            {index < steps.length - 1 ? (
-              <View
-                className={isMuted ? "mt-[13px] h-px w-20 bg-line" : "mt-[13px] h-px w-20 bg-secondary"}
-              />
-            ) : null}
-          </View>
-        );
-      })}
-    </View>
-  );
-}
-
 export default function FollowUpScreen({ navigation }) {
   const {
     canFinalize,
+    errorMessage,
     finalizeFocusedPicks,
     followUpNotes,
     hasStartedSearch,
@@ -94,14 +44,27 @@ export default function FollowUpScreen({ navigation }) {
   } = useSearchFlow();
 
   async function finalizeAndOpenResults() {
-    await finalizeFocusedPicks();
-    navigation.navigate("Results");
+    const didFinalize = await finalizeFocusedPicks();
+
+    if (didFinalize) {
+      navigation.navigate("Results");
+    }
   }
 
   async function skipAndOpenResults() {
-    await finalizeFocusedPicks({ followUpNotesOverride: "" });
-    navigation.navigate("Results");
+    const didFinalize = await finalizeFocusedPicks({ followUpNotesOverride: "" });
+
+    if (didFinalize) {
+      navigation.navigate("Results");
+    }
   }
+
+  const recoveryTitle = canFinalize
+    ? "Focamai could not finish the shortlist"
+    : "Focamai could not start this search";
+  const recoveryMessage = canFinalize
+    ? "Your notes are still here. Try building the shortlist again, or go back and adjust the search phrase."
+    : "Go back and check the product phrase, region, or backend connection before trying again.";
 
   return (
     <ScreenContainer
@@ -154,7 +117,7 @@ export default function FollowUpScreen({ navigation }) {
           onSettings={() => navigation.navigate("Settings")}
         />
 
-        <RefineProgressCue hasStartedSearch={hasStartedSearch} />
+        {hasStartedSearch ? <SearchFlowProgressCue activeStep="refine" /> : null}
 
         <SearchRefineSection
           followUpNotes={followUpNotes}
@@ -164,6 +127,19 @@ export default function FollowUpScreen({ navigation }) {
           productQuery={productQuery}
           suggestedRefinements={refinementPrompt?.suggestedRefinements}
         />
+
+        {errorMessage ? (
+          <RecoveryPanel
+            detail={errorMessage}
+            message={recoveryMessage}
+            onPrimaryAction={canFinalize ? finalizeAndOpenResults : () => navigation.navigate("Search")}
+            onSecondaryAction={canFinalize ? () => navigation.navigate("Search") : undefined}
+            primaryActionLabel={canFinalize ? "Try shortlist again" : "Back to search"}
+            secondaryActionLabel={canFinalize ? "Edit search" : undefined}
+            testID="followup.recoveryPanel"
+            title={recoveryTitle}
+          />
+        ) : null}
       </View>
     </ScreenContainer>
   );

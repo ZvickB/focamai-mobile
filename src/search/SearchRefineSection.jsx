@@ -1,6 +1,6 @@
 import { Mic, Search } from "lucide-react-native";
 import { Pressable, Text, TextInput, View } from "react-native";
-import { cx } from "../components/MobileUI";
+import { GuidanceText, cx } from "../components/MobileUI";
 
 const DEFAULT_REFINEMENT_CHIPS = [
   { label: "Good value" },
@@ -101,9 +101,9 @@ export function SearchRefineSection({
           <Text className="text-center text-[32px] font-semibold leading-[39px] text-ink">
             What should Focamai keep in{"\u00A0"}mind?
           </Text>
-          <Text className="mt-4 text-center text-[16px] leading-6 text-stone-600">
+          <GuidanceText className="mt-4 text-center">
             Add any preferences, must-haves, or deal breakers.
-          </Text>
+          </GuidanceText>
         </View>
 
         {isPromptStillLoading ? (

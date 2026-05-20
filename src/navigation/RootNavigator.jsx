@@ -14,22 +14,27 @@ import SearchResultDetailScreen from "../screens/SearchResultDetailScreen";
 import SearchScreen from "../screens/SearchScreen";
 import SettingsScreen from "../screens/SettingsScreen";
 import { SearchFlowProvider } from "../search/SearchFlowContext";
+import {
+  DevBackgroundPaletteControl,
+  useBackgroundPalette,
+} from "../theme/BackgroundPaletteContext";
 
 const Stack = createNativeStackNavigator();
 
-const navigationTheme = {
-  ...DefaultTheme,
-  colors: {
-    ...DefaultTheme.colors,
-    background: "#f7f2ea",
-    card: "#f7f2ea",
-    text: "#14222b",
-    border: "#e4d7c6",
-    primary: "#0F6175",
-  },
-};
-
 export default function RootNavigator() {
+  const { themeTokens } = useBackgroundPalette();
+  const navigationTheme = {
+    ...DefaultTheme,
+    colors: {
+      ...DefaultTheme.colors,
+      background: themeTokens.appBackground,
+      card: themeTokens.appBackground,
+      text: "#14222b",
+      border: themeTokens.borderSubtle,
+      primary: "#0F6175",
+    },
+  };
+
   return (
     <SafeAreaProvider>
       <NavigationContainer theme={navigationTheme}>
@@ -38,7 +43,7 @@ export default function RootNavigator() {
             screenOptions={{
               headerShadowVisible: false,
               headerStyle: {
-                backgroundColor: "#f7f2ea",
+                backgroundColor: themeTokens.appBackground,
               },
               headerTitleStyle: {
                 color: "#14222b",
@@ -46,7 +51,7 @@ export default function RootNavigator() {
                 fontWeight: "600",
               },
               contentStyle: {
-                backgroundColor: "#f7f2ea",
+                backgroundColor: themeTokens.appBackground,
               },
             }}
           >
@@ -86,6 +91,7 @@ export default function RootNavigator() {
               options={{ title: "Affiliate Disclosure" }}
             />
           </Stack.Navigator>
+          <DevBackgroundPaletteControl />
         </SearchFlowProvider>
       </NavigationContainer>
     </SafeAreaProvider>

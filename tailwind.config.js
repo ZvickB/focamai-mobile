@@ -19,6 +19,7 @@ module.exports = {
         "manrope-medium": ["Manrope_500Medium"],
         "manrope-semibold": ["Manrope_600SemiBold"],
         "manrope-bold": ["Manrope_700Bold"],
+        guidance: ["Manrope_400Regular"],
       },
     },
   },
