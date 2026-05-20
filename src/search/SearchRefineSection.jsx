@@ -35,7 +35,9 @@ function normalizeRefinementChips(suggestedRefinements) {
       }
 
       if (typeof chip?.label === "string") {
-        return { label: chip.label.trim() };
+        const label = chip.label.trim();
+        const prompt = typeof chip.prompt === "string" ? chip.prompt.trim() : undefined;
+        return prompt ? { label, prompt } : { label };
       }
 
       return null;
@@ -75,8 +77,12 @@ export function SearchRefineSection({
     : DEFAULT_REFINEMENT_CHIPS;
   const isPromptStillLoading = isGeneratingPrompt && !refinementPrompt;
 
-  function handleChipPress(chipLabel) {
-    setFollowUpNotes(addChipToNotes(followUpNotes, chipLabel));
+  function handleChipPress(chip) {
+    if (chip.prompt) {
+      setFollowUpNotes(chip.prompt);
+    } else {
+      setFollowUpNotes(addChipToNotes(followUpNotes, chip.label));
+    }
   }
 
   return (
@@ -110,7 +116,7 @@ export function SearchRefineSection({
               <RefinementChip
                 chip={chip}
                 key={chip.label}
-                onPress={() => handleChipPress(chip.label)}
+                onPress={() => handleChipPress(chip)}
                 selected={selected}
               />
             );
@@ -159,6 +165,7 @@ export function SearchRefineSection({
           Example: "Compact size", "Fits a small cafe", "Under $200"
         </Text>
       </View>
+
     </View>
   );
 }

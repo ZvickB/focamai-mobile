@@ -127,7 +127,7 @@ export default function FollowUpScreen({ navigation }) {
         paddingBottom: 16,
       }}
       footer={
-        <View className="gap-3 py-2">
+        <View className="w-full max-w-[430px] self-center gap-3 py-1">
           <Button
             testID="followup.showFocusedPicksButton"
             disabled={!canFinalize}

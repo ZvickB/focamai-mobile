@@ -96,6 +96,8 @@ project-notes/          Current mobile status and restart strategy
 - For meaningful checkpoints, report what changed, what was verified, and what phase we're on
 
 ### Behavior rules
+- **Questions are not change requests.** If Zvi asks a question — how something works, why something happens, how to test something — answer it. Do not read it as permission to go fix the thing being asked about. No code changes without an explicit instruction to make them.
+- **Explicit instruction required.** Valid triggers: "fix this", "change X to Y", "implement Z", "update the file". A question, observation, or "I'm worried about X" is not a trigger. When in doubt, ask: "Do you want me to make a change for this?"
 - **Deviate warning:** If your next action would meaningfully differ from my instruction or preference, say so before proceeding. Briefly state the mismatch and why. Do not silently override my intent. Do not warn for minor details.
 - **If unsure:** Prefer the smallest change that keeps the codebase aligned with the roadmap. Ask before making a product decision with non-obvious consequences.
 - **Keep changes scoped** — finish one phase or task cleanly before starting another

@@ -8,6 +8,7 @@ import ContactScreen from "../screens/ContactScreen";
 import FollowUpScreen from "../screens/FollowUpScreen";
 import HomeScreen from "../screens/HomeScreen";
 import PrivacyScreen from "../screens/PrivacyScreen";
+import RegionScreen from "../screens/RegionScreen";
 import ResultsScreen from "../screens/ResultsScreen";
 import SearchResultDetailScreen from "../screens/SearchResultDetailScreen";
 import SearchScreen from "../screens/SearchScreen";
@@ -62,7 +63,7 @@ export default function RootNavigator() {
             <Stack.Screen
               name="Results"
               component={ResultsScreen}
-              options={{ title: "Focused Picks" }}
+              options={{ headerShown: false }}
             />
             <Stack.Screen
               name="Home"
@@ -73,10 +74,11 @@ export default function RootNavigator() {
             <Stack.Screen name="Contact" component={ContactScreen} />
             <Stack.Screen name="Privacy" component={PrivacyScreen} />
             <Stack.Screen name="Settings" component={SettingsScreen} />
+            <Stack.Screen name="Region" component={RegionScreen} options={{ title: "Shopping region" }} />
             <Stack.Screen
               name="SearchResultDetail"
               component={SearchResultDetailScreen}
-              options={{ title: "Focused Pick" }}
+              options={{ headerShown: false }}
             />
             <Stack.Screen
               name="AffiliateDisclosure"

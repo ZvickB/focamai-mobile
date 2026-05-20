@@ -71,7 +71,7 @@ describe("normalizeQueryQualitySuggestion", () => {
 });
 
 describe("normalizeRefinementSuggestions", () => {
-  it("normalizes short string suggestions and caps at 3", () => {
+  it("normalizes short string suggestions into label objects and caps at 3", () => {
     expect(
       normalizeRefinementSuggestions({
         refinementSuggestions: [
@@ -81,22 +81,30 @@ describe("normalizeRefinementSuggestions", () => {
           "Extra valid",
         ],
       }),
-    ).toEqual(["Easy cleaning", "Quiet operation", "Small batches"]);
+    ).toEqual([
+      { label: "Easy cleaning" },
+      { label: "Quiet operation" },
+      { label: "Small batches" },
+    ]);
   });
 
-  it("drops malformed, empty, and overlong suggestions", () => {
+  it("passes through object chips with prompt and drops malformed or overlong entries", () => {
     expect(
       normalizeRefinementSuggestions({
         refinement_suggestions: [
           "Easy cleaning",
           "",
           "This label is much too long for a chip",
-          { label: "Ignored object" },
+          { label: "Quiet operation", prompt: "I need something that runs quietly" },
           123,
           "Small space",
         ],
       }),
-    ).toEqual(["Easy cleaning", "Small space"]);
+    ).toEqual([
+      { label: "Easy cleaning" },
+      { label: "Quiet operation", prompt: "I need something that runs quietly" },
+      { label: "Small space" },
+    ]);
   });
 
   it("returns an empty array when suggestions are missing", () => {

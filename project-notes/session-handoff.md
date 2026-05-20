@@ -117,6 +117,13 @@
 - The latest focused-pick detail slice had no touched `.js` files for `node --check`; `index.js` still passed `node --check`, and `npx expo export --platform android --output-dir .expo-export-check` passed; `.expo-export-check` was removed afterward.
 - The focused-pick detail/CTA slice now makes `SearchResultDetailScreen` show the product image/fallback, a retailer CTA when a link exists, an unavailable-link state when it does not, and a pricing/availability caveat before the existing at-a-glance, fit reason, caveat, and feature metadata. It keeps using the shared search-flow lookup by `candidateId`, preserves the 6-result cap, and does not change backend contracts or controller flow.
 - The focused-pick detail/CTA slice passed `node --check index.js`, `node --check App.js`, and `npx expo export --platform android --output-dir .expo-export-check`; `.expo-export-check` was removed afterward. Direct `node --check` on touched `.jsx` files is not supported by this Node setup, so the Expo Android export is the JSX parse/bundle check.
+- The May 19 Results payoff pass is implemented:
+  - `ResultsScreen` hides the native stack header and uses a native header matching Refine: back-to-refine, centered local PNG wordmark, quiet icon-only Settings, and a thinner `Search / Refine / Picks` progress cue with a small ember active accent.
+  - The generic Results intro is now `Your focused picks` plus a short assistant-style line and a quiet query/notes/count orientation strip.
+  - `SearchResultsSection` no longer wraps the shortlist cards inside another card; it renders `Six worth considering` with standalone product cards and keeps early preview secondary behind the reveal.
+  - Product cards keep the existing image/fallback, title, provider, price, rating/review fallbacks, fit/caveat preview, detail action, retailer CTA, affiliate disclosure, and 6-result cap while removing the louder first-pick treatment, metadata chip density, and nested reason card.
+  - Backend contracts, controller flow, explicit store preference behavior, query-quality polling, retry advice, enrichment hydration, candidate-id lookup, retailer CTA/disclosure, and retry placement are unchanged.
+  - The pass verified with `npm test -- --runInBand src/search/__tests__/SearchResultsSection.test.jsx`, `node --check App.js`, `node --check index.js`, and Android Expo export; `.expo-export-check` was removed afterward.
 - The Amazon affiliate disclosure slice now shows `As an Amazon Associate I earn from qualifying purchases.` near outbound retailer CTAs on both focused-pick cards and the detail screen. The CTA label remains vendor-agnostic as `View retailer`, and no backend contracts, controller flow, affiliate-tag logic, or multi-retailer behavior changed.
 - The Amazon affiliate disclosure slice passed `node --check index.js`, `node --check App.js`, and `npx expo export --platform android --output-dir .expo-export-check`; `.expo-export-check` was removed afterward.
 - UI/UX Slice 0/Slice 1 is complete:
@@ -231,6 +238,11 @@
   - `ScreenContainer` supports an optional fixed footer below the scroll view.
   - `SearchResultDetailScreen` uses that footer only when a retailer link exists, keeping `View retailer`, current price, short confirmation copy, and the affiliate disclosure reachable while scrolling detail content.
   - The in-page CTA/disclosure and unavailable-link state remain intact, with no backend contract or controller-flow changes.
+- The May 19 detail redesign is implemented:
+  - `SearchResultDetailScreen` now uses a native detail header with back-to-picks navigation and the centered local PNG wordmark, matching the newer Search/Refine/Results direction.
+  - The detail page uses the May 13 mockup as taste reference only: product-first image/title/facts, calmer decision-note surfaces, Lucide-supported feature notes, retailer CTA/disclosure, and at-a-glance metadata.
+  - It intentionally does not add saved, compare, share, profile, confidence percentages, tabs, bottom nav, or Amazon-specific CTA language.
+  - Candidate-id lookup, stale route-snapshot fallback, enrichment-aware fallback copy, fixed retailer footer, retailer CTA/disclosure, backend/controller contracts, query-quality polling, retry advice, hard-constraint refresh, and the 6-result cap remain unchanged.
 - The native detail parity slice keeps the native stack detail screen instead of copying the web modal layout. It adds a clearer detail overview and feature-highlight section, formats rating/review values on device, keeps calm fallback copy when feature/fit/caveat enrichment is absent, and preserves the existing candidate-id lookup, retailer CTA/disclosure, pricing/availability caveat, retry behavior, query-quality polling, controller flow, backend contracts, and 6-result cap.
 - The native detail parity slice passed `node --check index.js`, `node --check App.js`, and `npx expo export --platform android --output-dir .expo-export-check`; `.expo-export-check` was removed afterward. Direct `node --check` on touched `.jsx` files is not supported by this Node setup, so the Expo Android export is the JSX parse/bundle check.
 - The detail enrichment fix now polls `GET /api/search/enrichment` instead of `/api/search/enrich`, preserves finalize `fitReason`/`featureBullets` camelCase data, and merges enrichment entries by `candidate_id`, `candidateId`, or `id`. If the detail screen lacks AI fit reasons, caveats, or feature bullets, verify this path first.
@@ -296,6 +308,10 @@
   - finalize
   - enrichment
 - Do not start by copying the whole old hook back into mobile.
+
+## Audit checkpoints
+- **Last full audit:** commit `397a7da` ("Harden mobile audit fixes and checklist"), ~May 19 2026. Covers null safety, AsyncStorage, nav params, and controller data audit findings.
+- **Next audit:** schedule after the UI/UX pass is complete. Do not start it mid-slice.
 
 ## Next step
 - Continue building mobile search in bounded vertical slices against `src/search/useMobileSearchController.js`.

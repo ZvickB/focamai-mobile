@@ -214,10 +214,20 @@ export function normalizeRefinementSuggestions(payload) {
       : [];
 
   return rawSuggestions
-    .filter((item) => typeof item === "string")
-    .map((item) => item.trim().replace(/\s+/g, " "))
-    .filter(Boolean)
-    .filter((item) => item.length <= REFINEMENT_SUGGESTION_MAX_LENGTH)
+    .map((item) => {
+      if (typeof item === "string") {
+        const label = item.trim().replace(/\s+/g, " ");
+        return label ? { label } : null;
+      }
+      if (item && typeof item.label === "string") {
+        const label = item.label.trim().replace(/\s+/g, " ");
+        if (!label) return null;
+        const prompt = typeof item.prompt === "string" ? item.prompt.trim() : undefined;
+        return prompt ? { label, prompt } : { label };
+      }
+      return null;
+    })
+    .filter((item) => item?.label && item.label.length <= REFINEMENT_SUGGESTION_MAX_LENGTH)
     .slice(0, REFINEMENT_SUGGESTION_LIMIT);
 }
 
