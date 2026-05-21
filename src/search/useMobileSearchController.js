@@ -26,7 +26,6 @@ const ENRICHMENT_POLL_INTERVAL_MS = 1500;
 const ENRICHMENT_POLL_TIMEOUT_MS = 30000;
 const QUERY_QUALITY_POLL_INTERVAL_MS = 1500;
 const QUERY_QUALITY_POLL_TIMEOUT_MS = 20000;
-const MAX_RETRY_COUNT = 2;
 
 function createSearchSession({ amazonDomain, requestId, submittedQuery }) {
   return {
@@ -195,7 +194,6 @@ export function useMobileSearchController() {
   const [refinementPrompt, setRefinementPrompt] = useState(null);
   const [retryAdvice, setRetryAdvice] = useState(null);
   const [retryAdviceError, setRetryAdviceError] = useState("");
-  const [retryCount, setRetryCount] = useState(0);
   const [retryFeedback, setRetryFeedback] = useState("");
   const [showMarketplacePrompt, setShowMarketplacePrompt] = useState(false);
 
@@ -562,7 +560,6 @@ export function useMobileSearchController() {
     setDiscoverySummary(null);
     setFinalResults([]);
     setFollowUpNotes("");
-    setRetryCount(0);
     setRetryFeedback("");
     setPhaseEvents([
       ...(previousSessionWasRunning
@@ -1110,150 +1107,6 @@ export function useMobileSearchController() {
     }
   }
 
-  async function submitRetry() {
-    const session = activeSearchSessionRef.current;
-    const normalizedFeedback = retryFeedback.trim();
-
-    if (finalizingRequestIdRef.current) {
-      return;
-    }
-
-    if (finalResults.length === 0 || !normalizedFeedback || retryCount >= MAX_RETRY_COUNT) {
-      return;
-    }
-
-    if (!session?.discoveryToken || !session?.submittedQuery) {
-      const requestId = session?.requestId || searchRequestIdRef.current;
-
-      setErrorMessage("This search session expired. Start the search again before trying again.");
-      if (requestId) {
-        updateSessionForRequest(requestId, (currentSession) => ({
-          ...currentSession,
-          phases: {
-            ...currentSession.phases,
-            finalize: "failed",
-          },
-        }));
-        updatePhaseEvent(
-          buildPhaseEvent({
-            detail: "Retry blocked because the discovery token is missing",
-            eventKey: "finalize-retry-blocked",
-            phase: "finalize",
-            requestId,
-            status: "failed",
-          }),
-        );
-      }
-      return;
-    }
-
-    const requestId = session.requestId;
-    const nextRetryCount = retryCount + 1;
-    const retryEventKey = `finalize-retry-${nextRetryCount}`;
-    finalizingRequestIdRef.current = requestId;
-
-    setIsFinalizing(true);
-    setErrorMessage("");
-    updateSessionForRequest(requestId, (currentSession) => ({
-      ...currentSession,
-      phases: {
-        ...currentSession.phases,
-        finalize: "running",
-      },
-    }));
-    updatePhaseEvent(
-      buildPhaseEvent({
-        detail: `Sending retry ${nextRetryCount} request`,
-        eventKey: retryEventKey,
-        phase: "finalize",
-        requestId,
-        status: "running",
-      }),
-    );
-    stopEnrichmentPolling();
-
-    try {
-      const retryQuery = session.constraintRefresh?.query || session.submittedQuery;
-      const payload = await finalizeSearch({
-        amazonDomain: session.amazonDomain,
-        discoveryToken: session.discoveryToken,
-        excludedCandidateIds: finalResults.map((result) => result.id).filter(Boolean),
-        followUpNotes,
-        query: retryQuery,
-        rejectionFeedback: normalizedFeedback,
-        retryCount: nextRetryCount,
-      });
-
-      if (!isActiveRequest(requestId) || finalizingRequestIdRef.current !== requestId) {
-        return;
-      }
-
-      const nextFinalResults = normalizeFinalResults(
-        payload.results,
-        session.candidatePool,
-        `${requestId}-${session.discoveryToken}`,
-      );
-
-      setFinalResults(nextFinalResults);
-      setRetryCount(nextRetryCount);
-      setRetryFeedback("");
-      setRetryAdvice(null);
-      setRetryAdviceError("");
-      updateSessionForRequest(requestId, (currentSession) => ({
-        ...currentSession,
-        phases: {
-          ...currentSession.phases,
-          finalize: "complete",
-        },
-      }));
-      updatePhaseEvent(
-        buildPhaseEvent({
-          detail: `${nextFinalResults.length} replacement focused picks`,
-          eventKey: retryEventKey,
-          phase: "finalize",
-          requestId,
-          status: "complete",
-          timingMs: payload.clientTimingMs,
-        }),
-      );
-      if (shouldStartEnrichmentPolling(nextFinalResults)) {
-        startEnrichmentPolling({
-          amazonDomain: session.amazonDomain,
-          query: retryQuery,
-          requestId,
-          token: session.discoveryToken,
-        });
-      }
-    } catch (error) {
-      if (!isActiveRequest(requestId) || finalizingRequestIdRef.current !== requestId) {
-        return;
-      }
-
-      updateSessionForRequest(requestId, (currentSession) => ({
-        ...currentSession,
-        phases: {
-          ...currentSession.phases,
-          finalize: "failed",
-        },
-      }));
-      setErrorMessage(error instanceof Error ? error.message : "Unable to retry focused picks.");
-      updatePhaseEvent(
-        buildPhaseEvent({
-          detail: "Retry finalize request failed",
-          eventKey: retryEventKey,
-          phase: "finalize",
-          requestId,
-          status: "failed",
-        }),
-      );
-    } finally {
-      if (isActiveRequest(requestId) && finalizingRequestIdRef.current === requestId) {
-        finalizingRequestIdRef.current = null;
-        setIsFinalizing(false);
-      }
-    }
-  }
-
   function dismissQuerySuggestion() {
     setQuerySuggestion(null);
   }
@@ -1294,11 +1147,6 @@ export function useMobileSearchController() {
     : [];
   const canFinalize =
     Boolean(activeSearchSession?.discoveryToken && discoverySummary?.discoveryToken) && !isFinalizing;
-  const canRetry =
-    finalResults.length > 0 &&
-    retryFeedback.trim().length > 0 &&
-    retryCount < MAX_RETRY_COUNT &&
-    !isFinalizing;
   const canRequestRetryAdvice =
     finalResults.length > 0 &&
     !isFinalizing &&
@@ -1336,7 +1184,6 @@ export function useMobileSearchController() {
     setFinalResults([]);
     setFollowUpNotes("");
     setRefinementPrompt(null);
-    setRetryCount(0);
     setRetryFeedback("");
     setErrorMessage(
       `Amazon store changed to ${getAmazonMarketplaceLabel(nextAmazonDomain)}. Search again to use this store.`,
@@ -1383,7 +1230,6 @@ export function useMobileSearchController() {
   return {
     activeSearchSession,
     canFinalize,
-    canRetry,
     canRequestRetryAdvice,
     dismissQuerySuggestion,
     discoverySummary,
@@ -1406,7 +1252,6 @@ export function useMobileSearchController() {
     requestRetryAdvice,
     retryAdvice,
     retryAdviceError,
-    retryCount,
     retryFeedback,
     selectedAmazonDomain,
     showMarketplacePrompt,
@@ -1416,7 +1261,6 @@ export function useMobileSearchController() {
     setRetryFeedback: updateRetryFeedback,
     setSelectedAmazonDomain,
     startDiscoverySearch,
-    submitRetry,
     applyRetrySuggestion,
   };
 }

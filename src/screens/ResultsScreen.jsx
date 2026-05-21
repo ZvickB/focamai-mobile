@@ -156,8 +156,7 @@ export default function ResultsScreen({ navigation }) {
   const [focusedPicksY, setFocusedPicksY] = useState(0);
   const [rowLayouts, setRowLayouts] = useState({});
   const {
-    applyRetrySuggestion,
-    canRetry,
+    applyRetrySuggestion: applyRetrySuggestionToFlow,
     canRequestRetryAdvice,
     discoverySummary,
     errorMessage,
@@ -173,10 +172,8 @@ export default function ResultsScreen({ navigation }) {
     requestRetryAdvice,
     retryAdvice,
     retryAdviceError,
-    retryCount,
     retryFeedback,
     setRetryFeedback,
-    submitRetry,
   } = useSearchFlow();
   const focusedPickCount = Array.isArray(finalResults) ? finalResults.length : 0;
   const finalResultIdentity = Array.isArray(finalResults)
@@ -232,6 +229,18 @@ export default function ResultsScreen({ navigation }) {
       updateSelectedIndexForScroll(event.nativeEvent.contentOffset.y);
     },
     [updateSelectedIndexForScroll],
+  );
+  const handleApplyRetrySuggestion = useCallback(
+    (query) => {
+      const didStart = applyRetrySuggestionToFlow(query);
+
+      if (didStart) {
+        navigation.navigate("FollowUp");
+      }
+
+      return didStart;
+    },
+    [applyRetrySuggestionToFlow, navigation],
   );
   const fixedHeader = (
     <View className="gap-4 px-6 pb-3 pt-3">
@@ -296,8 +305,7 @@ export default function ResultsScreen({ navigation }) {
         />,
         <SearchRetrySection
           key="retry"
-          applyRetrySuggestion={applyRetrySuggestion}
-          canRetry={canRetry}
+          applyRetrySuggestion={handleApplyRetrySuggestion}
           canRequestRetryAdvice={canRequestRetryAdvice}
           finalResults={finalResults}
           followUpNotes={followUpNotes}
@@ -306,10 +314,8 @@ export default function ResultsScreen({ navigation }) {
           requestRetryAdvice={requestRetryAdvice}
           retryAdvice={retryAdvice}
           retryAdviceError={retryAdviceError}
-          retryCount={retryCount}
           retryFeedback={retryFeedback}
           setRetryFeedback={setRetryFeedback}
-          submitRetry={submitRetry}
         />,
       ];
 

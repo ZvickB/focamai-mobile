@@ -10,6 +10,7 @@ const RETRY_CORRECTION_CHIPS = [
   "Wrong size/count",
   "Not available",
 ];
+const RETRY_SUGGESTION_MAX_LENGTH = 80;
 
 const CONSTRAINT_STOP_WORDS = new Set([
   "a",
@@ -105,7 +106,6 @@ function deriveConstraintTags({ followUpNotes, retryFeedback, suggestedQuery, su
 
 export function SearchRetrySection({
   applyRetrySuggestion,
-  canRetry,
   canRequestRetryAdvice,
   finalResults,
   followUpNotes,
@@ -114,10 +114,8 @@ export function SearchRetrySection({
   requestRetryAdvice,
   retryAdvice,
   retryAdviceError,
-  retryCount,
   retryFeedback,
   setRetryFeedback,
-  submitRetry,
 }) {
   const [selectedChips, setSelectedChips] = useState([]);
   const [isEditingSuggestion, setIsEditingSuggestion] = useState(false);
@@ -184,8 +182,7 @@ export function SearchRetrySection({
         Want to correct the direction?
       </Text>
       <Text className="mt-2 text-sm leading-5 text-stone-600">
-        Say what felt off. Focamai can suggest a sharper next search, or fall back to replacement
-        picks from this search.
+        Say what felt off. Focamai can suggest a sharper next search and start fresh from there.
       </Text>
 
       <View className="mt-4 flex-row flex-wrap gap-2">
@@ -245,6 +242,7 @@ export function SearchRetrySection({
                   onChangeText={setEditableSuggestion}
                   placeholder="Edit the suggested search"
                   placeholderTextColor="#8B8175"
+                  maxLength={RETRY_SUGGESTION_MAX_LENGTH}
                   multiline
                   textAlignVertical="top"
                   className="mt-2 min-h-[72px] rounded-[18px] border border-line bg-white px-4 py-3 text-base text-ink"
@@ -294,33 +292,10 @@ export function SearchRetrySection({
         <View className="mt-4 rounded-[18px] border border-line bg-cream px-4 py-3">
           <Text className="text-sm leading-5 text-stone-700">{retryAdviceError}</Text>
           <Text className="mt-1 text-sm leading-5 text-stone-700">
-            You can still ask for replacement picks from this search.
+            Try editing your note and asking for a sharper search again.
           </Text>
         </View>
       ) : null}
-
-      <QuietStatusPanel className="mt-4">
-        <Text className="text-sm font-semibold text-ink">
-          Need replacements from this search?
-        </Text>
-        <Text className="mt-1 text-sm leading-5 text-stone-600">
-          This keeps the current candidate pool and asks for a different shortlist. Add a note
-          above so the retry has direction.
-        </Text>
-        {retryCount > 0 ? (
-          <Text className="mt-2 text-sm leading-5 text-stone-600">
-            {retryCount} of 2 retries used
-          </Text>
-        ) : null}
-        <Button
-          disabled={!canRetry}
-          onPress={submitRetry}
-          className="mt-3"
-          variant="secondary"
-        >
-          Retry these picks instead
-        </Button>
-      </QuietStatusPanel>
     </Surface>
   );
 }

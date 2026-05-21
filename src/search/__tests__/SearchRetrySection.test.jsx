@@ -13,7 +13,6 @@ function renderRetrySection(props = {}) {
     <SearchRetrySection
       applyRetrySuggestion={jest.fn()}
       canRequestRetryAdvice
-      canRetry={false}
       finalResults={finalResults}
       followUpNotes="easy to fold"
       isGeneratingRetryAdvice={false}
@@ -21,10 +20,8 @@ function renderRetrySection(props = {}) {
       requestRetryAdvice={jest.fn()}
       retryAdvice={null}
       retryAdviceError=""
-      retryCount={0}
       retryFeedback=""
       setRetryFeedback={jest.fn()}
-      submitRetry={jest.fn()}
       {...props}
     />,
   );
@@ -63,19 +60,5 @@ describe("SearchRetrySection", () => {
     fireEvent.press(getByText("Search this suggestion"));
 
     expect(applyRetrySuggestion).toHaveBeenCalledWith("compact stroller under $150");
-  });
-
-  it("keeps same-session retry as a fallback below advice", () => {
-    const submitRetry = jest.fn();
-    const { getByText } = renderRetrySection({
-      canRetry: true,
-      retryFeedback: "avoid bulky options",
-      submitRetry,
-    });
-
-    fireEvent.press(getByText("Retry these picks instead"));
-
-    expect(getByText("Need replacements from this search?")).toBeTruthy();
-    expect(submitRetry).toHaveBeenCalledTimes(1);
   });
 });

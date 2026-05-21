@@ -4,6 +4,7 @@ import {
   normalizeFinalResults,
   normalizeQueryQualitySuggestion,
   normalizeRefinementSuggestions,
+  normalizeRetryAdvice,
 } from "../searchApi";
 
 describe("coerceDisplayText", () => {
@@ -109,6 +110,31 @@ describe("normalizeRefinementSuggestions", () => {
 
   it("returns an empty array when suggestions are missing", () => {
     expect(normalizeRefinementSuggestions({ prompt: "What matters most?" })).toEqual([]);
+  });
+});
+
+describe("normalizeRetryAdvice", () => {
+  it("clamps suggested retry queries to the discovery query limit", () => {
+    const advice = normalizeRetryAdvice({
+      rationale: { message: "This is more specific." },
+      suggestedQuery: `compact city stroller ${"with lightweight fold and under $200 ".repeat(4)}`,
+    });
+
+    expect(advice.suggestedQuery.length).toBeLessThanOrEqual(80);
+    expect(advice.suggestedQuery).toMatch(/^compact city stroller/);
+    expect(advice.rationale).toBe("This is more specific.");
+  });
+
+  it("drops malformed retry query suggestions", () => {
+    expect(
+      normalizeRetryAdvice({
+        rationale: "This is more specific.",
+        suggestedQuery: "kosher white chocolate chips 漢",
+      }),
+    ).toMatchObject({
+      rationale: "This is more specific.",
+      suggestedQuery: "",
+    });
   });
 });
 

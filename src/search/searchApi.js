@@ -1,6 +1,7 @@
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || "";
 const FINAL_RESULT_LIMIT = 6;
 const PREVIEW_RESULT_LIMIT = 3;
+const RETRY_ADVICE_SUGGESTED_QUERY_MAX_LENGTH = 80;
 const REFINEMENT_SUGGESTION_LIMIT = 3;
 const REFINEMENT_SUGGESTION_MAX_LENGTH = 22;
 const TEXT_FIELD_KEYS = [
@@ -87,22 +88,14 @@ export async function getRefinementPrompt({ query }) {
 export async function finalizeSearch({
   amazonDomain,
   discoveryToken,
-  excludedCandidateIds = [],
   followUpNotes = "",
   query,
-  rejectionFeedback = "",
-  retryCount = 0,
 }) {
   assertApiBaseUrl();
 
   const requestStartedAt = Date.now();
   const normalizedNotes = followUpNotes.trim();
-  const normalizedFeedback = rejectionFeedback.trim();
-  const requestMode = retryCount > 0
-    ? "guided_retry"
-    : normalizedNotes
-      ? "guided_refined"
-      : "guided_empty_notes";
+  const requestMode = normalizedNotes ? "guided_refined" : "guided_empty_notes";
   const response = await fetch(`${API_BASE_URL}/api/search/finalize`, {
     method: "POST",
     headers: {
@@ -111,12 +104,9 @@ export async function finalizeSearch({
     body: JSON.stringify({
       amazonDomain,
       discoveryToken,
-      excludedCandidateIds,
       followUpNotes: normalizedNotes,
       query,
-      rejectionFeedback: normalizedFeedback,
       requestMode,
-      retryCount,
     }),
   });
 
@@ -231,6 +221,19 @@ export function normalizeRefinementSuggestions(payload) {
     .slice(0, REFINEMENT_SUGGESTION_LIMIT);
 }
 
+export function normalizeRetryAdvice(payload) {
+  const suggestedQuery = coerceDisplayText(payload?.suggestedQuery)
+    .replace(/\s+/g, " ")
+    .slice(0, RETRY_ADVICE_SUGGESTED_QUERY_MAX_LENGTH)
+    .trim();
+
+  return {
+    ...payload,
+    suggestedQuery: isSafeQuerySuggestionText(suggestedQuery) ? suggestedQuery : "",
+    rationale: coerceDisplayText(payload?.rationale),
+  };
+}
+
 export async function getRetryAdvice({
   followUpNotes = "",
   query,
@@ -253,7 +256,13 @@ export async function getRetryAdvice({
     }),
   });
 
-  return readJsonResponse(response, requestStartedAt, "Unable to suggest a better search direction.");
+  const payload = await readJsonResponse(
+    response,
+    requestStartedAt,
+    "Unable to suggest a better search direction.",
+  );
+
+  return normalizeRetryAdvice(payload);
 }
 
 export function normalizePreviewResults(results) {
