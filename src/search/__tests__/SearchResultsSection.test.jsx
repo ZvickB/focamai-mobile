@@ -57,7 +57,7 @@ describe("SearchResultsSection", () => {
 
   it("renders focused picks and opens a pick by item and index", () => {
     const onOpenResult = jest.fn();
-    const { getByTestId, getByText } = render(
+    const { getByLabelText, getByTestId, getByText } = render(
       <SearchResultsSection
         finalResults={[focusedPick]}
         onOpenResult={onOpenResult}
@@ -69,6 +69,7 @@ describe("SearchResultsSection", () => {
 
     expect(getByText("Why these picks?")).toBeTruthy();
     expect(getByText("Compact Travel Stroller")).toBeTruthy();
+    expect(getByLabelText("Selected result. Open result: Compact Travel Stroller")).toBeTruthy();
     expect(onOpenResult).toHaveBeenCalledWith(focusedPick, 0);
   });
 

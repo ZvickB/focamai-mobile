@@ -2,7 +2,7 @@ import { Image, Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
 import { ChevronLeft } from "lucide-react-native";
-import { useBackgroundPalette } from "../theme/BackgroundPaletteContext";
+import { appThemeTokens } from "../theme/themeTokens";
 
 const wordmarkImage = require("../../assets/wordmark.png");
 
@@ -16,21 +16,24 @@ export function ScreenContainer({
   backgroundElement,
   children,
   contentContainerStyle,
+  fixedHeader,
   footer,
   keyboardShouldPersistTaps,
+  onScroll,
   safeAreaEdges = ["bottom"],
+  scrollEventThrottle,
+  stickyHeaderIndices,
   testID,
 }) {
-  const { themeTokens } = useBackgroundPalette();
-
   return (
     <SafeAreaView
       edges={safeAreaEdges}
       className="flex-1"
-      style={{ backgroundColor: themeTokens.appBackground }}
+      style={{ backgroundColor: appThemeTokens.appBackground }}
       testID={testID}
     >
       {backgroundElement}
+      {fixedHeader}
       <ScrollView
         className="flex-1"
         contentContainerStyle={[
@@ -38,6 +41,9 @@ export function ScreenContainer({
           contentContainerStyle,
         ]}
         keyboardShouldPersistTaps={keyboardShouldPersistTaps}
+        onScroll={onScroll}
+        scrollEventThrottle={scrollEventThrottle}
+        stickyHeaderIndices={stickyHeaderIndices}
       >
         {children}
       </ScrollView>
@@ -45,8 +51,8 @@ export function ScreenContainer({
         <View
           className="border-t px-6 py-3"
           style={{
-            backgroundColor: themeTokens.cardBackground,
-            borderColor: themeTokens.borderSubtle,
+            backgroundColor: appThemeTokens.cardBackground,
+            borderColor: appThemeTokens.borderSubtle,
           }}
         >
           {footer}
@@ -320,6 +326,7 @@ export function RecoveryPanel({
 
 export function ProductImageFrame({
   containerClassName = "h-28 w-28",
+  frameClassName = "rounded-[18px] border border-line bg-white p-2",
   image,
   imageClassName = "rounded-md",
   title,
@@ -342,7 +349,7 @@ export function ProductImageFrame({
   }
 
   return (
-    <View className={cx("rounded-[18px] border border-line bg-white p-2", containerClassName)}>
+    <View className={cx(frameClassName, containerClassName)}>
       <Image
         accessibilityLabel={title}
         className={cx("h-full w-full", imageClassName)}

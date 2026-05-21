@@ -15,7 +15,6 @@ Read this file first at the start of every chat in `mobile/`.
 ## First reads
 - Read `project-notes/session-handoff.md` first for the fastest mobile reset.
 - Read `project-notes/current-status.md` next for the immediate mobile snapshot.
-- Read `project-notes/restart-strategy.md` before rebuilding search behavior on the clean-slate branch.
 - Read `migration-roadmap.md` for the actual phase-by-phase migration plan and file mapping.
 - Read `CLAUDE.md` for mobile stack decisions, run commands, and React Native gotchas.
 - Read `../web/project-notes/app_flow.md` for the canonical product behavior that mobile is translating.
@@ -26,7 +25,6 @@ Read this file first at the start of every chat in `mobile/`.
 - `migration-roadmap.md`: canonical migration phases, file mapping, and checkpoints.
 - `project-notes/current-status.md`: short mobile snapshot and current phase reality.
 - `project-notes/session-handoff.md`: fastest startup reset for a new mobile chat.
-- `project-notes/restart-strategy.md`: current clean-slate rebuild discipline and why the earlier Phase 3 port was removed.
 - `CLAUDE.md`: mobile stack choices, run commands, and practical RN replacements.
 - `../web/project-notes/app_flow.md`: current product behavior.
 - `../web/project-notes/current-status.md`: current web/backend reality.
@@ -45,6 +43,9 @@ Read this file first at the start of every chat in `mobile/`.
 - Do not copy large web controllers wholesale. Use them as behavior/request references and rebuild mobile-native data/controller layers in bounded vertical slices.
 - Keep implemented behavior and planned migration work separate.
 - If a web note and the mobile roadmap conflict, treat the web note as product truth and the roadmap as the implementation plan unless the user explicitly chooses otherwise.
+
+## Component Styling
+All new components must follow `project-notes/design-system.md` — tokens, spacing, typography, surface primitives, and what to avoid. A task can override a specific rule; the override applies only to that component unless stated otherwise.
 
 ## Current product direction to preserve
 - The app should feel calm, focused, mobile-first, and not marketplace-shaped.

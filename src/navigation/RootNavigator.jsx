@@ -14,23 +14,19 @@ import SearchResultDetailScreen from "../screens/SearchResultDetailScreen";
 import SearchScreen from "../screens/SearchScreen";
 import SettingsScreen from "../screens/SettingsScreen";
 import { SearchFlowProvider } from "../search/SearchFlowContext";
-import {
-  DevBackgroundPaletteControl,
-  useBackgroundPalette,
-} from "../theme/BackgroundPaletteContext";
+import { appThemeTokens } from "../theme/themeTokens";
 
 const Stack = createNativeStackNavigator();
 
 export default function RootNavigator() {
-  const { themeTokens } = useBackgroundPalette();
   const navigationTheme = {
     ...DefaultTheme,
     colors: {
       ...DefaultTheme.colors,
-      background: themeTokens.appBackground,
-      card: themeTokens.appBackground,
+      background: appThemeTokens.appBackground,
+      card: appThemeTokens.appBackground,
       text: "#14222b",
-      border: themeTokens.borderSubtle,
+      border: appThemeTokens.borderSubtle,
       primary: "#0F6175",
     },
   };
@@ -43,7 +39,7 @@ export default function RootNavigator() {
             screenOptions={{
               headerShadowVisible: false,
               headerStyle: {
-                backgroundColor: themeTokens.appBackground,
+                backgroundColor: appThemeTokens.appBackground,
               },
               headerTitleStyle: {
                 color: "#14222b",
@@ -51,7 +47,7 @@ export default function RootNavigator() {
                 fontWeight: "600",
               },
               contentStyle: {
-                backgroundColor: themeTokens.appBackground,
+                backgroundColor: appThemeTokens.appBackground,
               },
             }}
           >
@@ -91,7 +87,6 @@ export default function RootNavigator() {
               options={{ title: "Affiliate Disclosure" }}
             />
           </Stack.Navigator>
-          <DevBackgroundPaletteControl />
         </SearchFlowProvider>
       </NavigationContainer>
     </SafeAreaProvider>

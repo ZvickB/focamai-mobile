@@ -8,6 +8,7 @@ import {
   RecoveryPanel,
   ScreenContainer,
 } from "../components/MobileUI";
+import { FinalizeLoadingState } from "../search/FinalizeLoadingState";
 import { SearchFlowProgressCue } from "../search/SearchFlowProgressCue";
 import { SearchRefineSection } from "../search/SearchRefineSection";
 import { useSearchFlow } from "../search/SearchFlowContext";
@@ -78,6 +79,7 @@ export default function FollowUpScreen({ navigation }) {
         paddingBottom: 20,
       }}
       footer={
+        isFinalizing ? undefined :
         <View className="w-full max-w-[430px] self-center gap-3 py-1">
           <Button
             testID="followup.showFocusedPicksButton"
@@ -111,35 +113,45 @@ export default function FollowUpScreen({ navigation }) {
         </View>
       }
     >
-        <View className="w-full max-w-[430px] self-center gap-8">
+      <View className="w-full max-w-[430px] self-center gap-8">
         <RefineHeader
           onBack={() => navigation.navigate("Search")}
           onSettings={() => navigation.navigate("Settings")}
         />
 
-        {hasStartedSearch ? <SearchFlowProgressCue activeStep="refine" /> : null}
-
-        <SearchRefineSection
-          followUpNotes={followUpNotes}
-          isGeneratingPrompt={isGeneratingPrompt}
-          refinementPrompt={refinementPrompt}
-          setFollowUpNotes={setFollowUpNotes}
-          productQuery={productQuery}
-          suggestedRefinements={refinementPrompt?.suggestedRefinements}
-        />
-
-        {errorMessage ? (
-          <RecoveryPanel
-            detail={errorMessage}
-            message={recoveryMessage}
-            onPrimaryAction={canFinalize ? finalizeAndOpenResults : () => navigation.navigate("Search")}
-            onSecondaryAction={canFinalize ? () => navigation.navigate("Search") : undefined}
-            primaryActionLabel={canFinalize ? "Try shortlist again" : "Back to search"}
-            secondaryActionLabel={canFinalize ? "Edit search" : undefined}
-            testID="followup.recoveryPanel"
-            title={recoveryTitle}
-          />
+        {hasStartedSearch ? (
+          <SearchFlowProgressCue activeStep={isFinalizing ? "picks" : "refine"} />
         ) : null}
+
+        {isFinalizing ? (
+          <FinalizeLoadingState />
+        ) : (
+          <>
+            <SearchRefineSection
+              followUpNotes={followUpNotes}
+              isGeneratingPrompt={isGeneratingPrompt}
+              refinementPrompt={refinementPrompt}
+              setFollowUpNotes={setFollowUpNotes}
+              productQuery={productQuery}
+              suggestedRefinements={refinementPrompt?.suggestedRefinements}
+            />
+
+            {errorMessage ? (
+              <RecoveryPanel
+                detail={errorMessage}
+                message={recoveryMessage}
+                onPrimaryAction={
+                  canFinalize ? finalizeAndOpenResults : () => navigation.navigate("Search")
+                }
+                onSecondaryAction={canFinalize ? () => navigation.navigate("Search") : undefined}
+                primaryActionLabel={canFinalize ? "Try shortlist again" : "Back to search"}
+                secondaryActionLabel={canFinalize ? "Edit search" : undefined}
+                testID="followup.recoveryPanel"
+                title={recoveryTitle}
+              />
+            ) : null}
+          </>
+        )}
       </View>
     </ScreenContainer>
   );

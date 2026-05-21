@@ -6,7 +6,7 @@ module.exports = {
     extend: {
       colors: {
         ink: "#14222b",
-        mist: "#f7f2ea",
+        mist: "#fbf7ef",
         cream: "#fcf9f3",
         line: "#e4d7c6",
         accent: "#0F6175",

@@ -75,6 +75,16 @@ describe("FollowUpScreen", () => {
     });
   });
 
+  it("shows the finalize loading state while waiting for focused picks", () => {
+    const { getByTestId, getByText, queryByTestId } = renderFollowUp({
+      isFinalizing: true,
+    });
+
+    expect(getByTestId("finalizeLoading.state")).toBeTruthy();
+    expect(getByText("We're on it. Your results will be here soon.")).toBeTruthy();
+    expect(queryByTestId("followup.showFocusedPicksButton")).toBeNull();
+  });
+
   it("sends the user back to search when recovery cannot finalize yet", () => {
     const finalizeFocusedPicks = jest.fn();
     const { getByText, navigation } = renderFollowUp({

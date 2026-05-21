@@ -19,7 +19,7 @@ function SearchBackgroundWash() {
           <LinearGradient id="searchTopWash" x1="0" x2="0" y1="0" y2="1">
             <Stop offset="0" stopColor="#f2ddbf" stopOpacity="0.3" />
             <Stop offset="0.58" stopColor="#f7ead8" stopOpacity="0.12" />
-            <Stop offset="1" stopColor="#faf6f1" stopOpacity="0" />
+            <Stop offset="1" stopColor="#fbf7ef" stopOpacity="0" />
           </LinearGradient>
         </Defs>
         <Rect fill="url(#searchTopWash)" height="100%" width="100%" x="0" y="0" />

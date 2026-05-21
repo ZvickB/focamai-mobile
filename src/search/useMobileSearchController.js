@@ -63,6 +63,20 @@ function getFinalResultsKey(results) {
   return Array.isArray(results) ? results.map((item) => String(item?.id || "")).join("|") : "";
 }
 
+function resultNeedsEnrichment(result) {
+  const featureBullets = Array.isArray(result?.feature_bullets)
+    ? result.feature_bullets.map((bullet) => normalizeEnrichmentText(bullet)).filter(Boolean)
+    : [];
+
+  return !normalizeEnrichmentText(result?.fit_reason) ||
+    !normalizeEnrichmentText(result?.caveat) ||
+    featureBullets.length === 0;
+}
+
+function shouldStartEnrichmentPolling(results) {
+  return Array.isArray(results) && results.length > 0 && results.some(resultNeedsEnrichment);
+}
+
 function buildDiscoverySummary(discoveryPayload, query) {
   const candidates = Array.isArray(discoveryPayload.candidatePool?.candidates)
     ? discoveryPayload.candidatePool.candidates
@@ -971,10 +985,7 @@ export function useMobileSearchController() {
           timingMs: payload.clientTimingMs,
         }),
       );
-      if (
-        nextFinalResults.length > 0 &&
-        !nextFinalResults.some((result) => Boolean(result.fit_reason))
-      ) {
+      if (shouldStartEnrichmentPolling(nextFinalResults)) {
         startEnrichmentPolling({
           amazonDomain: finalizeAmazonDomain,
           query: finalizeQuery,
@@ -1205,10 +1216,7 @@ export function useMobileSearchController() {
           timingMs: payload.clientTimingMs,
         }),
       );
-      if (
-        nextFinalResults.length > 0 &&
-        !nextFinalResults.some((result) => Boolean(result.fit_reason))
-      ) {
+      if (shouldStartEnrichmentPolling(nextFinalResults)) {
         startEnrichmentPolling({
           amazonDomain: session.amazonDomain,
           query: retryQuery,

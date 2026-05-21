@@ -13,7 +13,6 @@ import { Text, TextInput } from "react-native";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import RootNavigator from "./src/navigation/RootNavigator";
-import { BackgroundPaletteProvider } from "./src/theme/BackgroundPaletteContext";
 
 Text.defaultProps = Text.defaultProps || {};
 Text.defaultProps.style = [{ fontFamily: "Manrope_400Regular" }, Text.defaultProps.style];
@@ -47,10 +46,8 @@ export default function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <BackgroundPaletteProvider>
-        <RootNavigator />
-        <StatusBar style="dark" />
-      </BackgroundPaletteProvider>
+      <RootNavigator />
+      <StatusBar style="dark" />
     </QueryClientProvider>
   );
 }

@@ -7,8 +7,12 @@ import { FocusedPickRow, PreviewResultRow } from "./SearchResultRows";
 export function SearchResultsSection({
   finalResults = [],
   isFinalizing = false,
+  onFocusedPicksLayout,
   onOpenResult,
+  onResultsLayout,
+  onRowLayout,
   previewItems = [],
+  selectedIndex = 0,
   showEmptyState = false,
 }) {
   const [isPreviewVisible, setIsPreviewVisible] = useState(false);
@@ -38,7 +42,7 @@ export function SearchResultsSection({
   }
 
   return (
-    <View className="gap-4">
+    <View className="gap-4" onLayout={onResultsLayout}>
       {hasFocusedPicks ? (
         <View className="gap-3">
           {safeFinalResults.length < 6 ? (
@@ -49,12 +53,14 @@ export function SearchResultsSection({
             </Text>
           ) : null}
 
-          <View className="gap-3" testID="results.focusedPicks">
+          <View className="gap-1" onLayout={onFocusedPicksLayout} testID="results.focusedPicks">
             {safeFinalResults.map((item, index) => (
               <FocusedPickRow
+                isSelected={index === selectedIndex}
                 key={item.id}
                 item={item}
                 index={index}
+                onLayout={(event) => onRowLayout?.(index, event)}
                 onPress={() => onOpenResult(item, index)}
               />
             ))}

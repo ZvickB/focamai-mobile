@@ -5,7 +5,7 @@ React Native (Expo) port of the Focama web app. Same product: user enters a quer
 
 **The backend is not touched.** The same three API endpoints (`discover`, `refine`, `finalize`) deployed on Render serve both the web app and this mobile app. All work here is frontend-only. (The web frontend is deployed on Vercel — that is separate from the API backend.)
 
-Current branch reality: `restart/mobile-clean-slate` is intentionally rolled back to a basic Expo shell. Read `project-notes/restart-strategy.md` before rebuilding search behavior.
+Current branch: `main`. The clean-slate rebuild is complete — all endpoint slices, UI/UX slices, and audit hardening are done. Do not copy the old Phase 3 guided-search hook wholesale; build new behavior in bounded vertical slices.
 
 Source of truth for the broad migration plan: `migration-roadmap.md` in this directory. Treat it as a reference, not permission to copy the old Phase 3 search hook back in one pass.
 
@@ -21,6 +21,9 @@ Source of truth for the broad migration plan: `migration-roadmap.md` in this dir
 - The task is pure implementation with no ambiguity about approach
 
 **Rule of thumb:** Conversation and judgment → Claude. Autonomous heads-down execution → Codex.
+
+## Component Styling
+All new components must follow `project-notes/design-system.md` — tokens, spacing, typography, surface primitives, and what to avoid. A task can override a specific rule; the override applies only to that component unless stated otherwise.
 
 ## Product Voice — AI Copy Tone
 Non-negotiable. Same rules as the web app.
@@ -71,8 +74,7 @@ project-notes/          Current mobile status and restart strategy
 - **Read from `../web/src/`**, write to `./src/`
 - One phase at a time — don't start the next phase until the current checkpoint passes
 - Test on a real device or emulator before calling a phase done — not just "it compiles"
-- Use `project-notes/restart-strategy.md` for the current rebuild discipline: one small verified slice at a time.
-- Do not copy the whole old guided-search hook back into mobile.
+- Build new behavior in bounded vertical slices; do not copy the whole old guided-search hook back into mobile.
 
 ## RN Gotchas — Know These Before Touching Any File
 | Web | React Native replacement |

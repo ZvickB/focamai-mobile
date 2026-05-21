@@ -49,140 +49,57 @@ function getPickReason(item, featureBullets) {
   return item.fit_reason || item.caveat || featureBullets[0] || "A focused match for this search.";
 }
 
-function getAttributeChips(item, featureBullets) {
-  const chips = [];
-
-  if (item.caveat) {
-    chips.push("Caveat noted");
-  }
-
-  chips.push(...featureBullets);
-
-  if (item.provider) {
-    chips.push(item.provider);
-  }
-
-  return chips
-    .map((chip) => String(chip).trim())
-    .filter(Boolean)
-    .slice(0, 3);
-}
-
-export function FeaturedPickCard({ item, onPress }) {
-  const featureBullets = Array.isArray(item.feature_bullets)
-    ? item.feature_bullets.map((bullet) => String(bullet).trim()).filter(Boolean)
-    : [];
-  const attributeChips = getAttributeChips(item, featureBullets);
-  const priceLabel = item.price || "Price not shown";
-  const reason = getPickReason(item, featureBullets);
-
-  return (
-    <Surface className="overflow-hidden bg-white px-0 py-0">
-      <Pressable
-        testID="results.focusedPick.1"
-        accessibilityRole="button"
-        accessibilityLabel={`Open focused pick 1: ${item.title}`}
-        onPress={onPress}
-        className="px-5 py-5"
-      >
-        <View className="flex-row gap-4">
-          <View className="items-center gap-3">
-            <ProductImageFrame
-              containerClassName="h-40 w-36"
-              image={item.image}
-              title={item.title}
-            />
-          </View>
-          <View className="min-w-0 flex-1 py-1">
-            <Text className="text-[22px] font-semibold leading-[28px] text-ink" numberOfLines={3}>
-              {item.title}
-            </Text>
-            <Text className="mt-2 text-sm leading-5 text-stone-600" numberOfLines={3}>
-              {reason}
-            </Text>
-
-            {attributeChips.length > 0 ? (
-              <View className="mt-3 flex-row flex-wrap gap-2">
-                {attributeChips.map((chip) => (
-                  <View className="rounded-full border border-line bg-cream px-2.5 py-1.5" key={chip}>
-                    <Text className="text-[11px] font-semibold text-stone-700" numberOfLines={1}>
-                      {chip}
-                    </Text>
-                  </View>
-                ))}
-              </View>
-            ) : null}
-
-            <Text className="mt-4 text-[21px] font-semibold text-accent">{priceLabel}</Text>
-
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="View details for pick 1"
-              className="mt-4 min-h-[46px] items-center justify-center rounded-[18px] bg-accent px-4"
-              onPress={onPress}
-            >
-              <Text className="text-sm font-semibold text-white">View details</Text>
-            </Pressable>
-          </View>
-        </View>
-      </Pressable>
-    </Surface>
-  );
-}
-
-export function CompactPickRow({ item, index, onPress }) {
+export function FocusedPickRow({ isSelected = false, item, index, onLayout, onPress }) {
   const featureBullets = Array.isArray(item.feature_bullets)
     ? item.feature_bullets.map((bullet) => String(bullet).trim()).filter(Boolean)
     : [];
   const reason = getPickReason(item, featureBullets);
   const priceLabel = item.price || "Price not shown";
+  const ratingLabel = formatRatingLabel(item.rating);
 
   return (
-    <Surface className="overflow-hidden bg-white px-0 py-0">
+    <Surface
+      className={`overflow-hidden px-0 py-0 ${isSelected ? "bg-cream" : "bg-white"}`}
+      onLayout={onLayout}
+    >
+      {isSelected ? <View className="absolute bottom-0 left-0 top-0 w-1 bg-accent" /> : null}
       <Pressable
         testID={`results.focusedPick.${index + 1}`}
         accessibilityRole="button"
-        accessibilityLabel={`Open focused pick ${index + 1}: ${item.title}`}
+        accessibilityLabel={`${isSelected ? "Selected result. " : ""}Open result: ${item.title}`}
         onPress={onPress}
-        className="px-5 py-4"
+        className="min-h-24 px-3 py-3"
       >
-        <View className="flex-row items-center gap-3">
-          <View className="items-center gap-2">
-            <View className="h-7 w-7 items-center justify-center rounded-full bg-cream">
-              <Text className="text-xs font-semibold text-accent">{index + 1}</Text>
-            </View>
-            <ProductImageFrame
-              containerClassName="h-16 w-16"
-              image={item.image}
-              title={item.title}
-            />
-          </View>
+        <View className="flex-row items-center gap-2">
+          <ProductImageFrame
+            containerClassName="h-14 w-14"
+            image={item.image}
+            title={item.title}
+          />
           <View className="min-w-0 flex-1">
             <Text className="text-base font-semibold leading-5 text-ink" numberOfLines={2}>
               {item.title}
             </Text>
-            <Text className="mt-1 text-sm leading-5 text-stone-600" numberOfLines={1}>
+            <Text className="mt-1 text-sm leading-5 text-stone-600" numberOfLines={2}>
               {reason}
             </Text>
-            <View className="mt-1 flex-row items-center gap-2">
-              <Text className="text-sm font-semibold text-ink">{priceLabel}</Text>
+            <View className="mt-1 flex-row flex-wrap items-center gap-x-2 gap-y-1">
+              <Text className="text-sm font-semibold text-ink" numberOfLines={1}>
+                {priceLabel}
+              </Text>
+              <Text className="text-xs font-medium text-stone-500" numberOfLines={1}>
+                {ratingLabel}
+              </Text>
               {item.provider ? (
                 <Text className="text-xs font-medium text-stone-500" numberOfLines={1}>
                   {item.provider}
                 </Text>
               ) : null}
             </View>
+            <Text className="mt-1 text-xs font-semibold text-accent">View details</Text>
           </View>
         </View>
       </Pressable>
     </Surface>
   );
-}
-
-export function FocusedPickRow({ item, index, onPress }) {
-  if (index === 0) {
-    return <FeaturedPickCard item={item} onPress={onPress} />;
-  }
-
-  return <CompactPickRow item={item} index={index} onPress={onPress} />;
 }
