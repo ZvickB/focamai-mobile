@@ -57,10 +57,11 @@ Use the normal command for ordinary UI/code edits. Use `--clear` after `.env` ch
 - **Styling:** NativeWind v4 (Tailwind class syntax)
 - **Fonts:** Manrope via `expo-font` and `@expo-google-fonts/manrope`, loaded in `App.js` before rendering.
 - **Animations:** React Native Reanimated
-- **Currently removed during clean-slate reset:** Expo Constants, Expo Crypto, Expo Linking, Expo Dev Client, lucide-react-native
-- **Re-added narrowly:** AsyncStorage is active only for the saved marketplace-domain preference.
-- **Re-added narrowly:** TanStack Query is installed and provided at the app root, but existing search logic has not been migrated to queries.
-- **Re-add later only when the rebuild slice needs them.**
+- **lucide-react-native:** active for icons (search, mic, settings, back chevron, feature-note bullets); `metro.config.js` appends `"mjs"` to `resolver.sourceExts` to resolve Lucide's ESM files.
+- **AsyncStorage:** active for saved marketplace-domain preference only.
+- **TanStack Query:** installed and provided at the app root; search logic has not been migrated to queries yet.
+- **Expo Linking:** re-added for retailer CTA outbound links.
+- **Not yet re-added:** Expo Constants, Expo Crypto, Expo Dev Client.
 
 ## Key Directories
 ```
@@ -133,5 +134,4 @@ When starting a new session:
 1. `AGENTS.md` — mobile front door and source-of-truth map
 2. `project-notes/session-handoff.md` — what phase we're on and what's left
 3. `project-notes/current-status.md` — immediate snapshot
-4. `project-notes/restart-strategy.md` — why the reset happened and how to rebuild safely
-5. `migration-roadmap.md` — broad phase reference, not a copy-wholesale instruction
+4. `migration-roadmap.md` — broad phase reference, not a copy-wholesale instruction
