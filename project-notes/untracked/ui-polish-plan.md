@@ -24,24 +24,8 @@
 
 ## Remaining polish
 
-### 1. Add semantic design tokens
-The app is coherent through shared components, but values are still repeated as utility classes.
-
-Do:
-- Add semantic Tailwind tokens for:
-  - screen padding: 24
-  - card padding: 20
-  - section spacing: 32
-  - medium spacing: 20
-  - tight spacing: 12
-  - card radius
-  - control radius
-  - image frame radius
-- Prefer future classes like `px-screen`, `p-card`, `rounded-card`, and `rounded-control` over numeric one-offs.
-
-Done when:
-- Shared primitives and main screens use semantic tokens where NativeWind supports them cleanly.
-- New screens have an obvious path to follow without copying numeric values.
+### 1. ~~Add semantic design tokens~~ — **Done**
+`project-notes/design-system.md` and `src/theme/themeTokens.js` now own the semantic tokens (spacing, radii, surface colors). `MobileUI.jsx` primitives use them consistently.
 
 ### 2. Create a shared input surface
 Search and Refine inputs now look related, but they are still custom implementations.

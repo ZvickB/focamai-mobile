@@ -1,5 +1,8 @@
 import { fireEvent, render } from "@testing-library/react-native";
-import { MAX_FOLLOW_UP_NOTES_LENGTH, SearchRefineSection } from "../SearchRefineSection";
+import {
+  MAX_FOLLOW_UP_NOTES_LENGTH,
+  SearchRefineSection,
+} from "../SearchRefineSection";
 
 const refinementPrompt = {
   followUpPlaceholder: "Budget, must-haves, or dealbreakers",
@@ -131,5 +134,13 @@ describe("SearchRefineSection", () => {
     expect(
       getByText("Getting a few ideas ready. You can still refine in your own words."),
     ).toBeTruthy();
+  });
+
+  it("does not apply the search query limit to refine notes", () => {
+    const { queryByTestId } = renderRefineSection({
+      followUpNotes: "x".repeat(MAX_FOLLOW_UP_NOTES_LENGTH),
+    });
+
+    expect(queryByTestId("followup.notesInlineMessage")).toBeNull();
   });
 });

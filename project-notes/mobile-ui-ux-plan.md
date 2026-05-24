@@ -72,6 +72,7 @@ For brand assets, use `../web` as reference only. Mobile must keep local copies 
 ## Implementation slices
 
 ### Slice 0 - Verify the baseline before polishing
+Status: complete.
 Goal: know the current scaffold still works before visual changes hide behavior bugs.
 
 Do:
@@ -89,6 +90,7 @@ Done when:
 - Current behavior is understood and any visible blockers are recorded before UI work begins.
 
 ### Slice 1 - Shared mobile surface and visual system
+Status: complete.
 Goal: make the app feel cohesive before polishing individual screens.
 
 Do:
@@ -121,6 +123,7 @@ Done when:
 - The existing screens can share consistent spacing, typography, buttons, chips, and panels without changing behavior.
 
 ### Slice 2 - Results ranked list
+Status: complete.
 Goal: make the six picks the first polished product moment.
 
 Why first:

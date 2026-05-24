@@ -85,6 +85,23 @@ describe("FollowUpScreen", () => {
     expect(queryByTestId("followup.showFocusedPicksButton")).toBeNull();
   });
 
+  it("allows refine notes above the search query limit to finalize", async () => {
+    const finalizeFocusedPicks = jest.fn().mockResolvedValue(true);
+    const { getByTestId, navigation, queryByTestId } = renderFollowUp({
+      finalizeFocusedPicks,
+      followUpNotes: "x".repeat(500),
+    });
+
+    expect(queryByTestId("followup.notesInlineMessage")).toBeNull();
+
+    fireEvent.press(getByTestId("followup.showFocusedPicksButton"));
+
+    await waitFor(() => {
+      expect(finalizeFocusedPicks).toHaveBeenCalled();
+    });
+    expect(navigation.navigate).toHaveBeenCalledWith("Results");
+  });
+
   it("sends the user back to search when recovery cannot finalize yet", () => {
     const finalizeFocusedPicks = jest.fn();
     const { getByText, navigation } = renderFollowUp({

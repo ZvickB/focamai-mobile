@@ -68,35 +68,37 @@ export function FocusedPickRow({ isSelected = false, item, index, onLayout, onPr
         accessibilityRole="button"
         accessibilityLabel={`${isSelected ? "Selected result. " : ""}Open result: ${item.title}`}
         onPress={onPress}
-        className="min-h-24 px-3 py-3"
+        className="min-h-[88px] px-3 py-2.5"
       >
-        <View className="flex-row items-center gap-2">
+        <View className="flex-row items-center gap-2.5">
           <ProductImageFrame
-            containerClassName="h-14 w-14"
+            containerClassName="h-12 w-12"
+            frameClassName="rounded-[14px] bg-cream p-1"
             image={item.image}
+            imageClassName="rounded-[10px]"
             title={item.title}
           />
           <View className="min-w-0 flex-1">
-            <Text className="text-base font-semibold leading-5 text-ink" numberOfLines={2}>
+            <Text className="text-sm font-semibold leading-5 text-ink" numberOfLines={2}>
               {item.title}
             </Text>
-            <Text className="mt-1 text-sm leading-5 text-stone-600" numberOfLines={2}>
+            <Text className="mt-0.5 text-xs leading-4 text-stone-500" numberOfLines={2}>
               {reason}
             </Text>
-            <View className="mt-1 flex-row flex-wrap items-center gap-x-2 gap-y-1">
-              <Text className="text-sm font-semibold text-ink" numberOfLines={1}>
+            <View className="mt-1 flex-row flex-wrap items-center gap-x-1.5 gap-y-0.5">
+              <Text className="text-xs font-medium text-stone-700" numberOfLines={1}>
                 {priceLabel}
               </Text>
-              <Text className="text-xs font-medium text-stone-500" numberOfLines={1}>
+              <Text className="text-xs text-stone-500" numberOfLines={1}>
                 {ratingLabel}
               </Text>
               {item.provider ? (
-                <Text className="text-xs font-medium text-stone-500" numberOfLines={1}>
+                <Text className="text-xs text-stone-500" numberOfLines={1}>
                   {item.provider}
                 </Text>
               ) : null}
             </View>
-            <Text className="mt-1 text-xs font-semibold text-accent">View details</Text>
+            <Text className="mt-0.5 text-xs font-semibold text-accent">View details</Text>
           </View>
         </View>
       </Pressable>

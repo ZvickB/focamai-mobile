@@ -4,27 +4,27 @@ export default {
     slug: "focama-mobile",
     version: "1.0.0",
     orientation: "portrait",
-    icon: "./assets/icon.png",
+    icon: "./assets/app-icon.png",
     userInterfaceStyle: "light",
     newArchEnabled: true,
     splash: {
-      image: "./assets/splash-icon.png",
+      image: "./assets/splash-brand.png",
       resizeMode: "contain",
-      backgroundColor: "#ffffff",
+      backgroundColor: "#fbf7ef",
     },
     ios: {
       supportsTablet: true,
     },
     android: {
       adaptiveIcon: {
-        foregroundImage: "./assets/adaptive-icon.png",
-        backgroundColor: "#ffffff",
+        foregroundImage: "./assets/adaptive-icon-foreground.png",
+        backgroundColor: "#fbf7ef",
       },
       edgeToEdgeEnabled: true,
     },
     web: {
       bundler: "metro",
-      favicon: "./assets/favicon.png",
+      favicon: "./assets/favicon-brand.png",
     },
     plugins: ["expo-font"],
   },

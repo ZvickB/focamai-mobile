@@ -114,35 +114,49 @@ function SelectedResultImagePanel({ item, onPress }) {
   }
 
   const priceLabel = item.price || "Price not shown";
-  const displayTitle = truncateAtWord(item.title, 91);
+  const displayTitle = truncateAtWord(item.title, 104);
+  const featureBullets = Array.isArray(item.feature_bullets)
+    ? item.feature_bullets.map((bullet) => String(bullet).trim()).filter(Boolean)
+    : [];
+  const reason =
+    item.fit_reason ||
+    item.caveat ||
+    featureBullets[0] ||
+    "A focused match for this search.";
 
   return (
     <Surface className="overflow-hidden bg-white px-0 py-0">
       <Pressable
         accessibilityLabel={`Open selected result details: ${item.title}`}
         accessibilityRole="button"
-        className="flex-row items-center gap-4 px-4 py-4"
+        className="min-h-[190px] flex-row items-stretch gap-4 px-4 py-5"
         onPress={onPress}
       >
-        <View className="min-w-0 flex-1 gap-3">
-          <Text
-            className="text-base font-semibold leading-[22px] text-ink"
-            ellipsizeMode="tail"
-            numberOfLines={3}
-          >
-            {displayTitle}
-          </Text>
-
+        <View className="min-w-0 flex-1 justify-between gap-4">
           <View className="gap-2">
-            <Text className="text-base font-semibold text-ink">{priceLabel}</Text>
+            <Text
+              className="text-lg font-semibold leading-6 text-ink"
+              ellipsizeMode="tail"
+              numberOfLines={3}
+            >
+              {displayTitle}
+            </Text>
+            <Text className="text-sm leading-5 text-stone-600" numberOfLines={3}>
+              {reason}
+            </Text>
+          </View>
+
+          <View className="gap-1.5 border-t border-line pt-3">
+            <Text className="text-sm font-medium text-stone-700">{priceLabel}</Text>
             <SelectedRating rating={item.rating} />
           </View>
         </View>
 
         <ProductImageFrame
-          containerClassName="h-40 w-[156px]"
-          frameClassName="rounded-[18px] bg-white p-2"
+          containerClassName="h-44 w-[176px]"
+          frameClassName="-mt-2 rounded-[18px] bg-white p-1.5"
           image={item.image}
+          imageClassName="rounded-[14px]"
           title={item.title}
         />
       </Pressable>
