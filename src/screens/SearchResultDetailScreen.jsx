@@ -222,7 +222,7 @@ export default function SearchResultDetailScreen({ navigation, route }) {
       <View className="w-full max-w-[430px] self-center gap-5">
         <DetailHeader onBack={goBack} />
 
-        <SearchResultDetailHero item={item} rank={rank} />
+        <SearchResultDetailHero className="pb-1" item={item} rank={rank} />
         {isStaleSnapshot ? (
           <QuietStatusPanel>
             <Text className="text-sm font-semibold text-slate-700">

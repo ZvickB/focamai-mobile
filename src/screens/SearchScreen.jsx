@@ -30,7 +30,7 @@ function SearchBackgroundWash() {
 
 function SearchFocusHero() {
   return (
-    <View className="gap-4">
+    <View className="gap-2.5">
       <BrandWordmark className="items-center" imageClassName="h-14 w-64" />
       <View className="items-center px-3">
         <Text
@@ -39,7 +39,7 @@ function SearchFocusHero() {
         >
           Find the right{"\u00A0"}pick.
         </Text>
-        <Text className="mt-2 max-w-[285px] text-center text-[15px] leading-6 text-stone-600">
+        <Text className="mt-1.5 max-w-[285px] text-center text-[15px] leading-6 text-stone-600">
           Tell Focamai what you need. It narrows the noise to six focused options.
         </Text>
       </View>
@@ -105,27 +105,29 @@ export default function SearchScreen({ navigation, route }) {
         justifyContent: "center",
         minHeight: "100%",
         paddingHorizontal: 24,
-        paddingTop: 4,
-        paddingBottom: 46,
+        paddingTop: 24,
+        paddingBottom: 32,
       }}
     >
-      <View className="w-full max-w-[430px] self-center gap-7">
+      <View className="w-full max-w-[430px] self-center gap-6">
         <View className="items-end">
           <SettingsIconButton onPress={() => navigation.navigate("Settings")} />
         </View>
 
-        <View className="-mt-5 mb-3">
+        <View className="-mt-5 mb-0.5">
           <SearchFlowProgressCue activeStep="search" testID="search.flowProgressCue" />
         </View>
 
         <SearchFocusHero />
 
-        <SearchEntrySection
-          isDiscovering={isDiscovering}
-          productQuery={productQuery}
-          setProductQuery={setProductQuery}
-          startDiscoverySearch={submitSearch}
-        />
+        <View className="mt-3">
+          <SearchEntrySection
+            isDiscovering={isDiscovering}
+            productQuery={productQuery}
+            setProductQuery={setProductQuery}
+            startDiscoverySearch={submitSearch}
+          />
+        </View>
 
         {errorMessage === "Enter a product query first." ? (
           <RecoveryPanel

@@ -25,7 +25,7 @@ export function SearchEntrySection({
   }
 
   return (
-    <View className="gap-5">
+    <View className="gap-4">
       <View
         className="rounded-[22px] border border-line bg-white px-5 py-5 shadow-sm"
         style={{
@@ -75,7 +75,7 @@ export function SearchEntrySection({
         {isDiscovering ? "Searching..." : "Find picks"}
       </Button>
       <View
-        className="h-[2px] self-center rounded-full bg-ember opacity-60"
+        className="-mt-2 h-[2px] self-center rounded-full bg-ember opacity-60"
         style={{ width: 44 }}
       />
     </View>

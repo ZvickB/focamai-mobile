@@ -1,6 +1,6 @@
 import { CheckCircle2, Info, ShieldCheck, Sparkles, Star } from "lucide-react-native";
 import { Text, View } from "react-native";
-import { ProductImageFrame, Surface } from "../components/MobileUI";
+import { cx, ProductImageFrame, Surface } from "../components/MobileUI";
 
 export function detailValue(value, fallback) {
   if (
@@ -190,21 +190,21 @@ export function DetailRatingStars({ rating }) {
 
 function HeroFact({ label, value }) {
   return (
-    <View className="rounded-full border border-line bg-cream px-3 py-2">
+    <View className="rounded-full border border-line bg-cream px-3 py-1.5">
       <Text className="text-xs font-semibold text-stone-500">{label}</Text>
-      <Text className="mt-0.5 text-sm font-semibold text-ink">{value}</Text>
+      <Text className="mt-0.5 text-xs font-semibold text-ink">{value}</Text>
     </View>
   );
 }
 
-export function SearchResultDetailHero({ item, rank }) {
+export function SearchResultDetailHero({ className = "", item, rank }) {
   const provider = detailValue(item.provider, "Unknown source");
   const price = detailValue(item.price, "Price not shown");
   const rating = formatRating(item.rating);
   const reviews = formatReviews(item.reviewCount);
 
   return (
-    <View className="gap-4">
+    <View className={cx("gap-4", className)}>
       <ProductImageFrame
         containerClassName="h-72 w-full"
         image={item.image}
@@ -223,7 +223,7 @@ export function SearchResultDetailHero({ item, rank }) {
             <Text className="text-sm font-semibold text-stone-600">{provider}</Text>
           </View>
         </View>
-        <Text className="text-[31px] font-semibold leading-[38px] text-ink">
+        <Text className="text-lg font-semibold leading-6 text-ink">
           {detailValue(item.title, "Untitled product")}
         </Text>
         <View className="flex-row flex-wrap gap-2">
@@ -280,7 +280,7 @@ export function SearchResultDetailMetadata({ enrichmentStatus = "idle", item }) 
   const hasReasoning = Boolean(item.fit_reason || item.caveat || featureBullets.length);
 
   return (
-    <Surface className="py-4">
+    <Surface className="mt-1 py-5">
       <DetailTextSection
         icon={Sparkles}
         label="Why this pick"

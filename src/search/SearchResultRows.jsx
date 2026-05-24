@@ -1,3 +1,4 @@
+import { Star } from "lucide-react-native";
 import { Pressable, Text, View } from "react-native";
 import { Pill, ProductImageFrame, Surface } from "../components/MobileUI";
 
@@ -23,6 +24,24 @@ function formatRatingLabel(rating) {
 
 function MetadataPill({ label }) {
   return <Pill>{label}</Pill>;
+}
+
+function formatReviewLabel(reviewCount) {
+  if (reviewCount === null || reviewCount === undefined || reviewCount === "") {
+    return "";
+  }
+
+  if (typeof reviewCount === "number") {
+    return `${reviewCount} reviews`;
+  }
+
+  if (typeof reviewCount === "string") {
+    const trimmedReviewCount = reviewCount.trim();
+
+    return trimmedReviewCount ? `${trimmedReviewCount} reviews` : "";
+  }
+
+  return "";
 }
 
 export function PreviewResultRow({ item, index }) {
@@ -56,6 +75,7 @@ export function FocusedPickRow({ isSelected = false, item, index, onLayout, onPr
   const reason = getPickReason(item, featureBullets);
   const priceLabel = item.price || "Price not shown";
   const ratingLabel = formatRatingLabel(item.rating);
+  const reviewLabel = formatReviewLabel(item.reviewCount);
 
   return (
     <Surface
@@ -68,32 +88,40 @@ export function FocusedPickRow({ isSelected = false, item, index, onLayout, onPr
         accessibilityRole="button"
         accessibilityLabel={`${isSelected ? "Selected result. " : ""}Open result: ${item.title}`}
         onPress={onPress}
-        className="min-h-[88px] px-3 py-2.5"
+        className="min-h-[88px] px-3 py-3"
       >
-        <View className="flex-row items-center gap-2.5">
+        <View className="flex-row items-center gap-3">
           <ProductImageFrame
             containerClassName="h-12 w-12"
-            frameClassName="rounded-[14px] bg-cream p-1"
+            frameClassName="rounded-[14px] bg-cream p-1.5"
             image={item.image}
             imageClassName="rounded-[10px]"
             title={item.title}
           />
           <View className="min-w-0 flex-1">
-            <Text className="text-sm font-semibold leading-5 text-ink" numberOfLines={2}>
+            <Text className="text-[13px] font-medium leading-[18px] text-ink" numberOfLines={2}>
               {item.title}
             </Text>
-            <Text className="mt-0.5 text-xs leading-4 text-stone-500" numberOfLines={2}>
+            <Text className="mt-1.5 text-[13px] leading-[18px] text-stone-700" numberOfLines={2}>
               {reason}
             </Text>
-            <View className="mt-1 flex-row flex-wrap items-center gap-x-1.5 gap-y-0.5">
-              <Text className="text-xs font-medium text-stone-700" numberOfLines={1}>
+            <View className="mt-1.5 flex-row flex-wrap items-center gap-x-3 gap-y-0.5">
+              <Text className="text-[11px] font-medium text-stone-500" numberOfLines={1}>
                 {priceLabel}
               </Text>
-              <Text className="text-xs text-stone-500" numberOfLines={1}>
-                {ratingLabel}
-              </Text>
+              <View className="flex-row items-center gap-1">
+                <Star color="#0F6175" opacity={0.55} size={10} strokeWidth={2} />
+                <Text className="text-[11px] text-stone-500" numberOfLines={1}>
+                  {ratingLabel}
+                </Text>
+              </View>
+              {reviewLabel ? (
+                <Text className="text-[11px] text-stone-400" numberOfLines={1}>
+                  {reviewLabel}
+                </Text>
+              ) : null}
               {item.provider ? (
-                <Text className="text-xs text-stone-500" numberOfLines={1}>
+                <Text className="text-[11px] text-stone-400" numberOfLines={1}>
                   {item.provider}
                 </Text>
               ) : null}
