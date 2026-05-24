@@ -48,7 +48,7 @@ export function SearchEntrySection({
             placeholder="What are you shopping for?"
             placeholderTextColor="#B4ADA4"
             returnKeyType="search"
-            className="min-h-[62px] flex-1 py-3 text-[18px] leading-7 text-ink"
+            className="min-h-[62px] min-w-0 flex-1 py-3 text-[18px] leading-7 text-ink"
           />
           <Pressable
             accessibilityLabel="Voice input coming later"

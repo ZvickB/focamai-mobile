@@ -80,7 +80,7 @@ export function ScreenIntro({ eyebrow, title, description, testID }) {
   );
 }
 
-export function BrandWordmark({ className = "", imageClassName = "h-12 w-52" }) {
+export function BrandWordmark({ className = "", imageClassName = "h-12 w-52", imageStyle }) {
   return (
     <View className={cx("items-start", className)}>
       <Image
@@ -88,6 +88,7 @@ export function BrandWordmark({ className = "", imageClassName = "h-12 w-52" }) 
         className={imageClassName}
         resizeMode="contain"
         source={wordmarkImage}
+        style={imageStyle}
       />
     </View>
   );

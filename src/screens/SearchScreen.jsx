@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { Settings } from "lucide-react-native";
-import { Pressable, Text, View } from "react-native";
+import { Pressable, Text, useWindowDimensions, View } from "react-native";
 import Svg, { Defs, LinearGradient, Rect, Stop } from "react-native-svg";
 import { BrandWordmark, RecoveryPanel, ScreenContainer } from "../components/MobileUI";
 import { MarketplacePromptSection } from "../search/MarketplacePromptSection";
@@ -29,9 +29,16 @@ function SearchBackgroundWash() {
 }
 
 function SearchFocusHero() {
+  const { width } = useWindowDimensions();
+  const wordmarkWidth = Math.min(256, Math.max(216, width - 72));
+
   return (
     <View className="gap-2.5">
-      <BrandWordmark className="items-center" imageClassName="h-14 w-64" />
+      <BrandWordmark
+        className="items-center"
+        imageClassName="h-14"
+        imageStyle={{ width: wordmarkWidth }}
+      />
       <View className="items-center px-3">
         <Text
           className="text-center text-[31px] font-semibold leading-[38px] text-ink"
