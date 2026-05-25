@@ -1,8 +1,8 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { Settings } from "lucide-react-native";
 import { Pressable, Text, useWindowDimensions, View } from "react-native";
 import Svg, { Defs, LinearGradient, Rect, Stop } from "react-native-svg";
-import { BrandWordmark, RecoveryPanel, ScreenContainer } from "../components/MobileUI";
+import { BrandWordmark, RecoveryPanel, ScreenContainer, cx } from "../components/MobileUI";
 import { MarketplacePromptSection } from "../search/MarketplacePromptSection";
 import { SearchEntrySection } from "../search/SearchEntrySection";
 import { SearchFlowProgressCue } from "../search/SearchFlowProgressCue";
@@ -30,13 +30,14 @@ function SearchBackgroundWash() {
 
 function SearchFocusHero() {
   const { width } = useWindowDimensions();
-  const wordmarkWidth = Math.min(256, Math.max(216, width - 72));
+  const isCompact = width < 400;
+  const wordmarkWidth = Math.min(256, Math.max(isCompact ? 188 : 216, width - 72));
 
   return (
-    <View className="gap-2.5">
+    <View className={isCompact ? "gap-2" : "gap-2.5"}>
       <BrandWordmark
         className="items-center"
-        imageClassName="h-14"
+        imageClassName={isCompact ? "h-12" : "h-14"}
         imageStyle={{ width: wordmarkWidth }}
       />
       <View className="items-center px-3">
@@ -47,7 +48,7 @@ function SearchFocusHero() {
           Find the right{"\u00A0"}pick.
         </Text>
         <Text className="mt-1.5 max-w-[285px] text-center text-[15px] leading-6 text-stone-600">
-          Tell Focamai what you need. It narrows the noise to six focused options.
+          Tell Focamai what you need. It narrows the noise to six useful picks.
         </Text>
       </View>
     </View>
@@ -68,8 +69,26 @@ function SettingsIconButton({ onPress }) {
   );
 }
 
+function SearchTopBar({ isCompact, onOpenSettings }) {
+  return (
+    <View className="min-h-[44px] flex-row items-center">
+      <View className="h-11 w-11" />
+      <View className={cx("flex-1 items-center px-2", isCompact ? "max-w-[230px]" : "max-w-[280px]")}>
+        <SearchFlowProgressCue activeStep="search" testID="search.flowProgressCue" />
+      </View>
+      <View className="h-11 w-11 items-end justify-center">
+        <SettingsIconButton onPress={onOpenSettings} />
+      </View>
+    </View>
+  );
+}
+
 export default function SearchScreen({ navigation, route }) {
+  const { width } = useWindowDimensions();
+  const isCompact = width < 400;
+  const pendingNavigationToFollowUpRef = useRef(null);
   const {
+    activeSearchSession,
     confirmSelectedAmazonDomain,
     errorMessage,
     isDiscovering,
@@ -90,13 +109,52 @@ export default function SearchScreen({ navigation, route }) {
     }
   }, [navigation, route?.params?.selectedAmazonDomain, setSelectedAmazonDomain]);
 
+  useEffect(() => {
+    const pendingSearch = pendingNavigationToFollowUpRef.current;
+    const startedMatchingSearch =
+      pendingSearch &&
+      activeSearchSession?.submittedQuery === pendingSearch.query &&
+      activeSearchSession?.requestId !== pendingSearch.previousRequestId;
+
+    if (startedMatchingSearch && !showMarketplacePrompt) {
+      pendingNavigationToFollowUpRef.current = null;
+      navigation.navigate("FollowUp");
+    }
+  }, [activeSearchSession, navigation, showMarketplacePrompt]);
+
   function submitSearch(queryOverride) {
     const nextQuery = String(queryOverride ?? productQuery).trim();
     const hasQuery = nextQuery.length > 0;
+    pendingNavigationToFollowUpRef.current = hasQuery
+      ? {
+          previousRequestId: activeSearchSession?.requestId,
+          query: nextQuery,
+        }
+      : null;
+    const didStartSearch = startDiscoverySearch(
+      queryOverride === undefined ? undefined : { queryOverride: nextQuery },
+    );
 
-    startDiscoverySearch(queryOverride === undefined ? undefined : { queryOverride: nextQuery });
+    if (hasQuery && didStartSearch) {
+      pendingNavigationToFollowUpRef.current = null;
+      navigation.navigate("FollowUp");
+    } else if (!hasQuery) {
+      pendingNavigationToFollowUpRef.current = null;
+    }
+  }
 
-    if (hasQuery) {
+  function confirmMarketplaceAndContinue(nextAmazonDomain) {
+    const nextQuery = String(productQuery).trim();
+    pendingNavigationToFollowUpRef.current = nextQuery
+      ? {
+          previousRequestId: activeSearchSession?.requestId,
+          query: nextQuery,
+        }
+      : pendingNavigationToFollowUpRef.current;
+    const didStartSearch = confirmSelectedAmazonDomain(nextAmazonDomain);
+
+    if (didStartSearch) {
+      pendingNavigationToFollowUpRef.current = null;
       navigation.navigate("FollowUp");
     }
   }
@@ -108,26 +166,23 @@ export default function SearchScreen({ navigation, route }) {
       keyboardShouldPersistTaps="handled"
       safeAreaEdges={["top", "bottom"]}
       contentContainerStyle={{
-        gap: 20,
+        gap: isCompact ? 16 : 20,
         justifyContent: "center",
         minHeight: "100%",
-        paddingHorizontal: 24,
-        paddingTop: 24,
+        paddingHorizontal: isCompact ? 16 : 24,
+        paddingTop: isCompact ? 16 : 24,
         paddingBottom: 32,
       }}
     >
-      <View className="w-full max-w-[430px] self-center gap-6">
-        <View className="items-end">
-          <SettingsIconButton onPress={() => navigation.navigate("Settings")} />
-        </View>
-
-        <View className="-mt-5 mb-0.5">
-          <SearchFlowProgressCue activeStep="search" testID="search.flowProgressCue" />
-        </View>
+      <View className={cx("w-full max-w-[430px] self-center", isCompact ? "gap-5" : "gap-6")}>
+        <SearchTopBar
+          isCompact={isCompact}
+          onOpenSettings={() => navigation.navigate("Settings")}
+        />
 
         <SearchFocusHero />
 
-        <View className="mt-3">
+        <View className={isCompact ? "mt-1" : "mt-3"}>
           <SearchEntrySection
             isDiscovering={isDiscovering}
             productQuery={productQuery}
@@ -148,7 +203,7 @@ export default function SearchScreen({ navigation, route }) {
 
       {showMarketplacePrompt ? (
         <MarketplacePromptSection
-          confirmSelectedAmazonDomain={confirmSelectedAmazonDomain}
+          confirmSelectedAmazonDomain={confirmMarketplaceAndContinue}
           selectedAmazonDomain={selectedAmazonDomain}
         />
       ) : null}

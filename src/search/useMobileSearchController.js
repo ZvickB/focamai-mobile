@@ -195,7 +195,9 @@ export function useMobileSearchController() {
   const [retryAdvice, setRetryAdvice] = useState(null);
   const [retryAdviceError, setRetryAdviceError] = useState("");
   const [retryFeedback, setRetryFeedback] = useState("");
+  const [shouldAskMarketplaceBeforeSearch, setShouldAskMarketplaceBeforeSearch] = useState(false);
   const [showMarketplacePrompt, setShowMarketplacePrompt] = useState(false);
+  const pendingMarketplaceSearchRef = useRef(null);
 
   function updatePhaseEvent(nextEvent) {
     setPhaseEvents((currentEvents) => replacePhaseEvent(currentEvents, nextEvent));
@@ -507,13 +509,15 @@ export function useMobileSearchController() {
       .then(([preference, hasSeenPrompt]) => {
         if (isMounted && !selectedAmazonDomainTouchedRef.current) {
           setSelectedAmazonDomainState(preference.domain);
-          setShowMarketplacePrompt(!preference.hasSavedPreference && !hasSeenPrompt);
+          setShouldAskMarketplaceBeforeSearch(!preference.hasSavedPreference && !hasSeenPrompt);
+          setShowMarketplacePrompt(false);
         }
       })
       .catch(() => {
         if (isMounted && !selectedAmazonDomainTouchedRef.current) {
           setSelectedAmazonDomainState(DEFAULT_AMAZON_DOMAIN);
-          setShowMarketplacePrompt(true);
+          setShouldAskMarketplaceBeforeSearch(true);
+          setShowMarketplacePrompt(false);
         }
       });
 
@@ -522,14 +526,15 @@ export function useMobileSearchController() {
     };
   }, []);
 
-  function startDiscoverySearch({ cacheMode = "", queryOverride } = {}) {
+  function runDiscoverySearch({ amazonDomainOverride, cacheMode = "", queryOverride } = {}) {
     const normalizedQuery = String(queryOverride ?? productQuery).trim();
-    const requestedAmazonDomain = normalizeAmazonDomain(selectedAmazonDomain) || DEFAULT_AMAZON_DOMAIN;
+    const requestedAmazonDomain =
+      normalizeAmazonDomain(amazonDomainOverride ?? selectedAmazonDomain) || DEFAULT_AMAZON_DOMAIN;
 
     if (!normalizedQuery) {
       setErrorMessage("Enter a product query first.");
       setDiscoverySummary(null);
-      return;
+      return false;
     }
 
     if (queryOverride !== undefined) {
@@ -738,6 +743,34 @@ export function useMobileSearchController() {
           setIsGeneratingPrompt(false);
         }
       });
+
+    return true;
+  }
+
+  function startDiscoverySearch({ cacheMode = "", queryOverride } = {}) {
+    const normalizedQuery = String(queryOverride ?? productQuery).trim();
+
+    if (!normalizedQuery) {
+      setErrorMessage("Enter a product query first.");
+      setDiscoverySummary(null);
+      return false;
+    }
+
+    if (shouldAskMarketplaceBeforeSearch) {
+      if (queryOverride !== undefined) {
+        setProductQuery(normalizedQuery);
+      }
+
+      pendingMarketplaceSearchRef.current = {
+        cacheMode,
+        queryOverride: normalizedQuery,
+      };
+      setErrorMessage("");
+      setShowMarketplacePrompt(true);
+      return false;
+    }
+
+    return runDiscoverySearch({ cacheMode, queryOverride: normalizedQuery });
   }
 
   async function refreshDiscoveryForHardConstraints({
@@ -1206,6 +1239,8 @@ export function useMobileSearchController() {
     selectedAmazonDomainTouchedRef.current = true;
     setSelectedAmazonDomainState(normalizedDomain);
     saveAmazonMarketplaceSelection(normalizedDomain);
+    setShouldAskMarketplaceBeforeSearch(false);
+    pendingMarketplaceSearchRef.current = null;
     setShowMarketplacePrompt(false);
 
     if (domainChanged && hasMarketplaceScopedSearchState()) {
@@ -1216,15 +1251,27 @@ export function useMobileSearchController() {
   function confirmSelectedAmazonDomain(nextDomain = selectedAmazonDomain) {
     const normalizedDomain = normalizeAmazonDomain(nextDomain) || DEFAULT_AMAZON_DOMAIN;
     const domainChanged = normalizedDomain !== selectedAmazonDomain;
+    const pendingSearch = pendingMarketplaceSearchRef.current;
 
     selectedAmazonDomainTouchedRef.current = true;
     setSelectedAmazonDomainState(normalizedDomain);
     saveAmazonMarketplaceSelection(normalizedDomain);
+    setShouldAskMarketplaceBeforeSearch(false);
+    pendingMarketplaceSearchRef.current = null;
     setShowMarketplacePrompt(false);
+
+    if (pendingSearch) {
+      return runDiscoverySearch({
+        ...pendingSearch,
+        amazonDomainOverride: normalizedDomain,
+      });
+    }
 
     if (domainChanged && hasMarketplaceScopedSearchState()) {
       resetSearchAfterMarketplaceChange(normalizedDomain);
     }
+
+    return false;
   }
 
   return {

@@ -20,9 +20,9 @@ describe("MarketplacePromptSection", () => {
     fireEvent.press(getByLabelText("Select Canada"));
 
     expect(confirmSelectedAmazonDomain).not.toHaveBeenCalled();
-    expect(getByText("Use Canada")).toBeTruthy();
+    expect(getByText("Continue with Canada")).toBeTruthy();
 
-    fireEvent.press(getByText("Use Canada"));
+    fireEvent.press(getByText("Continue with Canada"));
 
     expect(confirmSelectedAmazonDomain).toHaveBeenCalledWith("amazon.ca");
   });
