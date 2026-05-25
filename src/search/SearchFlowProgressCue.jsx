@@ -1,5 +1,4 @@
-import { Check } from "lucide-react-native";
-import { Text, View } from "react-native";
+import { Text, useWindowDimensions, View } from "react-native";
 
 const stepOrder = ["search", "refine", "picks"];
 
@@ -25,6 +24,10 @@ function getStepState(step, activeStep) {
 }
 
 export function SearchFlowProgressCue({ activeStep = "search", testID }) {
+  const { width } = useWindowDimensions();
+  const isCompact = width < 400;
+  const labelClassName = isCompact ? "text-[10px]" : "text-[11px]";
+  const segmentClassName = isCompact ? "h-1" : "h-[5px]";
   const steps = stepOrder.map((step) => ({
     key: step,
     label: stepLabels[step],
@@ -34,50 +37,51 @@ export function SearchFlowProgressCue({ activeStep = "search", testID }) {
   return (
     <View
       accessibilityLabel={`Search progress: ${stepLabels[activeStep] || "Search"} step`}
-      className="flex-row items-start justify-center"
+      className="w-full gap-1.5"
       testID={testID}
     >
-      {steps.map((step, index) => {
+      <View className="flex-row gap-1.5">
+        {steps.map((step) => {
+          const isCurrent = step.state === "current";
+          const isComplete = step.state === "complete";
+
+          return (
+            <View
+              key={step.key}
+              className={
+                isCurrent
+                  ? `${segmentClassName} flex-1 rounded-full bg-ember`
+                  : isComplete
+                    ? `${segmentClassName} flex-1 rounded-full bg-accent`
+                    : `${segmentClassName} flex-1 rounded-full bg-line`
+              }
+            />
+          );
+        })}
+      </View>
+      <View className="flex-row">
+        {steps.map((step) => {
         const isCurrent = step.state === "current";
         const isComplete = step.state === "complete";
-        const isMuted = step.state === "upcoming";
+        const isUpcoming = step.state === "upcoming";
 
         return (
-          <View className="flex-row items-start" key={step.key}>
-            <View className="items-center">
-              <View
-                className={
-                  isMuted
-                    ? "h-7 w-7 items-center justify-center rounded-full border border-line bg-mist"
-                    : isCurrent
-                      ? "h-7 w-7 items-center justify-center rounded-full bg-ember"
-                      : "h-7 w-7 items-center justify-center rounded-full bg-accent"
-                }
-              >
-                {isComplete ? <Check color="#ffffff" size={15} strokeWidth={2.5} /> : null}
-              </View>
-              <Text
-                className={
-                  isMuted
-                    ? "mt-2 text-xs font-semibold text-stone-400"
-                    : isCurrent
-                      ? "mt-2 text-xs font-semibold text-ember"
-                      : "mt-2 text-xs font-semibold text-accent"
-                }
-              >
-                {step.label}
-              </Text>
-            </View>
-            {index < steps.length - 1 ? (
-              <View
-                className={
-                  isMuted ? "mt-[13px] h-px w-20 bg-line" : "mt-[13px] h-px w-20 bg-secondary"
-                }
-              />
-            ) : null}
+          <View className="flex-1 items-center" key={step.key}>
+            <Text
+              className={
+                isUpcoming
+                  ? `${labelClassName} font-semibold text-stone-400`
+                  : isCurrent
+                    ? `${labelClassName} font-semibold text-ember`
+                    : `${labelClassName} font-semibold text-accent`
+              }
+            >
+              {step.label}
+            </Text>
           </View>
         );
       })}
+      </View>
     </View>
   );
 }

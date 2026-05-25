@@ -1,5 +1,5 @@
 import { Settings } from "lucide-react-native";
-import { Pressable, Text, View } from "react-native";
+import { Pressable, Text, useWindowDimensions, View } from "react-native";
 import {
   AppHeader,
   Button,
@@ -31,6 +31,8 @@ function RefineHeader({ onBack, onSettings }) {
 }
 
 export default function FollowUpScreen({ navigation }) {
+  const { width } = useWindowDimensions();
+  const isCompact = width < 400;
   const {
     canFinalize,
     errorMessage,
@@ -73,8 +75,8 @@ export default function FollowUpScreen({ navigation }) {
       keyboardShouldPersistTaps="handled"
       safeAreaEdges={["top", "bottom"]}
       contentContainerStyle={{
-        gap: 20,
-        paddingHorizontal: 24,
+        gap: isCompact ? 16 : 20,
+        paddingHorizontal: isCompact ? 16 : 24,
         paddingTop: 14,
         paddingBottom: 20,
       }}
@@ -113,7 +115,7 @@ export default function FollowUpScreen({ navigation }) {
         </View>
       }
     >
-      <View className="w-full max-w-[430px] self-center gap-8">
+      <View className={isCompact ? "w-full max-w-[430px] self-center gap-6" : "w-full max-w-[430px] self-center gap-8"}>
         <RefineHeader
           onBack={() => navigation.navigate("Search")}
           onSettings={() => navigation.navigate("Settings")}

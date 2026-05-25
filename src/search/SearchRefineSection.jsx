@@ -1,5 +1,5 @@
 import { Mic, Search } from "lucide-react-native";
-import { Pressable, Text, TextInput, View } from "react-native";
+import { Pressable, Text, TextInput, useWindowDimensions, View } from "react-native";
 import { GuidanceText, cx } from "../components/MobileUI";
 
 const DEFAULT_REFINEMENT_CHIPS = [
@@ -51,13 +51,14 @@ function normalizeRefinementChips(suggestedRefinements) {
     .slice(0, MAX_REFINEMENT_CHIPS);
 }
 
-function RefinementChip({ chip, onPress, selected }) {
+function RefinementChip({ chip, isCompact, onPress, selected }) {
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={`Add ${chip.label} refinement`}
       className={cx(
-        "min-h-[50px] flex-1 basis-[31%] items-center justify-center rounded-full border px-3",
+        "flex-1 items-center justify-center rounded-full border px-3",
+        isCompact ? "min-h-[46px] basis-[47%]" : "min-h-[50px] basis-[31%]",
         selected ? "border-secondary bg-cream" : "border-line bg-mist",
       )}
       onPress={onPress}
@@ -76,6 +77,8 @@ export function SearchRefineSection({
   productQuery,
   suggestedRefinements = DEFAULT_REFINEMENT_CHIPS,
 }) {
+  const { width } = useWindowDimensions();
+  const isCompact = width < 400;
   const normalizedSuggestedChips = normalizeRefinementChips(suggestedRefinements);
   const visibleChips = normalizedSuggestedChips.length
     ? normalizedSuggestedChips
@@ -95,10 +98,16 @@ export function SearchRefineSection({
   }
 
   return (
-    <View className="gap-8">
-      <View className="items-center gap-4">
+    <View className={isCompact ? "gap-6" : "gap-8"}>
+      <View className={isCompact ? "items-center gap-3" : "items-center gap-4"}>
         <View className="items-center px-1">
-          <Text className="text-center text-[32px] font-semibold leading-[39px] text-ink">
+          <Text
+            className={
+              isCompact
+                ? "text-center text-[28px] font-semibold leading-[35px] text-ink"
+                : "text-center text-[32px] font-semibold leading-[39px] text-ink"
+            }
+          >
             What should Focamai keep in{"\u00A0"}mind?
           </Text>
           <GuidanceText className="mt-4 text-center">
@@ -124,6 +133,7 @@ export function SearchRefineSection({
             return (
               <RefinementChip
                 chip={chip}
+                isCompact={isCompact}
                 key={chip.label}
                 onPress={() => handleChipPress(chip)}
                 selected={selected}
@@ -135,7 +145,10 @@ export function SearchRefineSection({
 
       <View className="gap-3">
         <View
-          className="rounded-[22px] border border-line bg-white px-5 py-5 shadow-sm"
+          className={cx(
+            "rounded-[22px] border border-line bg-white shadow-sm",
+            isCompact ? "px-4 py-4" : "px-5 py-5",
+          )}
           style={{
             elevation: 2,
             shadowColor: "#78573f",
@@ -144,9 +157,9 @@ export function SearchRefineSection({
             shadowRadius: 18,
           }}
         >
-          <View className="min-h-[72px] flex-row items-center gap-3">
-            <View className="h-11 w-11 items-center justify-center rounded-full bg-cream">
-              <Search color="#0F6175" size={24} strokeWidth={2.2} />
+          <View className={cx("flex-row items-center", isCompact ? "min-h-[68px] gap-2" : "min-h-[72px] gap-3")}>
+            <View className={cx("items-center justify-center rounded-full bg-cream", isCompact ? "h-10 w-10" : "h-11 w-11")}>
+              <Search color="#0F6175" size={isCompact ? 22 : 24} strokeWidth={2.2} />
             </View>
             <TextInput
               testID="followup.notesInput"
@@ -156,18 +169,20 @@ export function SearchRefineSection({
               placeholder="Tell Focamai anything that's important..."
               placeholderTextColor="#B4ADA4"
               multiline
-              textAlignVertical="center"
+              textAlignVertical="top"
               className="min-h-[54px] flex-1 py-2 text-[16px] leading-6 text-ink"
             />
-            <Pressable
-              accessibilityLabel="Voice input coming later"
-              accessibilityRole="button"
-              className="h-11 w-11 items-center justify-center rounded-full bg-cream"
-              disabled
-              testID="followup.voiceButton"
-            >
-              <Mic color="#0F6175" size={23} strokeWidth={2.2} />
-            </Pressable>
+            {isCompact ? null : (
+              <Pressable
+                accessibilityLabel="Voice input coming later"
+                accessibilityRole="button"
+                className="h-11 w-11 items-center justify-center rounded-full bg-cream"
+                disabled
+                testID="followup.voiceButton"
+              >
+                <Mic color="#0F6175" size={23} strokeWidth={2.2} />
+              </Pressable>
+            )}
           </View>
         </View>
 
