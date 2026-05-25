@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Search, Star } from "lucide-react-native";
-import { Pressable, Text, View } from "react-native";
+import { Pressable, Text, useWindowDimensions, View } from "react-native";
 import {
   AppHeader,
   HeaderBackButton,
@@ -37,10 +37,16 @@ function ResultsTopBar({ onBack, onNewSearch }) {
   );
 }
 
-function ResultsHero() {
+function ResultsHero({ isCompact }) {
   return (
-    <View className="gap-3">
-      <Text className="text-[32px] font-semibold leading-[39px] text-ink">
+    <View className={isCompact ? "gap-2" : "gap-3"}>
+      <Text
+        className={
+          isCompact
+            ? "text-[28px] font-semibold leading-[35px] text-ink"
+            : "text-[32px] font-semibold leading-[39px] text-ink"
+        }
+      >
         Here are your <Text className="text-ember">6</Text> best picks
       </Text>
       <Text className="text-[15px] leading-6 text-stone-600">
@@ -108,7 +114,7 @@ function SelectedRating({ rating }) {
   );
 }
 
-function SelectedResultImagePanel({ item, onPress }) {
+function SelectedResultImagePanel({ isCompact, item, onPress }) {
   if (!item) {
     return null;
   }
@@ -129,9 +135,23 @@ function SelectedResultImagePanel({ item, onPress }) {
       <Pressable
         accessibilityLabel={`Open selected result details: ${item.title}`}
         accessibilityRole="button"
-        className="min-h-[190px] flex-row items-stretch gap-4 px-4 py-5"
+        className={
+          isCompact
+            ? "gap-4 px-4 py-4"
+            : "min-h-[190px] flex-row items-stretch gap-4 px-4 py-5"
+        }
         onPress={onPress}
       >
+        {isCompact ? (
+          <ProductImageFrame
+            containerClassName="h-40 w-full"
+            frameClassName="rounded-[18px] bg-white p-1.5"
+            image={item.image}
+            imageClassName="rounded-[14px]"
+            title={item.title}
+          />
+        ) : null}
+
         <View className="min-w-0 flex-1 justify-between gap-4">
           <View className="gap-2">
             <Text
@@ -152,19 +172,23 @@ function SelectedResultImagePanel({ item, onPress }) {
           </View>
         </View>
 
-        <ProductImageFrame
-          containerClassName="h-44 w-[176px]"
-          frameClassName="-mt-2 rounded-[18px] bg-white p-1.5"
-          image={item.image}
-          imageClassName="rounded-[14px]"
-          title={item.title}
-        />
+        {isCompact ? null : (
+          <ProductImageFrame
+            containerClassName="h-44 w-[176px]"
+            frameClassName="-mt-2 rounded-[18px] bg-white p-1.5"
+            image={item.image}
+            imageClassName="rounded-[14px]"
+            title={item.title}
+          />
+        )}
       </Pressable>
     </Surface>
   );
 }
 
 export default function ResultsScreen({ navigation }) {
+  const { width } = useWindowDimensions();
+  const isCompact = width < 400;
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [resultsSectionY, setResultsSectionY] = useState(0);
   const [focusedPicksY, setFocusedPicksY] = useState(0);
@@ -257,13 +281,13 @@ export default function ResultsScreen({ navigation }) {
     [applyRetrySuggestionToFlow, navigation],
   );
   const fixedHeader = (
-    <View className="gap-4 px-6 pb-3 pt-3">
+    <View className={isCompact ? "gap-3 px-4 pb-3 pt-3" : "gap-4 px-6 pb-3 pt-3"}>
       <ResultsTopBar
         onBack={() => navigation.navigate("FollowUp")}
         onNewSearch={() => navigation.navigate("Search")}
       />
 
-      {shouldShowFinalizeLoading ? null : <ResultsHero />}
+      {shouldShowFinalizeLoading ? null : <ResultsHero isCompact={isCompact} />}
 
       {shouldShowStatus ? (
         <SearchProgressStatus
@@ -282,6 +306,7 @@ export default function ResultsScreen({ navigation }) {
 
       {selectedResult ? (
         <SelectedResultImagePanel
+          isCompact={isCompact}
           item={selectedResult}
           onPress={() =>
             navigation.navigate("SearchResultDetail", {
@@ -340,7 +365,7 @@ export default function ResultsScreen({ navigation }) {
       safeAreaEdges={["top", "bottom"]}
       contentContainerStyle={{
         gap: 12,
-        paddingHorizontal: 24,
+        paddingHorizontal: isCompact ? 16 : 24,
         paddingTop: 0,
         paddingBottom: 32,
       }}

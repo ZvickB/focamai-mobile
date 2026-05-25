@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Pressable, Text, View } from "react-native";
+import { Pressable, Text, useWindowDimensions, View } from "react-native";
 import { ScreenContainer, ScreenIntro, Surface } from "../components/MobileUI";
 import {
   AMAZON_MARKETPLACES,
@@ -10,6 +10,8 @@ import {
 } from "../search/amazonMarketplaces";
 
 export default function RegionScreen({ navigation }) {
+  const { width } = useWindowDimensions();
+  const isCompact = width < 400;
   const [selectedAmazonDomain, setSelectedAmazonDomain] = useState(DEFAULT_AMAZON_DOMAIN);
 
   useEffect(() => {
@@ -35,7 +37,11 @@ export default function RegionScreen({ navigation }) {
   return (
     <ScreenContainer
       testID="region.screen"
-      contentContainerStyle={{ gap: 32, paddingHorizontal: 24, paddingVertical: 32 }}
+      contentContainerStyle={{
+        gap: isCompact ? 24 : 32,
+        paddingHorizontal: isCompact ? 16 : 24,
+        paddingVertical: isCompact ? 24 : 32,
+      }}
     >
       <ScreenIntro
         eyebrow="Shopping region"

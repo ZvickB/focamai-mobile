@@ -1,9 +1,17 @@
-import { Text, View } from "react-native";
+import { Text, useWindowDimensions, View } from "react-native";
 import { ScreenContainer, ScreenIntro } from "../components/MobileUI";
 
 export default function AffiliateDisclosureScreen() {
+  const { width } = useWindowDimensions();
+  const isCompact = width < 400;
+
   return (
-    <ScreenContainer contentContainerStyle={{ paddingHorizontal: 24, paddingVertical: 32 }}>
+    <ScreenContainer
+      contentContainerStyle={{
+        paddingHorizontal: isCompact ? 16 : 24,
+        paddingVertical: isCompact ? 24 : 32,
+      }}
+    >
       <ScreenIntro
         eyebrow="Affiliate Disclosure"
         title="How affiliate links work in this app."

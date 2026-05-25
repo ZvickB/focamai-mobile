@@ -1,5 +1,5 @@
 import { Star } from "lucide-react-native";
-import { Pressable, Text, View } from "react-native";
+import { Pressable, Text, useWindowDimensions, View } from "react-native";
 import { Pill, ProductImageFrame, Surface } from "../components/MobileUI";
 
 function formatRatingLabel(rating) {
@@ -69,6 +69,8 @@ function getPickReason(item, featureBullets) {
 }
 
 export function FocusedPickRow({ isSelected = false, item, index, onLayout, onPress }) {
+  const { width } = useWindowDimensions();
+  const isCompact = width < 400;
   const featureBullets = Array.isArray(item.feature_bullets)
     ? item.feature_bullets.map((bullet) => String(bullet).trim()).filter(Boolean)
     : [];
@@ -88,11 +90,11 @@ export function FocusedPickRow({ isSelected = false, item, index, onLayout, onPr
         accessibilityRole="button"
         accessibilityLabel={`${isSelected ? "Selected result. " : ""}Open result: ${item.title}`}
         onPress={onPress}
-        className="min-h-[88px] px-3 py-3"
+        className={isCompact ? "min-h-[84px] px-3 py-3" : "min-h-[88px] px-3 py-3"}
       >
-        <View className="flex-row items-center gap-3">
+        <View className={isCompact ? "flex-row items-center gap-2.5" : "flex-row items-center gap-3"}>
           <ProductImageFrame
-            containerClassName="h-12 w-12"
+            containerClassName={isCompact ? "h-11 w-11" : "h-12 w-12"}
             frameClassName="rounded-[14px] bg-cream p-1.5"
             image={item.image}
             imageClassName="rounded-[10px]"

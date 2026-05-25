@@ -1,4 +1,4 @@
-import { Image, Pressable, ScrollView, Text, View } from "react-native";
+import { Image, Pressable, ScrollView, Text, useWindowDimensions, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
 import { ChevronLeft } from "lucide-react-native";
@@ -25,6 +25,10 @@ export function ScreenContainer({
   stickyHeaderIndices,
   testID,
 }) {
+  const { width } = useWindowDimensions();
+  const isCompact = width < 400;
+  const defaultHorizontalPadding = isCompact ? 16 : 24;
+
   return (
     <SafeAreaView
       edges={safeAreaEdges}
@@ -37,7 +41,7 @@ export function ScreenContainer({
       <ScrollView
         className="flex-1"
         contentContainerStyle={[
-          { gap: 20, paddingHorizontal: 24, paddingVertical: 24 },
+          { gap: isCompact ? 16 : 20, paddingHorizontal: defaultHorizontalPadding, paddingVertical: 24 },
           contentContainerStyle,
         ]}
         keyboardShouldPersistTaps={keyboardShouldPersistTaps}
@@ -49,7 +53,7 @@ export function ScreenContainer({
       </ScrollView>
       {footer ? (
         <View
-          className="border-t px-6 py-3"
+          className={cx("border-t py-3", isCompact ? "px-4" : "px-6")}
           style={{
             backgroundColor: appThemeTokens.cardBackground,
             borderColor: appThemeTokens.borderSubtle,
@@ -115,6 +119,9 @@ export function IconButton({
 }
 
 export function HeaderBackButton({ label, onPress, testID }) {
+  const { width } = useWindowDimensions();
+  const isCompact = width < 360;
+
   return (
     <Pressable
       accessibilityLabel={`Back to ${label.toLowerCase()}`}
@@ -124,7 +131,7 @@ export function HeaderBackButton({ label, onPress, testID }) {
       testID={testID}
     >
       <ChevronLeft color="#14222b" size={24} strokeWidth={2.3} />
-      <Text className="text-base font-semibold text-ink">{label}</Text>
+      {isCompact ? null : <Text className="text-base font-semibold text-ink">{label}</Text>}
     </Pressable>
   );
 }
@@ -134,14 +141,21 @@ export function AppHeader({
   right,
   wordmarkClassName = "h-9 w-36",
 }) {
+  const { width } = useWindowDimensions();
+  const isCompact = width < 400;
+  const compactWordmarkClassName =
+    wordmarkClassName === "h-9 w-36" || wordmarkClassName === "h-9 w-32"
+      ? "h-8 w-28"
+      : wordmarkClassName;
+
   return (
     <View className="relative min-h-[44px] w-full flex-row items-center justify-between">
-      <View className="z-10 min-w-[96px] flex-row items-center justify-start">{left}</View>
+      <View className={cx("z-10 flex-row items-center justify-start", isCompact ? "min-w-[72px]" : "min-w-[96px]")}>{left}</View>
       <BrandWordmark
         className="absolute inset-x-0 items-center"
-        imageClassName={wordmarkClassName}
+        imageClassName={isCompact ? compactWordmarkClassName : wordmarkClassName}
       />
-      <View className="z-10 min-w-[96px] flex-row items-center justify-end gap-2">{right}</View>
+      <View className={cx("z-10 flex-row items-center justify-end gap-2", isCompact ? "min-w-[72px]" : "min-w-[96px]")}>{right}</View>
     </View>
   );
 }

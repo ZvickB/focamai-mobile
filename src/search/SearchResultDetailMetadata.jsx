@@ -1,5 +1,5 @@
 import { CheckCircle2, Info, ShieldCheck, Sparkles, Star } from "lucide-react-native";
-import { Text, View } from "react-native";
+import { Text, useWindowDimensions, View } from "react-native";
 import { cx, ProductImageFrame, Surface } from "../components/MobileUI";
 
 export function detailValue(value, fallback) {
@@ -198,6 +198,8 @@ function HeroFact({ label, value }) {
 }
 
 export function SearchResultDetailHero({ className = "", item, rank }) {
+  const { width } = useWindowDimensions();
+  const isCompact = width < 400;
   const provider = detailValue(item.provider, "Unknown source");
   const price = detailValue(item.price, "Price not shown");
   const rating = formatRating(item.rating);
@@ -206,7 +208,7 @@ export function SearchResultDetailHero({ className = "", item, rank }) {
   return (
     <View className={cx("gap-4", className)}>
       <ProductImageFrame
-        containerClassName="h-72 w-full"
+        containerClassName={isCompact ? "h-56 w-full" : "h-72 w-full"}
         image={item.image}
         imageClassName="rounded-md"
         title={detailValue(item.title, "Focused pick")}
@@ -231,7 +233,7 @@ export function SearchResultDetailHero({ className = "", item, rank }) {
           <HeroFact label="Rating" value={rating} />
           <HeroFact label="Reviews" value={reviews} />
         </View>
-        <View className="flex-row items-center gap-2">
+        <View className="flex-row flex-wrap items-center gap-2">
           <DetailRatingStars rating={item.rating} />
           <Text className="text-sm font-medium text-stone-600">
             {rating} - {reviews}

@@ -1,7 +1,9 @@
-import { Pressable, Text, View } from "react-native";
+import { Pressable, Text, useWindowDimensions, View } from "react-native";
 import { ScreenContainer, ScreenIntro, Surface } from "../components/MobileUI";
 
 export default function SettingsScreen({ navigation }) {
+  const { width } = useWindowDimensions();
+  const isCompact = width < 400;
   const menuItems = [
     { label: "Shopping region", routeName: "Region" },
     { label: "About Focama", routeName: "About" },
@@ -13,7 +15,11 @@ export default function SettingsScreen({ navigation }) {
   return (
     <ScreenContainer
       testID="settings.screen"
-      contentContainerStyle={{ gap: 32, paddingHorizontal: 24, paddingVertical: 32 }}
+      contentContainerStyle={{
+        gap: isCompact ? 24 : 32,
+        paddingHorizontal: isCompact ? 16 : 24,
+        paddingVertical: isCompact ? 24 : 32,
+      }}
     >
       <ScreenIntro
         eyebrow="Settings"

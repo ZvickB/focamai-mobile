@@ -1,9 +1,17 @@
-import { Text, View } from "react-native";
+import { Text, useWindowDimensions, View } from "react-native";
 import { ScreenContainer, ScreenIntro } from "../components/MobileUI";
 
 export default function AboutScreen() {
+  const { width } = useWindowDimensions();
+  const isCompact = width < 400;
+
   return (
-    <ScreenContainer contentContainerStyle={{ paddingHorizontal: 24, paddingVertical: 32 }}>
+    <ScreenContainer
+      contentContainerStyle={{
+        paddingHorizontal: isCompact ? 16 : 24,
+        paddingVertical: isCompact ? 24 : 32,
+      }}
+    >
       <ScreenIntro eyebrow="Why Focamai" title={"Find what you need.\nGet on with your day."} />
 
       <View className="mt-8 gap-5">

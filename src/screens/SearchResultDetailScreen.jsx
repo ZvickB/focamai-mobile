@@ -1,4 +1,4 @@
-import { Linking, Pressable, Text, View } from "react-native";
+import { Linking, Pressable, Text, useWindowDimensions, View } from "react-native";
 import {
   AppHeader,
   Button,
@@ -62,6 +62,9 @@ function DetailRetailerCta({ item }) {
 }
 
 function DetailRetailerFooter({ item }) {
+  const { width } = useWindowDimensions();
+  const isCompact = width < 400;
+
   if (!item.link) {
     return null;
   }
@@ -71,7 +74,13 @@ function DetailRetailerFooter({ item }) {
 
   return (
     <View className="gap-2">
-      <View className="flex-row items-center justify-between gap-3">
+      <View
+        className={
+          isCompact
+            ? "gap-2"
+            : "flex-row items-center justify-between gap-3"
+        }
+      >
         <View className="flex-1">
           <Text className="text-xs font-medium text-stone-500">Current listing</Text>
           <Text className="text-base font-semibold text-ink" numberOfLines={1}>
@@ -81,7 +90,7 @@ function DetailRetailerFooter({ item }) {
         <Button
           accessibilityRole="link"
           accessibilityLabel={`View ${detailValue(item.title, "this product")} on ${provider}`}
-          className="min-w-[144px]"
+          className={isCompact ? "w-full" : "min-w-[144px]"}
           onPress={() => openRetailerLink(item.link)}
         >
           View retailer
@@ -152,13 +161,16 @@ function normalizeDetailRouteItem(routeItem) {
 }
 
 function UnavailableDetailState({ onBack }) {
+  const { width } = useWindowDimensions();
+  const isCompact = width < 400;
+
   return (
     <ScreenContainer
       safeAreaEdges={["top", "bottom"]}
       testID="detail.screen"
       contentContainerStyle={{
-        gap: 20,
-        paddingHorizontal: 24,
+        gap: isCompact ? 16 : 20,
+        paddingHorizontal: isCompact ? 16 : 24,
         paddingTop: 14,
         paddingBottom: 32,
       }}
@@ -188,6 +200,8 @@ function UnavailableDetailState({ onBack }) {
 }
 
 export default function SearchResultDetailScreen({ navigation, route }) {
+  const { width } = useWindowDimensions();
+  const isCompact = width < 400;
   const { activeSearchSession, finalResults } = useSearchFlow();
   const safeFinalResults = Array.isArray(finalResults) ? finalResults : [];
   const candidateId = route.params?.candidateId;
@@ -213,8 +227,8 @@ export default function SearchResultDetailScreen({ navigation, route }) {
       safeAreaEdges={["top", "bottom"]}
       testID="detail.screen"
       contentContainerStyle={{
-        gap: 20,
-        paddingHorizontal: 24,
+        gap: isCompact ? 16 : 20,
+        paddingHorizontal: isCompact ? 16 : 24,
         paddingTop: 14,
         paddingBottom: 32,
       }}

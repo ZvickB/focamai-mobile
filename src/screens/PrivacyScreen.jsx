@@ -1,9 +1,17 @@
-import { Linking, Pressable, Text, View } from "react-native";
+import { Linking, Pressable, Text, useWindowDimensions, View } from "react-native";
 import { ScreenContainer, ScreenIntro } from "../components/MobileUI";
 
 export default function PrivacyScreen() {
+  const { width } = useWindowDimensions();
+  const isCompact = width < 400;
+
   return (
-    <ScreenContainer contentContainerStyle={{ paddingHorizontal: 24, paddingVertical: 32 }}>
+    <ScreenContainer
+      contentContainerStyle={{
+        paddingHorizontal: isCompact ? 16 : 24,
+        paddingVertical: isCompact ? 24 : 32,
+      }}
+    >
       <ScreenIntro
         eyebrow="Privacy Policy"
         title="How information is handled in this app."
