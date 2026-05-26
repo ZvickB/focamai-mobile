@@ -42,9 +42,9 @@ function DetailRetailerFooter({ item }) {
             accessibilityLabel={`View ${detailValue(item.title, "this product")} on ${provider || "the retailer"}`}
             className="flex-1"
             onPress={() => openRetailerLink(item.link)}
-            style={{ backgroundColor: "#0f6e8c" }}
+            style={{ backgroundColor: "#E59B26" }}
           >
-            View retailer
+            {`View on ${provider || "retailer"}`}
           </Button>
         ) : (
           <Text className="text-sm text-stone-400">Link unavailable</Text>
@@ -113,7 +113,7 @@ function normalizeDetailRouteItem(routeItem) {
 
 function UnavailableDetailState({ onBack }) {
   const { width } = useWindowDimensions();
-  const isCompact = width < 400;
+  const isCompact = width <= 415;
 
   return (
     <ScreenContainer
@@ -152,7 +152,7 @@ function UnavailableDetailState({ onBack }) {
 
 export default function SearchResultDetailScreen({ navigation, route }) {
   const { width } = useWindowDimensions();
-  const isCompact = width < 400;
+  const isCompact = width <= 415;
   const { activeSearchSession, finalResults } = useSearchFlow();
   const safeFinalResults = Array.isArray(finalResults) ? finalResults : [];
   const candidateId = route.params?.candidateId;
