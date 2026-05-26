@@ -16,9 +16,9 @@ const focusedPick = {
 };
 
 describe("SearchResultsSection", () => {
-  it("returns no section until preview or focused results exist", () => {
+  it("returns no section until focused results exist", () => {
     const { toJSON } = render(
-      <SearchResultsSection finalResults={[]} onOpenResult={jest.fn()} previewItems={[]} />,
+      <SearchResultsSection finalResults={[]} onOpenResult={jest.fn()} />,
     );
 
     expect(toJSON()).toBeNull();
@@ -29,7 +29,6 @@ describe("SearchResultsSection", () => {
       <SearchResultsSection
         finalResults={null}
         onOpenResult={jest.fn()}
-        previewItems={{}}
         showEmptyState
       />,
     );
@@ -42,7 +41,6 @@ describe("SearchResultsSection", () => {
       <SearchResultsSection
         finalResults={[]}
         onOpenResult={jest.fn()}
-        previewItems={[]}
         showEmptyState
       />,
     );
@@ -61,13 +59,11 @@ describe("SearchResultsSection", () => {
       <SearchResultsSection
         finalResults={[focusedPick]}
         onOpenResult={onOpenResult}
-        previewItems={[]}
       />,
     );
 
     fireEvent.press(getByTestId("results.focusedPick.1"));
 
-    expect(getByText("Why these picks?")).toBeTruthy();
     expect(getByText("Compact Travel Stroller")).toBeTruthy();
     expect(getByLabelText("Selected result. Open result: Compact Travel Stroller")).toBeTruthy();
     expect(onOpenResult).toHaveBeenCalledWith(focusedPick, 0);
@@ -84,7 +80,6 @@ describe("SearchResultsSection", () => {
           },
         ]}
         onOpenResult={jest.fn()}
-        previewItems={[]}
       />,
     );
 
@@ -99,7 +94,6 @@ describe("SearchResultsSection", () => {
       <SearchResultsSection
         finalResults={[focusedPick]}
         onOpenResult={jest.fn()}
-        previewItems={[]}
       />,
     );
 

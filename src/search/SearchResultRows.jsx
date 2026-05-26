@@ -1,6 +1,6 @@
 import { Star } from "lucide-react-native";
 import { Pressable, Text, useWindowDimensions, View } from "react-native";
-import { Pill, ProductImageFrame, Surface } from "../components/MobileUI";
+import { ProductImageFrame, Surface } from "../components/MobileUI";
 
 function formatRatingLabel(rating) {
   if (rating === null || rating === undefined || rating === "" || typeof rating === "boolean") {
@@ -22,10 +22,6 @@ function formatRatingLabel(rating) {
   return "Rating not shown";
 }
 
-function MetadataPill({ label }) {
-  return <Pill>{label}</Pill>;
-}
-
 function formatReviewLabel(reviewCount) {
   if (reviewCount === null || reviewCount === undefined || reviewCount === "") {
     return "";
@@ -42,26 +38,6 @@ function formatReviewLabel(reviewCount) {
   }
 
   return "";
-}
-
-export function PreviewResultRow({ item, index }) {
-  return (
-    <View className="border-b border-line py-3">
-      <View className="flex-row gap-3">
-        <View className="h-7 w-7 items-center justify-center rounded-full bg-white">
-          <Text className="text-xs font-semibold text-accent">{index + 1}</Text>
-        </View>
-        <View className="flex-1">
-          <Text className="text-sm font-semibold leading-5 text-ink">{item.title}</Text>
-          <Text className="mt-1 text-sm leading-5 text-stone-600">{item.provider}</Text>
-          <View className="mt-2 flex-row flex-wrap gap-2">
-            <MetadataPill label={item.price} />
-            <MetadataPill label={formatRatingLabel(item.rating)} />
-          </View>
-        </View>
-      </View>
-    </View>
-  );
 }
 
 function getPickReason(item, featureBullets) {
@@ -83,6 +59,7 @@ export function FocusedPickRow({ isSelected = false, item, index, onLayout, onPr
     <Surface
       className={`overflow-hidden px-0 py-0 ${isSelected ? "bg-cream" : "bg-white"}`}
       onLayout={onLayout}
+      testID={`results.focusedPickRow.${index + 1}`}
     >
       {isSelected ? <View className="absolute bottom-0 left-0 top-0 w-1 bg-accent" /> : null}
       <Pressable

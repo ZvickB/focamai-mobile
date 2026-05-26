@@ -1,8 +1,6 @@
-import { useState } from "react";
-import { Pressable, Text, View } from "react-native";
-import { GuidanceText, SectionHeader, Surface } from "../components/MobileUI";
-import { AffiliateDisclosureNote } from "./AffiliateDisclosureNote";
-import { FocusedPickRow, PreviewResultRow } from "./SearchResultRows";
+import { Text, View } from "react-native";
+import { SectionHeader, Surface } from "../components/MobileUI";
+import { FocusedPickRow } from "./SearchResultRows";
 
 export function SearchResultsSection({
   finalResults = [],
@@ -11,17 +9,13 @@ export function SearchResultsSection({
   onOpenResult,
   onResultsLayout,
   onRowLayout,
-  previewItems = [],
   selectedIndex = 0,
   showEmptyState = false,
 }) {
-  const [isPreviewVisible, setIsPreviewVisible] = useState(false);
   const safeFinalResults = Array.isArray(finalResults) ? finalResults : [];
-  const safePreviewItems = Array.isArray(previewItems) ? previewItems : [];
-  const hasPreview = safePreviewItems.length > 0;
   const hasFocusedPicks = safeFinalResults.length > 0;
 
-  if (!hasPreview && !hasFocusedPicks) {
+  if (!hasFocusedPicks) {
     if (showEmptyState) {
       return (
         <Surface variant="quiet">
@@ -42,80 +36,29 @@ export function SearchResultsSection({
   }
 
   return (
-    <View className="gap-4" onLayout={onResultsLayout}>
-      {hasFocusedPicks ? (
-        <View className="gap-3">
-          {safeFinalResults.length < 6 ? (
-            <Text className="px-1 text-sm leading-5 text-stone-600">
-              {safeFinalResults.length} credible option
-              {safeFinalResults.length === 1 ? "" : "s"} came back for this search. That can happen
-              when fewer results look credible for your needs.
-            </Text>
-          ) : null}
+    <View className="gap-4" onLayout={onResultsLayout} testID="results.section">
+      <View className="gap-3">
+        {safeFinalResults.length < 6 ? (
+          <Text className="px-1 text-sm leading-5 text-stone-600">
+            {safeFinalResults.length} credible option
+            {safeFinalResults.length === 1 ? "" : "s"} came back for this search. That can happen
+            when fewer results look credible for your needs.
+          </Text>
+        ) : null}
 
-          <View className="gap-1" onLayout={onFocusedPicksLayout} testID="results.focusedPicks">
-            {safeFinalResults.map((item, index) => (
-              <FocusedPickRow
-                isSelected={index === selectedIndex}
-                key={item.id}
-                item={item}
-                index={index}
-                onLayout={(event) => onRowLayout?.(index, event)}
-                onPress={() => onOpenResult(item, index)}
-              />
-            ))}
-          </View>
-
-          <Surface variant="quiet">
-            <Text className="text-base font-semibold text-ink">Why these picks?</Text>
-            <GuidanceText className="mt-1 text-sm leading-5">
-              Focamai narrows the list around your search and notes, then keeps the set short so
-              each option is worth a closer look.
-            </GuidanceText>
-            <View className="mt-3 border-t border-line pt-3">
-              <Text className="text-xs leading-4 text-stone-500">
-                Retailer availability and pricing can change.
-              </Text>
-              <AffiliateDisclosureNote />
-            </View>
-          </Surface>
+        <View className="gap-1" onLayout={onFocusedPicksLayout} testID="results.focusedPicks">
+          {safeFinalResults.map((item, index) => (
+            <FocusedPickRow
+              isSelected={index === selectedIndex}
+              key={item.id}
+              item={item}
+              index={index}
+              onLayout={(event) => onRowLayout?.(index, event)}
+              onPress={() => onOpenResult(item, index)}
+            />
+          ))}
         </View>
-      ) : null}
-
-      {hasPreview ? (
-        <Surface variant="quiet" className={hasFocusedPicks ? "py-4" : ""}>
-          <View className="flex-row items-center justify-between gap-3">
-            <View className="flex-1">
-              <Text className="text-xs font-semibold uppercase tracking-[1px] text-stone-500">
-                Early preview
-              </Text>
-              <Text className="mt-1 text-sm leading-5 text-stone-600">
-                {hasFocusedPicks
-                  ? "Discovery candidates are kept here for context."
-                  : "Initial candidates will be narrowed into focused picks."}
-              </Text>
-            </View>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={isPreviewVisible ? "Hide early preview" : "Show early preview"}
-              onPress={() => setIsPreviewVisible((current) => !current)}
-              className="min-h-[40px] items-center justify-center rounded-full border border-line bg-white px-3 py-2"
-            >
-              <Text className="text-sm font-semibold text-accent">
-                {isPreviewVisible ? "Hide" : "Show"}
-              </Text>
-            </Pressable>
-          </View>
-
-          {isPreviewVisible ? (
-            <View className="mt-3 border-t border-line pt-1">
-              {safePreviewItems.map((item, index) => (
-                <PreviewResultRow key={item.id} item={item} index={index} />
-              ))}
-            </View>
-          ) : null}
-        </Surface>
-      ) : null}
+      </View>
     </View>
   );
 }

@@ -187,7 +187,7 @@ function SelectedResultImagePanel({ isCompact, item, onPress }) {
 }
 
 export default function ResultsScreen({ navigation }) {
-  const { width } = useWindowDimensions();
+  const { height, width } = useWindowDimensions();
   const isCompact = width < 400;
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [resultsSectionY, setResultsSectionY] = useState(0);
@@ -338,7 +338,6 @@ export default function ResultsScreen({ navigation }) {
           }
           onResultsLayout={(event) => setResultsSectionY(event.nativeEvent.layout.y)}
           onRowLayout={handleRowLayout}
-          previewItems={previewItems}
           selectedIndex={safeSelectedIndex}
           showEmptyState
         />,
@@ -367,7 +366,7 @@ export default function ResultsScreen({ navigation }) {
         gap: 12,
         paddingHorizontal: isCompact ? 16 : 24,
         paddingTop: 0,
-        paddingBottom: 32,
+        paddingBottom: height,
       }}
       fixedHeader={fixedHeader}
       onScroll={handleScroll}
