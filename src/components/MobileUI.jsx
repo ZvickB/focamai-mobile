@@ -53,10 +53,15 @@ export function ScreenContainer({
       </ScrollView>
       {footer ? (
         <View
-          className={cx("border-t py-3", isCompact ? "px-4" : "px-6")}
+          className={cx("border-t py-2", isCompact ? "px-4" : "px-6")}
           style={{
-            backgroundColor: appThemeTokens.cardBackground,
+            backgroundColor: "#ffffff",
             borderColor: appThemeTokens.borderSubtle,
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: -2 },
+            shadowOpacity: 0.06,
+            shadowRadius: 6,
+            elevation: 8,
           }}
         >
           {footer}
@@ -216,6 +221,7 @@ export function Button({
   className = "",
   disabled,
   onPress,
+  style,
   testID,
   variant = "primary",
 }) {
@@ -252,6 +258,7 @@ export function Button({
       )}
       disabled={disabled}
       onPress={onPress}
+      style={style}
       testID={testID}
     >
       <Text className={cx("text-center text-sm font-semibold", textClassName)}>{children}</Text>
