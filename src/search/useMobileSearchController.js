@@ -1087,6 +1087,17 @@ export function useMobileSearchController() {
     setRetryAdviceError("");
     setErrorMessage("");
 
+    function isRetryAdviceRequestStale() {
+      return (
+        retryAdviceRequestIdRef.current !== snapshot.requestId ||
+        activeSearchSessionRef.current?.requestId !== snapshot.searchRequestId ||
+        activeSearchSessionRef.current?.submittedQuery !== snapshot.submittedQuery ||
+        followUpNotesRef.current !== snapshot.followUpNotes ||
+        retryFeedbackRef.current.trim() !== snapshot.visibleFeedback ||
+        getFinalResultsKey(finalResultsRef.current) !== snapshot.resultsKey
+      );
+    }
+
     try {
       const payload = await getRetryAdvice({
         followUpNotes,
@@ -1097,15 +1108,7 @@ export function useMobileSearchController() {
         })),
       });
 
-      const isStale =
-        retryAdviceRequestIdRef.current !== snapshot.requestId ||
-        activeSearchSessionRef.current?.requestId !== snapshot.searchRequestId ||
-        activeSearchSessionRef.current?.submittedQuery !== snapshot.submittedQuery ||
-        followUpNotesRef.current !== snapshot.followUpNotes ||
-        retryFeedbackRef.current.trim() !== snapshot.visibleFeedback ||
-        getFinalResultsKey(finalResultsRef.current) !== snapshot.resultsKey;
-
-      if (isStale) {
+      if (isRetryAdviceRequestStale()) {
         return;
       }
 
@@ -1116,15 +1119,7 @@ export function useMobileSearchController() {
         timingMs: payload.clientTimingMs,
       });
     } catch (error) {
-      const isStale =
-        retryAdviceRequestIdRef.current !== snapshot.requestId ||
-        activeSearchSessionRef.current?.requestId !== snapshot.searchRequestId ||
-        activeSearchSessionRef.current?.submittedQuery !== snapshot.submittedQuery ||
-        followUpNotesRef.current !== snapshot.followUpNotes ||
-        retryFeedbackRef.current.trim() !== snapshot.visibleFeedback ||
-        getFinalResultsKey(finalResultsRef.current) !== snapshot.resultsKey;
-
-      if (isStale) {
+      if (isRetryAdviceRequestStale()) {
         return;
       }
 

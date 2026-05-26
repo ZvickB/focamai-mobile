@@ -1,8 +1,8 @@
 import { useEffect, useRef } from "react";
 import { Settings } from "lucide-react-native";
-import { Pressable, Text, useWindowDimensions, View } from "react-native";
+import { Text, useWindowDimensions, View } from "react-native";
 import Svg, { Defs, LinearGradient, Rect, Stop } from "react-native-svg";
-import { BrandWordmark, RecoveryPanel, ScreenContainer, cx } from "../components/MobileUI";
+import { BrandWordmark, IconButton, RecoveryPanel, ScreenContainer, cx } from "../components/MobileUI";
 import { MarketplacePromptSection } from "../search/MarketplacePromptSection";
 import { SearchEntrySection } from "../search/SearchEntrySection";
 import { SearchFlowProgressCue } from "../search/SearchFlowProgressCue";
@@ -57,15 +57,13 @@ function SearchFocusHero() {
 
 function SettingsIconButton({ onPress }) {
   return (
-    <Pressable
+    <IconButton
       accessibilityLabel="Open settings"
-      accessibilityRole="button"
-      className="h-11 w-11 items-center justify-center rounded-full"
       onPress={onPress}
       testID="search.settingsButton"
     >
       <Settings color="#0F6175" size={21} strokeWidth={2.1} />
-    </Pressable>
+    </IconButton>
   );
 }
 
