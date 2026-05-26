@@ -16,7 +16,7 @@ export function detailValue(value, fallback) {
   return String(value);
 }
 
-function formatRating(value) {
+export function formatRating(value) {
   if (value === null || value === undefined || value === "" || typeof value === "boolean") {
     return "Rating not shown";
   }
@@ -30,7 +30,7 @@ function formatRating(value) {
   return rating.toFixed(1);
 }
 
-function formatReviews(value) {
+export function formatReviews(value) {
   if (value === null || value === undefined || value === "") {
     return "Reviews not shown";
   }
@@ -116,9 +116,9 @@ function getEnrichmentCopy(enrichmentStatus) {
   };
 }
 
-function SnapshotPill({ label, value }) {
+export function SnapshotPill({ label, value }) {
   return (
-    <View className="min-w-[120px] flex-1 rounded-[18px] border border-line bg-cream px-3 py-3">
+    <View className="flex-1 rounded-[18px] border border-line bg-cream px-3 py-3">
       <Text className="text-xs font-medium uppercase tracking-[1.2px] text-stone-500">{label}</Text>
       <Text className="mt-1 text-sm font-semibold leading-5 text-ink">{value}</Text>
     </View>
@@ -258,23 +258,6 @@ export function SearchResultFeatureHighlights({ enrichmentStatus = "idle", item 
   );
 }
 
-export function SearchResultDetailSnapshot({ item, rank }) {
-  return (
-    <Surface variant="quiet">
-      <View className="flex-row items-center gap-2">
-        <Info color="#0F6175" size={18} strokeWidth={2} />
-        <Text className="text-base font-semibold text-ink">At a glance</Text>
-      </View>
-      <View className="mt-3 flex-row flex-wrap gap-2">
-        <SnapshotPill label="Shortlist" value={rank ? `Pick #${rank}` : "Focused pick"} />
-        <SnapshotPill label="Source" value={detailValue(item.provider, "Unknown source")} />
-        <SnapshotPill label="Price" value={detailValue(item.price, "Price not shown")} />
-        <SnapshotPill label="Rating" value={formatRating(item.rating)} />
-        <SnapshotPill label="Reviews" value={formatReviews(item.reviewCount)} />
-      </View>
-    </Surface>
-  );
-}
 
 export function SearchResultDetailMetadata({ enrichmentStatus = "idle", item }) {
   const featureBullets = getFeatureBullets(item);

@@ -1,17 +1,15 @@
-import { Linking, Pressable, Text, useWindowDimensions, View } from "react-native";
+import { Linking, Text, useWindowDimensions, View } from "react-native";
 import {
   AppHeader,
   Button,
   HeaderBackButton,
   ScreenContainer,
-  Surface,
   QuietStatusPanel,
 } from "../components/MobileUI";
 import {
   detailValue,
   SearchResultDetailHero,
   SearchResultDetailMetadata,
-  SearchResultDetailSnapshot,
   SearchResultFeatureHighlights,
 } from "../search/SearchResultDetailMetadata";
 import { AffiliateDisclosureNote } from "../search/AffiliateDisclosureNote";
@@ -25,81 +23,34 @@ function openRetailerLink(link) {
   Linking.openURL(link).catch(() => {});
 }
 
-function DetailRetailerCta({ item }) {
-  const provider = detailValue(item.provider, "the retailer");
-
-  return (
-    <Surface className="border-secondary bg-white">
-      <Text className="text-base font-semibold text-ink">Check availability</Text>
-      <Text className="mt-2 text-sm leading-5 text-stone-600">
-        Confirm current price, availability, shipping, and seller details with {provider} before
-        buying.
-      </Text>
-      {item.link ? (
-        <Button
-          accessibilityRole="link"
-          accessibilityLabel={`View ${detailValue(item.title, "this product")} on ${provider}`}
-        className="mt-4 flex-row"
-          onPress={() => openRetailerLink(item.link)}
-        >
-          View retailer
-        </Button>
-      ) : (
-        <QuietStatusPanel className="mt-4">
-          <Text className="text-sm font-semibold text-slate-600">Retailer link unavailable</Text>
-          <Text className="mt-1 text-sm leading-5 text-slate-500">
-            Search the retailer directly to confirm the current listing before making a decision.
-          </Text>
-        </QuietStatusPanel>
-      )}
-      <Text className="mt-3 text-xs leading-5 text-stone-500">
-        Pricing, availability, shipping, and seller details can change after Focamai builds the
-        shortlist.
-      </Text>
-      {item.link ? <AffiliateDisclosureNote className="mt-2" /> : null}
-    </Surface>
-  );
-}
-
 function DetailRetailerFooter({ item }) {
-  const { width } = useWindowDimensions();
-  const isCompact = width < 400;
-
-  if (!item.link) {
-    return null;
-  }
-
-  const provider = detailValue(item.provider, "the retailer");
+  const provider = detailValue(item.provider, "");
   const price = detailValue(item.price, "Price not shown");
 
   return (
-    <View className="gap-2">
-      <View
-        className={
-          isCompact
-            ? "gap-2"
-            : "flex-row items-center justify-between gap-3"
-        }
-      >
-        <View className="flex-1">
-          <Text className="text-xs font-medium text-stone-500">Current listing</Text>
-          <Text className="text-base font-semibold text-ink" numberOfLines={1}>
-            {price}
-          </Text>
+    <View>
+      <View className="flex-row items-center gap-3">
+        <View className="w-28">
+          <Text className="text-base font-semibold text-ink" numberOfLines={1}>{price}</Text>
+          {provider ? (
+            <Text className="text-xs text-stone-500" numberOfLines={1}>{provider}</Text>
+          ) : null}
         </View>
-        <Button
-          accessibilityRole="link"
-          accessibilityLabel={`View ${detailValue(item.title, "this product")} on ${provider}`}
-          className={isCompact ? "w-full" : "min-w-[144px]"}
-          onPress={() => openRetailerLink(item.link)}
-        >
-          View retailer
-        </Button>
+        {item.link ? (
+          <Button
+            accessibilityRole="link"
+            accessibilityLabel={`View ${detailValue(item.title, "this product")} on ${provider || "the retailer"}`}
+            className="flex-1"
+            onPress={() => openRetailerLink(item.link)}
+            style={{ backgroundColor: "#0f6e8c" }}
+          >
+            View retailer
+          </Button>
+        ) : (
+          <Text className="text-sm text-stone-400">Link unavailable</Text>
+        )}
       </View>
-      <Text className="text-xs leading-4 text-slate-500">
-        Confirm price, availability, and seller details with {provider}.
-      </Text>
-      <AffiliateDisclosureNote />
+      {item.link ? <AffiliateDisclosureNote className="mt-2" /> : null}
     </View>
   );
 }
@@ -250,8 +201,6 @@ export default function SearchResultDetailScreen({ navigation, route }) {
         ) : null}
         <SearchResultDetailMetadata enrichmentStatus={enrichmentStatus} item={item} />
         <SearchResultFeatureHighlights enrichmentStatus={enrichmentStatus} item={item} />
-        <DetailRetailerCta item={item} />
-        <SearchResultDetailSnapshot item={item} rank={rank} />
       </View>
     </ScreenContainer>
   );
