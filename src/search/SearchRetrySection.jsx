@@ -1,15 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { ChevronDown } from "lucide-react-native";
 import { Pressable, Text, TextInput, View } from "react-native";
 import { Button, Pill, QuietStatusPanel, Surface } from "../components/MobileUI";
 
-const RETRY_CORRECTION_CHIPS = [
-  "Wrong brand",
-  "Wrong product type",
-  "Missing dietary need",
-  "Too expensive",
-  "Wrong size/count",
-  "Not available",
-];
 const RETRY_SUGGESTION_MAX_LENGTH = 80;
 
 const CONSTRAINT_STOP_WORDS = new Set([
@@ -117,26 +110,13 @@ export function SearchRetrySection({
   retryFeedback,
   setRetryFeedback,
 }) {
-  const [selectedChips, setSelectedChips] = useState([]);
-  const [isEditingSuggestion, setIsEditingSuggestion] = useState(false);
-  const [editableSuggestion, setEditableSuggestion] = useState("");
-
-  if (finalResults.length === 0) {
-    return null;
-  }
-
-  const hasSelectedChips = selectedChips.length > 0;
-  const feedbackPayload = [
-    hasSelectedChips ? `Correction type: ${selectedChips.join(", ")}` : "",
-    retryFeedback.trim(),
-  ]
-    .filter(Boolean)
-    .join("\n");
   const suggestedQuery = String(retryAdvice?.suggestedQuery || "").trim();
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [editableSuggestion, setEditableSuggestion] = useState(suggestedQuery);
+
+  const feedbackPayload = retryFeedback.trim();
   const canAskForAdvice = Boolean(canRequestRetryAdvice && feedbackPayload);
-  const canSearchSuggestion = Boolean(
-    isEditingSuggestion ? editableSuggestion.trim() : suggestedQuery,
-  );
+  const canSearchSuggestion = Boolean(editableSuggestion.trim());
   const constraintTags = deriveConstraintTags({
     followUpNotes,
     retryFeedback: feedbackPayload,
@@ -144,86 +124,79 @@ export function SearchRetrySection({
     submittedQuery: productQuery,
   });
 
-  function toggleChip(chipLabel) {
-    setSelectedChips((currentChips) =>
-      currentChips.includes(chipLabel)
-        ? currentChips.filter((label) => label !== chipLabel)
-        : [...currentChips, chipLabel],
-    );
-    setRetryFeedback(retryFeedback);
+  useEffect(() => {
+    setEditableSuggestion(suggestedQuery);
+  }, [suggestedQuery]);
+
+  if (!Array.isArray(finalResults) || finalResults.length === 0) {
+    return null;
   }
 
   function handleRequestAdvice() {
     requestRetryAdvice({ rejectionFeedback: feedbackPayload });
   }
 
-  function handleEditFirst() {
-    setEditableSuggestion(suggestedQuery);
-    setIsEditingSuggestion(true);
+  function toggleExpanded() {
+    setIsExpanded((currentValue) => !currentValue);
   }
 
   function handleSearchSuggestion() {
-    const queryToSearch = isEditingSuggestion ? editableSuggestion : suggestedQuery;
-    const didStart = applyRetrySuggestion(queryToSearch);
+    const didStart = applyRetrySuggestion(editableSuggestion);
 
     if (didStart) {
-      setSelectedChips([]);
-      setIsEditingSuggestion(false);
       setEditableSuggestion("");
     }
   }
 
   return (
     <Surface>
-      <Text className="text-xs font-semibold uppercase tracking-[1.2px] text-accent">
-        Recovery
-      </Text>
-      <Text className="mt-2 text-xl font-semibold leading-7 text-ink">
-        Want to correct the direction?
-      </Text>
-      <Text className="mt-2 text-sm leading-5 text-stone-600">
-        Say what felt off. Focamai can suggest a sharper next search and start fresh from there.
-      </Text>
-
-      <View className="mt-4 flex-row flex-wrap gap-2">
-        {RETRY_CORRECTION_CHIPS.map((chipLabel) => {
-          const isSelected = selectedChips.includes(chipLabel);
-
-          return (
-            <Pressable
-              key={chipLabel}
-              onPress={() => toggleChip(chipLabel)}
-              className={`rounded-full border px-3 py-1.5 ${
-                isSelected ? "border-accent bg-cream" : "border-line bg-white"
-              }`}
-            >
-              <Text
-                className={`text-xs font-semibold ${isSelected ? "text-accent" : "text-stone-600"}`}
-              >
-                {chipLabel}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </View>
-
-      <TextInput
-        value={retryFeedback}
-        onChangeText={setRetryFeedback}
-        placeholder="Example: Keep the budget, but avoid bulky options."
-        placeholderTextColor="#8B8175"
-        multiline
-        textAlignVertical="top"
-        className="mt-4 min-h-[104px] rounded-[18px] border border-line bg-cream px-4 py-4 text-base leading-6 text-ink"
-      />
-      <Button
-        disabled={!canAskForAdvice}
-        onPress={handleRequestAdvice}
-        className="mt-4"
-        variant="primary"
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={
+          isExpanded ? "Hide correction options" : "Show correction options"
+        }
+        accessibilityState={{ expanded: isExpanded }}
+        onPress={toggleExpanded}
+        className="flex-row items-center gap-3"
       >
-        {isGeneratingRetryAdvice ? "Finding a better search..." : "Suggest a better search"}
-      </Button>
+        <View className="flex-1">
+          <Text className="text-xl font-semibold leading-7 text-ink">
+            Want to correct the direction?
+          </Text>
+          <Text className="mt-2 text-sm leading-5 text-stone-600">
+            Say what felt off. Focamai can suggest a sharper next search and start fresh from
+            there.
+          </Text>
+        </View>
+        <View
+          className="h-10 w-10 items-center justify-center rounded-full border border-line bg-cream"
+          style={{ transform: [{ rotate: isExpanded ? "180deg" : "0deg" }] }}
+        >
+          <ChevronDown color="#0F6175" size={20} strokeWidth={2.2} />
+        </View>
+      </Pressable>
+
+      {isExpanded ? (
+        <>
+          <TextInput
+            value={retryFeedback}
+            onChangeText={setRetryFeedback}
+            placeholder="Example: Keep the budget, but avoid bulky options."
+            placeholderTextColor="#8B8175"
+            multiline
+            textAlignVertical="top"
+            className="mt-4 min-h-[104px] rounded-[18px] border border-line bg-cream px-4 py-4 text-base leading-6 text-ink"
+          />
+          <Button
+            disabled={!canAskForAdvice}
+            onPress={handleRequestAdvice}
+            className="mt-4"
+            variant="primary"
+          >
+            {isGeneratingRetryAdvice ? "Writing a better search..." : "Get new search suggestion"}
+          </Button>
+        </>
+      ) : null}
 
       {retryAdvice ? (
         <QuietStatusPanel className="mt-4 bg-white">
@@ -235,23 +208,21 @@ export function SearchRetrySection({
           ) : null}
 
           {suggestedQuery ? (
-          <View className="mt-3 rounded-[18px] border border-line bg-cream px-4 py-4">
-              {isEditingSuggestion ? (
-                <TextInput
-                  value={editableSuggestion}
-                  onChangeText={setEditableSuggestion}
-                  placeholder="Edit the suggested search"
-                  placeholderTextColor="#8B8175"
-                  maxLength={RETRY_SUGGESTION_MAX_LENGTH}
-                  multiline
-                  textAlignVertical="top"
-                  className="mt-2 min-h-[72px] rounded-[18px] border border-line bg-white px-4 py-3 text-base text-ink"
-                />
-              ) : (
-                <Text className="text-base font-semibold leading-6 text-ink">
-                  {suggestedQuery}
-                </Text>
-              )}
+            <View className="mt-3 rounded-[18px] border border-line bg-cream px-4 py-4">
+              <Text className="text-xs font-semibold uppercase tracking-[1px] text-stone-500">
+                Edit before searching
+              </Text>
+              <TextInput
+                accessibilityLabel="Suggested search query"
+                value={editableSuggestion}
+                onChangeText={setEditableSuggestion}
+                placeholder="Edit the suggested search"
+                placeholderTextColor="#8B8175"
+                maxLength={RETRY_SUGGESTION_MAX_LENGTH}
+                multiline
+                textAlignVertical="top"
+                className="mt-2 min-h-[72px] rounded-[18px] border border-line bg-white px-4 py-3 text-base font-semibold leading-6 text-ink"
+              />
 
               {constraintTags.length > 0 ? (
                 <View className="mt-3 flex-row flex-wrap items-center gap-2">
@@ -271,12 +242,6 @@ export function SearchRetrySection({
                   variant="primary"
                 >
                   Search this suggestion
-                </Button>
-                <Button
-                  onPress={handleEditFirst}
-                  variant="secondary"
-                >
-                  Edit first
                 </Button>
               </View>
             </View>
