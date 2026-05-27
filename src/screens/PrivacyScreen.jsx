@@ -1,9 +1,9 @@
-import { Linking, Pressable, Text, useWindowDimensions, View } from "react-native";
+import { Alert, Linking, Pressable, Text, useWindowDimensions, View } from "react-native";
 import { ScreenContainer, ScreenIntro } from "../components/MobileUI";
 
 export default function PrivacyScreen() {
   const { width } = useWindowDimensions();
-  const isCompact = width < 400;
+  const isCompact = width <= 415;
 
   return (
     <ScreenContainer
@@ -37,6 +37,8 @@ export default function PrivacyScreen() {
             onPress={() =>
               Linking.openURL(
                 "https://www.amazon.com/gp/help/customer/display.html?nodeId=468496",
+              ).catch(() =>
+                Alert.alert("Could not open link", "No browser was found on this device."),
               )
             }
           >

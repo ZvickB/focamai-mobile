@@ -2,6 +2,7 @@ import { NavigationContainer, DefaultTheme } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
+import DevLauncherScreen from "../screens/DevLauncherScreen";
 import AboutScreen from "../screens/AboutScreen";
 import AffiliateDisclosureScreen from "../screens/AffiliateDisclosureScreen";
 import ContactScreen from "../screens/ContactScreen";
@@ -15,6 +16,7 @@ import SearchScreen from "../screens/SearchScreen";
 import SettingsScreen from "../screens/SettingsScreen";
 import { SearchFlowProvider } from "../search/SearchFlowContext";
 import { appThemeTokens } from "../theme/themeTokens";
+import { AppErrorBoundary } from "../components/AppErrorBoundary";
 
 const Stack = createNativeStackNavigator();
 
@@ -32,10 +34,12 @@ export default function RootNavigator() {
   };
 
   return (
+    <AppErrorBoundary>
     <SafeAreaProvider>
       <NavigationContainer theme={navigationTheme}>
         <SearchFlowProvider>
           <Stack.Navigator
+            initialRouteName={__DEV__ ? "DevLauncher" : "Search"}
             screenOptions={{
               headerShadowVisible: false,
               headerStyle: {
@@ -51,6 +55,13 @@ export default function RootNavigator() {
               },
             }}
           >
+            {__DEV__ ? (
+              <Stack.Screen
+                name="DevLauncher"
+                component={DevLauncherScreen}
+                options={{ headerShown: false }}
+              />
+            ) : null}
             <Stack.Screen
               name="Search"
               component={SearchScreen}
@@ -90,5 +101,6 @@ export default function RootNavigator() {
         </SearchFlowProvider>
       </NavigationContainer>
     </SafeAreaProvider>
+    </AppErrorBoundary>
   );
 }

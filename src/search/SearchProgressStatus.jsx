@@ -260,7 +260,7 @@ export function SearchProgressStatus({
           ) : null}
         </View>
       ) : null}
-      {errorMessage ? (
+      {showDiagnostics && errorMessage ? (
         <Text className="mt-3 text-xs leading-4 text-stone-500">
           Raw message: {errorMessage}
         </Text>

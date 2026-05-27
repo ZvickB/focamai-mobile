@@ -1,4 +1,4 @@
-import { Linking, Text, useWindowDimensions, View } from "react-native";
+import { Alert, Linking, Text, useWindowDimensions, View } from "react-native";
 import {
   AppHeader,
   Button,
@@ -20,7 +20,9 @@ function openRetailerLink(link) {
     return;
   }
 
-  Linking.openURL(link).catch(() => {});
+  Linking.openURL(link).catch(() =>
+    Alert.alert("Could not open link", "No browser was found on this device."),
+  );
 }
 
 function DetailRetailerFooter({ item }) {

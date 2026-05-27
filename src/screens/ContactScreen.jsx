@@ -1,9 +1,9 @@
-import { Linking, Pressable, Text, useWindowDimensions, View } from "react-native";
+import { Alert, Linking, Pressable, Text, useWindowDimensions, View } from "react-native";
 import { ScreenContainer, ScreenIntro } from "../components/MobileUI";
 
 export default function ContactScreen() {
   const { width } = useWindowDimensions();
-  const isCompact = width < 400;
+  const isCompact = width <= 415;
 
   return (
     <ScreenContainer
@@ -19,7 +19,13 @@ export default function ContactScreen() {
       />
 
       <View className="mt-8 gap-5">
-        <Pressable onPress={() => Linking.openURL("mailto:contact@focamai.com")}>
+        <Pressable
+          onPress={() =>
+            Linking.openURL("mailto:contact@focamai.com").catch(() =>
+              Alert.alert("Could not open email", "No email app was found on this device."),
+            )
+          }
+        >
           <Text className="text-base font-medium text-accent underline underline-offset-4">
             contact@focamai.com
           </Text>

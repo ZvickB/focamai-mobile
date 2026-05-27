@@ -11,7 +11,7 @@ import {
 
 export default function RegionScreen({ navigation }) {
   const { width } = useWindowDimensions();
-  const isCompact = width < 400;
+  const isCompact = width <= 415;
   const [selectedAmazonDomain, setSelectedAmazonDomain] = useState(DEFAULT_AMAZON_DOMAIN);
 
   useEffect(() => {
@@ -30,8 +30,12 @@ export default function RegionScreen({ navigation }) {
 
   async function chooseMarketplace(domain) {
     setSelectedAmazonDomain(domain);
-    const result = await saveAmazonMarketplaceSelection(domain);
-    navigation.navigate("Search", { selectedAmazonDomain: result.domain });
+    try {
+      const result = await saveAmazonMarketplaceSelection(domain);
+      navigation.navigate("Search", { selectedAmazonDomain: result.domain });
+    } catch {
+      navigation.navigate("Search", { selectedAmazonDomain: domain });
+    }
   }
 
   return (
