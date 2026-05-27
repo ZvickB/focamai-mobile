@@ -2,7 +2,6 @@ import { render } from "@testing-library/react-native";
 import {
   SearchResultDetailHero,
   SearchResultDetailMetadata,
-  SearchResultDetailSnapshot,
   SearchResultFeatureHighlights,
 } from "../SearchResultDetailMetadata";
 
@@ -75,7 +74,7 @@ describe("SearchResultDetailHero", () => {
 
   it("does not render object-shaped review counts", () => {
     const { getAllByText, queryByText } = render(
-      <SearchResultDetailSnapshot
+      <SearchResultDetailHero
         item={{
           ...baseItem,
           reviewCount: { total: 128 },

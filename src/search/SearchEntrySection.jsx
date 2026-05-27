@@ -10,7 +10,7 @@ export function SearchEntrySection({
   startDiscoverySearch,
 }) {
   const { width } = useWindowDimensions();
-  const isCompact = width < 400;
+  const isCompact = width <= 415;
   const [draftQuery, setDraftQuery] = useState(productQuery);
 
   useEffect(() => {

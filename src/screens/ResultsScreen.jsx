@@ -188,7 +188,7 @@ function SelectedResultImagePanel({ isCompact, item, onPress }) {
 
 export default function ResultsScreen({ navigation }) {
   const { height, width } = useWindowDimensions();
-  const isCompact = width < 400;
+  const isCompact = width <= 415;
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [resultsSectionY, setResultsSectionY] = useState(0);
   const [focusedPicksY, setFocusedPicksY] = useState(0);

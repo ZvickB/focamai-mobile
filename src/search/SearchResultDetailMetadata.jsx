@@ -199,7 +199,7 @@ function HeroFact({ label, value }) {
 
 export function SearchResultDetailHero({ className = "", item, rank }) {
   const { width } = useWindowDimensions();
-  const isCompact = width < 400;
+  const isCompact = width <= 415;
   const provider = detailValue(item.provider, "Unknown source");
   const price = detailValue(item.price, "Price not shown");
   const rating = formatRating(item.rating);

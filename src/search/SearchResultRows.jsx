@@ -46,7 +46,7 @@ function getPickReason(item, featureBullets) {
 
 export function FocusedPickRow({ isSelected = false, item, index, onLayout, onPress }) {
   const { width } = useWindowDimensions();
-  const isCompact = width < 400;
+  const isCompact = width <= 415;
   const featureBullets = Array.isArray(item.feature_bullets)
     ? item.feature_bullets.map((bullet) => String(bullet).trim()).filter(Boolean)
     : [];

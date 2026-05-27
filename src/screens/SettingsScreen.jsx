@@ -3,7 +3,7 @@ import { ScreenContainer, ScreenIntro, Surface } from "../components/MobileUI";
 
 export default function SettingsScreen({ navigation }) {
   const { width } = useWindowDimensions();
-  const isCompact = width < 400;
+  const isCompact = width <= 415;
   const menuItems = [
     { label: "Shopping region", routeName: "Region" },
     { label: "About Focama", routeName: "About" },

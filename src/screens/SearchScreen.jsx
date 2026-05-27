@@ -30,7 +30,7 @@ function SearchBackgroundWash() {
 
 function SearchFocusHero() {
   const { width } = useWindowDimensions();
-  const isCompact = width < 400;
+  const isCompact = width <= 415;
   const wordmarkWidth = Math.min(256, Math.max(isCompact ? 188 : 216, width - 72));
 
   return (
@@ -83,7 +83,7 @@ function SearchTopBar({ isCompact, onOpenSettings }) {
 
 export default function SearchScreen({ navigation, route }) {
   const { width } = useWindowDimensions();
-  const isCompact = width < 400;
+  const isCompact = width <= 415;
   const pendingNavigationToFollowUpRef = useRef(null);
   const {
     activeSearchSession,

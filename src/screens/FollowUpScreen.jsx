@@ -32,7 +32,7 @@ function RefineHeader({ onBack, onSettings }) {
 
 export default function FollowUpScreen({ navigation }) {
   const { width } = useWindowDimensions();
-  const isCompact = width < 400;
+  const isCompact = width <= 415;
   const {
     canFinalize,
     errorMessage,

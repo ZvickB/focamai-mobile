@@ -3,7 +3,7 @@ import { ScreenContainer, ScreenIntro } from "../components/MobileUI";
 
 export default function AffiliateDisclosureScreen() {
   const { width } = useWindowDimensions();
-  const isCompact = width < 400;
+  const isCompact = width <= 415;
 
   return (
     <ScreenContainer

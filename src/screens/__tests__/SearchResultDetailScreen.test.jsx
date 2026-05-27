@@ -50,9 +50,10 @@ describe("SearchResultDetailScreen", () => {
   it("keeps retailer access visible in a fixed footer when a link exists", () => {
     const { getAllByText, getByText } = renderDetail();
 
-    expect(getByText("Current listing")).toBeTruthy();
-    expect(getByText("Confirm price, availability, and seller details with Amazon.")).toBeTruthy();
-    expect(getAllByText("View retailer")).toHaveLength(2);
+    expect(getAllByText("$199").length).toBeGreaterThan(0);
+    expect(getAllByText("Amazon").length).toBeGreaterThan(0);
+    expect(getByText("As an Amazon Associate I earn from qualifying purchases.")).toBeTruthy();
+    expect(getAllByText("View on Amazon")).toHaveLength(1);
   });
 
   it("does not show the fixed retailer footer when the link is unavailable", () => {
@@ -61,8 +62,8 @@ describe("SearchResultDetailScreen", () => {
       link: "",
     });
 
-    expect(getByText("Retailer link unavailable")).toBeTruthy();
-    expect(queryByText("Current listing")).toBeNull();
+    expect(getByText("Link unavailable")).toBeTruthy();
+    expect(queryByText("View on Amazon")).toBeNull();
   });
 
   it("prefers the live shortlist rank over the route snapshot rank", () => {

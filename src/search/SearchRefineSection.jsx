@@ -78,7 +78,7 @@ export function SearchRefineSection({
   suggestedRefinements = DEFAULT_REFINEMENT_CHIPS,
 }) {
   const { width } = useWindowDimensions();
-  const isCompact = width < 400;
+  const isCompact = width <= 415;
   const normalizedSuggestedChips = normalizeRefinementChips(suggestedRefinements);
   const visibleChips = normalizedSuggestedChips.length
     ? normalizedSuggestedChips

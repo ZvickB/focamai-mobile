@@ -26,7 +26,7 @@ export function ScreenContainer({
   testID,
 }) {
   const { width } = useWindowDimensions();
-  const isCompact = width < 400;
+  const isCompact = width <= 415;
   const defaultHorizontalPadding = isCompact ? 16 : 24;
 
   return (
@@ -147,7 +147,7 @@ export function AppHeader({
   wordmarkClassName = "h-9 w-36",
 }) {
   const { width } = useWindowDimensions();
-  const isCompact = width < 400;
+  const isCompact = width <= 415;
   const compactWordmarkClassName =
     wordmarkClassName === "h-9 w-36" || wordmarkClassName === "h-9 w-32"
       ? "h-8 w-28"

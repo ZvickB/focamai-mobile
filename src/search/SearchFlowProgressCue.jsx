@@ -25,7 +25,7 @@ function getStepState(step, activeStep) {
 
 export function SearchFlowProgressCue({ activeStep = "search", testID }) {
   const { width } = useWindowDimensions();
-  const isCompact = width < 400;
+  const isCompact = width <= 415;
   const labelClassName = isCompact ? "text-[10px]" : "text-[11px]";
   const segmentClassName = isCompact ? "h-1" : "h-[5px]";
   const steps = stepOrder.map((step) => ({
