@@ -1159,6 +1159,62 @@ export function useMobileSearchController() {
     return true;
   }
 
+  function loadDevFixture(scene) {
+    if (!__DEV__) {
+      return;
+    }
+
+    const {
+      MOCK_DISCOVERY_SUMMARY,
+      MOCK_FINAL_RESULTS,
+      MOCK_PRODUCT_QUERY,
+      MOCK_REFINEMENT_PROMPT,
+    } = require("../dev/devFixtures");
+
+    searchRequestIdRef.current += 1;
+    finalizingRequestIdRef.current = null;
+    stopEnrichmentPolling();
+    stopQueryQualityPolling({ clearSuggestion: true, updateState: false });
+    clearRetryAdviceState();
+
+    const mockSession = {
+      amazonDomain: "amazon.com",
+      candidatePool: null,
+      candidateCount: 24,
+      constraintRefresh: null,
+      discoveryToken: "dev-token-abc123",
+      phases: { discover: "complete", finalize: "complete", refine: "complete" },
+      previewCount: 6,
+      requestId: searchRequestIdRef.current,
+      submittedQuery: MOCK_PRODUCT_QUERY,
+    };
+
+    setProductQuery(MOCK_PRODUCT_QUERY);
+    setDiscoverySummary(MOCK_DISCOVERY_SUMMARY);
+    setRefinementPrompt(MOCK_REFINEMENT_PROMPT);
+    setFollowUpNotes("");
+    setErrorMessage("");
+    setIsDiscovering(false);
+    setIsGeneratingPrompt(false);
+    setIsFinalizing(false);
+    setPhaseEvents([]);
+    setRetryFeedback("");
+    setRetryAdvice(null);
+    setRetryAdviceError("");
+
+    if (scene === "results" || scene === "detail") {
+      setFinalResults(MOCK_FINAL_RESULTS);
+      finalResultsRef.current = MOCK_FINAL_RESULTS;
+      mockSession.phases.finalize = "complete";
+    } else {
+      setFinalResults([]);
+      finalResultsRef.current = [];
+    }
+
+    activeSearchSessionRef.current = mockSession;
+    setActiveSearchSession(mockSession);
+  }
+
   function applyQuerySuggestion() {
     const nextQuery = String(querySuggestion?.suggestedQuery || "").trim();
 
@@ -1304,5 +1360,6 @@ export function useMobileSearchController() {
     setSelectedAmazonDomain,
     startDiscoverySearch,
     applyRetrySuggestion,
+    ...(__DEV__ ? { loadDevFixture } : {}),
   };
 }
