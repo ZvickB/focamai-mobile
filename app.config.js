@@ -1,6 +1,12 @@
+const mobileApiBaseUrl = process.env.EXPO_PUBLIC_API_BASE_URL || "";
+
+if (process.env.EAS_BUILD && !mobileApiBaseUrl) {
+  throw new Error("Set EXPO_PUBLIC_API_BASE_URL to the Render backend API URL before running an EAS build.");
+}
+
 export default {
   expo: {
-    name: "Focama",
+    name: "Focamai",
     slug: "focama-mobile",
     version: "1.0.0",
     orientation: "portrait",
@@ -21,10 +27,15 @@ export default {
         backgroundColor: "#fbf7ef",
       },
       edgeToEdgeEnabled: true,
+      package: "com.focamai.app",
+      versionCode: 1,
     },
     web: {
       bundler: "metro",
       favicon: "./assets/favicon-brand.png",
+    },
+    extra: {
+      apiBaseUrl: mobileApiBaseUrl,
     },
     plugins: ["expo-font"],
   },

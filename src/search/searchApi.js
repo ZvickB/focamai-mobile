@@ -4,6 +4,15 @@ const PREVIEW_RESULT_LIMIT = 3;
 const RETRY_ADVICE_SUGGESTED_QUERY_MAX_LENGTH = 80;
 const REFINEMENT_SUGGESTION_LIMIT = 3;
 const REFINEMENT_SUGGESTION_MAX_LENGTH = 22;
+const REQUEST_TIMEOUT_MESSAGE =
+  "This is taking longer than expected. Try again, or adjust the search.";
+const REQUEST_TIMEOUTS_MS = {
+  discover: 25000,
+  finalize: 35000,
+  poll: 8000,
+  refine: 15000,
+  retryAdvice: 20000,
+};
 const TEXT_FIELD_KEYS = [
   "query",
   "text",
@@ -24,6 +33,30 @@ export function getApiBaseUrl() {
 function assertApiBaseUrl() {
   if (!API_BASE_URL) {
     throw new Error("Set EXPO_PUBLIC_API_BASE_URL to the backend API URL, then restart Expo.");
+  }
+}
+
+async function fetchWithTimeout(url, options = {}, timeoutMs) {
+  const controller = new AbortController();
+  let didTimeout = false;
+  const timeoutId = setTimeout(() => {
+    didTimeout = true;
+    controller.abort();
+  }, timeoutMs);
+
+  try {
+    return await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+  } catch (error) {
+    if (didTimeout) {
+      throw new Error(REQUEST_TIMEOUT_MESSAGE);
+    }
+
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
   }
 }
 
@@ -71,7 +104,11 @@ export async function discoverProducts({ amazonDomain, cacheMode = "", query }) 
     params.set("cacheMode", "refresh");
   }
 
-  const response = await fetch(`${API_BASE_URL}/api/search/rainforest-discover?${params.toString()}`);
+  const response = await fetchWithTimeout(
+    `${API_BASE_URL}/api/search/rainforest-discover?${params.toString()}`,
+    {},
+    REQUEST_TIMEOUTS_MS.discover,
+  );
 
   return readJsonResponse(response, requestStartedAt, "Discovery request failed.");
 }
@@ -80,7 +117,11 @@ export async function getRefinementPrompt({ query }) {
   assertApiBaseUrl();
 
   const requestStartedAt = Date.now();
-  const response = await fetch(`${API_BASE_URL}/api/search/refine?query=${encodeURIComponent(query)}`);
+  const response = await fetchWithTimeout(
+    `${API_BASE_URL}/api/search/refine?query=${encodeURIComponent(query)}`,
+    {},
+    REQUEST_TIMEOUTS_MS.refine,
+  );
 
   return readJsonResponse(response, requestStartedAt, "Refinement request failed.");
 }
@@ -96,19 +137,23 @@ export async function finalizeSearch({
   const requestStartedAt = Date.now();
   const normalizedNotes = followUpNotes.trim();
   const requestMode = normalizedNotes ? "guided_refined" : "guided_empty_notes";
-  const response = await fetch(`${API_BASE_URL}/api/search/finalize`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
+  const response = await fetchWithTimeout(
+    `${API_BASE_URL}/api/search/finalize`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        amazonDomain,
+        discoveryToken,
+        followUpNotes: normalizedNotes,
+        query,
+        requestMode,
+      }),
     },
-    body: JSON.stringify({
-      amazonDomain,
-      discoveryToken,
-      followUpNotes: normalizedNotes,
-      query,
-      requestMode,
-    }),
-  });
+    REQUEST_TIMEOUTS_MS.finalize,
+  );
 
   return readJsonResponse(response, requestStartedAt, "Finalize request failed.");
 }
@@ -122,7 +167,11 @@ export async function pollEnrichment({ amazonDomain, query, token }) {
     query,
     token,
   });
-  const response = await fetch(`${API_BASE_URL}/api/search/enrichment?${params.toString()}`);
+  const response = await fetchWithTimeout(
+    `${API_BASE_URL}/api/search/enrichment?${params.toString()}`,
+    {},
+    REQUEST_TIMEOUTS_MS.poll,
+  );
 
   return readJsonResponse(response, requestStartedAt, "Enrichment request failed.");
 }
@@ -140,7 +189,11 @@ export async function pollQueryQuality({ amazonDomain, query, token }) {
     params.set("amazonDomain", amazonDomain);
   }
 
-  const response = await fetch(`${API_BASE_URL}/api/search/query-quality?${params.toString()}`);
+  const response = await fetchWithTimeout(
+    `${API_BASE_URL}/api/search/query-quality?${params.toString()}`,
+    {},
+    REQUEST_TIMEOUTS_MS.poll,
+  );
 
   return readJsonResponse(response, requestStartedAt, "Query-quality request failed.");
 }
@@ -243,18 +296,22 @@ export async function getRetryAdvice({
   assertApiBaseUrl();
 
   const requestStartedAt = Date.now();
-  const response = await fetch(`${API_BASE_URL}/api/search/retry-advice`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
+  const response = await fetchWithTimeout(
+    `${API_BASE_URL}/api/search/retry-advice`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        followUpNotes: followUpNotes.trim(),
+        query,
+        rejectionFeedback: rejectionFeedback.trim(),
+        shortlist,
+      }),
     },
-    body: JSON.stringify({
-      followUpNotes: followUpNotes.trim(),
-      query,
-      rejectionFeedback: rejectionFeedback.trim(),
-      shortlist,
-    }),
-  });
+    REQUEST_TIMEOUTS_MS.retryAdvice,
+  );
 
   const payload = await readJsonResponse(
     response,

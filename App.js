@@ -20,7 +20,7 @@ TextInput.defaultProps = TextInput.defaultProps || {};
 TextInput.defaultProps.style = [{ fontFamily: "Manrope_400Regular" }, TextInput.defaultProps.style];
 
 export default function App() {
-  const [fontsLoaded] = useFonts({
+  const [fontsLoaded, fontLoadError] = useFonts({
     Manrope_400Regular,
     Manrope_500Medium,
     Manrope_600SemiBold,
@@ -40,7 +40,7 @@ export default function App() {
       }),
   );
 
-  if (!fontsLoaded) {
+  if (!fontsLoaded && !fontLoadError) {
     return null;
   }
 

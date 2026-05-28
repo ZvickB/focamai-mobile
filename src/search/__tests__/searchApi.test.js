@@ -7,6 +7,46 @@ import {
   normalizeRetryAdvice,
 } from "../searchApi";
 
+describe("request timeouts", () => {
+  const originalFetch = global.fetch;
+  const originalApiBaseUrl = process.env.EXPO_PUBLIC_API_BASE_URL;
+
+  beforeEach(() => {
+    jest.useFakeTimers();
+    process.env.EXPO_PUBLIC_API_BASE_URL = "https://api.example.test";
+  });
+
+  afterEach(() => {
+    global.fetch = originalFetch;
+    process.env.EXPO_PUBLIC_API_BASE_URL = originalApiBaseUrl;
+    jest.resetModules();
+    jest.useRealTimers();
+  });
+
+  it("fails discovery with calm recovery copy when the request takes too long", async () => {
+    jest.resetModules();
+    const { discoverProducts } = require("../searchApi");
+
+    global.fetch = jest.fn(
+      (_url, options = {}) =>
+        new Promise((_resolve, reject) => {
+          options.signal?.addEventListener("abort", () => reject(new Error("aborted")));
+        }),
+    );
+
+    const request = discoverProducts({
+      amazonDomain: "amazon.com",
+      query: "travel stroller",
+    });
+
+    jest.advanceTimersByTime(25000);
+
+    await expect(request).rejects.toThrow(
+      "This is taking longer than expected. Try again, or adjust the search.",
+    );
+  });
+});
+
 describe("coerceDisplayText", () => {
   it("extracts useful strings from nested query-quality objects", () => {
     expect(coerceDisplayText({ query: "white chocolate chips" })).toBe("white chocolate chips");

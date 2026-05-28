@@ -1,4 +1,4 @@
-import { render } from "@testing-library/react-native";
+import { fireEvent, render } from "@testing-library/react-native";
 import { SearchProgressStatus } from "../SearchProgressStatus";
 
 jest.mock("@react-native-async-storage/async-storage", () => ({
@@ -39,7 +39,7 @@ describe("SearchProgressStatus", () => {
 
   it("rewrites API-base errors while keeping the raw message secondary", () => {
     const rawMessage = "The server returned HTML instead of JSON. Check EXPO_PUBLIC_API_BASE_URL.";
-    const { getByText } = render(
+    const { getByLabelText, getByText, queryByText } = render(
       <SearchProgressStatus
         errorMessage={rawMessage}
         hasStartedSearch
@@ -53,6 +53,10 @@ describe("SearchProgressStatus", () => {
     expect(
       getByText("The app is not reaching the backend API yet. Check the API base URL, then restart Expo."),
     ).toBeTruthy();
+    expect(queryByText(`Raw message: ${rawMessage}`)).toBeNull();
+
+    fireEvent.press(getByLabelText("Show search diagnostics"));
+
     expect(getByText(`Raw message: ${rawMessage}`)).toBeTruthy();
   });
 });
