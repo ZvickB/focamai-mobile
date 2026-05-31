@@ -1,6 +1,7 @@
 import { Mic, Search } from "lucide-react-native";
 import { Pressable, Text, TextInput, useWindowDimensions, View } from "react-native";
 import { GuidanceText, cx } from "../components/MobileUI";
+import { useVoiceRecorder } from "./useVoiceRecorder";
 
 const DEFAULT_REFINEMENT_CHIPS = [
   { label: "Good value" },
@@ -79,6 +80,13 @@ export function SearchRefineSection({
 }) {
   const { width } = useWindowDimensions();
   const isCompact = width <= 415;
+  const { status: voiceStatus, handleMicPress } = useVoiceRecorder({
+    onTranscribed: (text) => {
+      setFollowUpNotes(clampFollowUpNotes(
+        followUpNotes.trim() ? `${followUpNotes.trim()} ${text}` : text
+      ));
+    },
+  });
   const normalizedSuggestedChips = normalizeRefinementChips(suggestedRefinements);
   const visibleChips = normalizedSuggestedChips.length
     ? normalizedSuggestedChips
@@ -172,17 +180,26 @@ export function SearchRefineSection({
               textAlignVertical="top"
               className="min-h-[54px] flex-1 py-2 text-[16px] leading-6 text-ink"
             />
-            {isCompact ? null : (
-              <Pressable
-                accessibilityLabel="Voice input coming later"
-                accessibilityRole="button"
-                className="h-11 w-11 items-center justify-center rounded-full bg-cream"
-                disabled
-                testID="followup.voiceButton"
-              >
-                <Mic color="#0F6175" size={23} strokeWidth={2.2} />
-              </Pressable>
-            )}
+            <Pressable
+              accessibilityLabel={
+                voiceStatus === "recording"
+                  ? "Stop recording"
+                  : voiceStatus === "processing"
+                    ? "Transcribing…"
+                    : "Add notes by voice"
+              }
+              accessibilityRole="button"
+              className="h-11 w-11 items-center justify-center rounded-full bg-cream"
+              disabled={voiceStatus === "processing"}
+              onPress={handleMicPress}
+              testID="followup.voiceButton"
+            >
+              <Mic
+                color={voiceStatus === "recording" || voiceStatus === "error" ? "#C0392B" : "#0F6175"}
+                size={23}
+                strokeWidth={2.2}
+              />
+            </Pressable>
           </View>
         </View>
 
