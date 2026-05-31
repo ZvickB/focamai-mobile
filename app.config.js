@@ -20,6 +20,9 @@ export default {
     },
     ios: {
       supportsTablet: true,
+      infoPlist: {
+        NSMicrophoneUsageDescription: "Focamai uses your microphone to let you search by voice.",
+      },
     },
     android: {
       adaptiveIcon: {
@@ -28,6 +31,7 @@ export default {
       },
       edgeToEdgeEnabled: true,
       package: "com.focamai.app",
+      permissions: ["android.permission.RECORD_AUDIO"],
       versionCode: 1,
     },
     web: {
@@ -40,6 +44,6 @@ export default {
         projectId: "cfc4fd1e-d40c-424e-91c0-a24866bb09d7",
       },
     },
-    plugins: ["expo-font"],
+    plugins: ["expo-font", "expo-av"],
   },
 };
