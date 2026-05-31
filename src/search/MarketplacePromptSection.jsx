@@ -51,10 +51,10 @@ export function MarketplacePromptSection({
                     accessibilityLabel={`Select ${getAmazonMarketplaceLabel(marketplace.domain)}`}
                     onPress={() => setDraftAmazonDomain(marketplace.domain)}
                     className={`rounded-full border px-3 py-2 ${
-                      isSelected ? "border-secondary bg-secondary" : "border-line bg-cream"
+                      isSelected ? "border-accent bg-accent" : "border-line bg-white"
                     }`}
                   >
-                    <Text className={`text-xs font-semibold ${isSelected ? "text-white" : "text-stone-700"}`}>
+                    <Text className={`text-xs font-semibold ${isSelected ? "text-white" : "text-ink"}`}>
                       {marketplace.label}
                     </Text>
                   </Pressable>
