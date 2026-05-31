@@ -1,5 +1,6 @@
-import { CheckCircle2, Info, ShieldCheck, Sparkles, Star } from "lucide-react-native";
-import { Text, useWindowDimensions, View } from "react-native";
+import { useState } from "react";
+import { CheckCircle2, ChevronDown, Info, ShieldCheck, Sparkles, Star } from "lucide-react-native";
+import { Pressable, Text, useWindowDimensions, View } from "react-native";
 import { cx, ProductImageFrame, Surface } from "../components/MobileUI";
 import { getProductDisplayTitle } from "./productTitle";
 
@@ -198,6 +199,44 @@ function HeroFact({ label, value }) {
   );
 }
 
+function RawTitleDisclosure({ item }) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const rawTitle = detailValue(item.title, "").replace(/\s+/g, " ").trim();
+  const displayTitle = getProductDisplayTitle(rawTitle);
+  const provider = detailValue(item.provider, "");
+  const label = provider.toLowerCase().startsWith("amazon")
+    ? "Full Amazon title"
+    : "Full source title";
+
+  if (!rawTitle || !displayTitle || rawTitle === displayTitle) {
+    return null;
+  }
+
+  return (
+    <View>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityState={{ expanded: isExpanded }}
+        className="flex-row items-center gap-1 self-start py-0"
+        onPress={() => setIsExpanded((currentValue) => !currentValue)}
+      >
+        <Text className="text-sm font-semibold text-stone-500">
+          {isExpanded ? "Hide full title" : label}
+        </Text>
+        <ChevronDown
+          color="#78716c"
+          size={13}
+          strokeWidth={2}
+          style={{ transform: [{ rotate: isExpanded ? "180deg" : "0deg" }] }}
+        />
+      </Pressable>
+      {isExpanded ? (
+        <Text className="mt-0.5 text-sm leading-5 text-stone-500">{rawTitle}</Text>
+      ) : null}
+    </View>
+  );
+}
+
 export function SearchResultDetailHero({ className = "", item, rank }) {
   const { width } = useWindowDimensions();
   const isCompact = width <= 415;
@@ -227,9 +266,12 @@ export function SearchResultDetailHero({ className = "", item, rank }) {
             <Text className="text-sm font-semibold text-stone-600">{provider}</Text>
           </View>
         </View>
-        <Text className="text-lg font-semibold leading-6 text-ink">
-          {displayTitle || detailValue(item.title, "Untitled product")}
-        </Text>
+        <View className="gap-1">
+          <Text className="text-lg font-semibold leading-6 text-ink">
+            {displayTitle || detailValue(item.title, "Untitled product")}
+          </Text>
+          <RawTitleDisclosure item={item} />
+        </View>
         <View className="flex-row flex-wrap gap-2">
           <HeroFact label="Price" value={price} />
           <HeroFact label="Rating" value={rating} />
