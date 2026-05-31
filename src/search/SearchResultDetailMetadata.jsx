@@ -1,6 +1,7 @@
 import { CheckCircle2, Info, ShieldCheck, Sparkles, Star } from "lucide-react-native";
 import { Text, useWindowDimensions, View } from "react-native";
 import { cx, ProductImageFrame, Surface } from "../components/MobileUI";
+import { getProductDisplayTitle } from "./productTitle";
 
 export function detailValue(value, fallback) {
   if (
@@ -204,6 +205,7 @@ export function SearchResultDetailHero({ className = "", item, rank }) {
   const price = detailValue(item.price, "Price not shown");
   const rating = formatRating(item.rating);
   const reviews = formatReviews(item.reviewCount);
+  const displayTitle = getProductDisplayTitle(item.title);
 
   return (
     <View className={cx("gap-4", className)}>
@@ -211,7 +213,7 @@ export function SearchResultDetailHero({ className = "", item, rank }) {
         containerClassName={isCompact ? "h-56 w-full" : "h-72 w-full"}
         image={item.image}
         imageClassName="rounded-md"
-        title={detailValue(item.title, "Focused pick")}
+        title={displayTitle || detailValue(item.title, "Focused pick")}
       />
       <View className="gap-4">
         <View className="flex-row flex-wrap items-center justify-between gap-2">
@@ -226,7 +228,7 @@ export function SearchResultDetailHero({ className = "", item, rank }) {
           </View>
         </View>
         <Text className="text-lg font-semibold leading-6 text-ink">
-          {detailValue(item.title, "Untitled product")}
+          {displayTitle || detailValue(item.title, "Untitled product")}
         </Text>
         <View className="flex-row flex-wrap gap-2">
           <HeroFact label="Price" value={price} />

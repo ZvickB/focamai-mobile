@@ -13,6 +13,7 @@ import { SearchProgressStatus } from "../search/SearchProgressStatus";
 import { SearchRetrySection } from "../search/SearchRetrySection";
 import { SearchResultsSection } from "../search/SearchResultsSection";
 import { useSearchFlow } from "../search/SearchFlowContext";
+import { getProductDisplayTitle } from "../search/productTitle";
 
 function ResultsTopBar({ onBack, onNewSearch }) {
   return (
@@ -66,27 +67,6 @@ function getRatingValue(rating) {
   return Number.isFinite(ratingValue) ? ratingValue : null;
 }
 
-function truncateAtWord(value, maxLength) {
-  if (typeof value !== "string") {
-    return "";
-  }
-
-  const normalizedValue = value.trim().replace(/\s+/g, " ");
-
-  if (normalizedValue.length <= maxLength) {
-    return normalizedValue;
-  }
-
-  const clippedValue = normalizedValue.slice(0, maxLength).trimEnd();
-  const lastSpaceIndex = clippedValue.lastIndexOf(" ");
-  const wordSafeValue =
-    lastSpaceIndex > Math.floor(maxLength * 0.55)
-      ? clippedValue.slice(0, lastSpaceIndex)
-      : clippedValue;
-
-  return `${wordSafeValue}...`;
-}
-
 function SelectedRating({ rating }) {
   const ratingValue = getRatingValue(rating);
 
@@ -120,7 +100,7 @@ function SelectedResultImagePanel({ isCompact, item, onPress }) {
   }
 
   const priceLabel = item.price || "Price not shown";
-  const displayTitle = truncateAtWord(item.title, 104);
+  const displayTitle = getProductDisplayTitle(item.title);
   const featureBullets = Array.isArray(item.feature_bullets)
     ? item.feature_bullets.map((bullet) => String(bullet).trim()).filter(Boolean)
     : [];
@@ -148,7 +128,7 @@ function SelectedResultImagePanel({ isCompact, item, onPress }) {
             frameClassName="rounded-[18px] bg-white p-1.5"
             image={item.image}
             imageClassName="rounded-[14px]"
-            title={item.title}
+            title={displayTitle || item.title}
           />
         ) : null}
 
@@ -159,7 +139,7 @@ function SelectedResultImagePanel({ isCompact, item, onPress }) {
               ellipsizeMode="tail"
               numberOfLines={3}
             >
-              {displayTitle}
+              {displayTitle || item.title}
             </Text>
             <Text className="text-sm leading-5 text-stone-600" numberOfLines={3}>
               {reason}
@@ -178,7 +158,7 @@ function SelectedResultImagePanel({ isCompact, item, onPress }) {
             frameClassName="-mt-2 rounded-[18px] bg-white p-1.5"
             image={item.image}
             imageClassName="rounded-[14px]"
-            title={item.title}
+            title={displayTitle || item.title}
           />
         )}
       </Pressable>

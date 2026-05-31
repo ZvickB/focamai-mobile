@@ -1,4 +1,5 @@
-import { Alert, Linking, Text, useWindowDimensions, View } from "react-native";
+import { useState } from "react";
+import { Alert, Linking, Pressable, Text, useWindowDimensions, View } from "react-native";
 import {
   AppHeader,
   Button,
@@ -14,6 +15,7 @@ import {
 } from "../search/SearchResultDetailMetadata";
 import { AffiliateDisclosureNote } from "../search/AffiliateDisclosureNote";
 import { useSearchFlow } from "../search/SearchFlowContext";
+import { getProductDisplayTitle } from "../search/productTitle";
 
 function openRetailerLink(link) {
   if (!link) {
@@ -28,6 +30,7 @@ function openRetailerLink(link) {
 function DetailRetailerFooter({ item }) {
   const provider = detailValue(item.provider, "");
   const price = detailValue(item.price, "Price not shown");
+  const displayTitle = getProductDisplayTitle(item.title) || detailValue(item.title, "this product");
 
   return (
     <View>
@@ -41,7 +44,7 @@ function DetailRetailerFooter({ item }) {
         {item.link ? (
           <Button
             accessibilityRole="link"
-            accessibilityLabel={`View ${detailValue(item.title, "this product")} on ${provider || "the retailer"}`}
+            accessibilityLabel={`View ${displayTitle} on ${provider || "the retailer"}`}
             className="flex-1"
             onPress={() => openRetailerLink(item.link)}
             style={{ backgroundColor: "#E59B26" }}
@@ -53,6 +56,37 @@ function DetailRetailerFooter({ item }) {
         )}
       </View>
       {item.link ? <AffiliateDisclosureNote className="mt-2" /> : null}
+    </View>
+  );
+}
+
+function RawTitleDisclosure({ item }) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const rawTitle = detailValue(item.title, "").replace(/\s+/g, " ").trim();
+  const displayTitle = getProductDisplayTitle(rawTitle);
+  const provider = detailValue(item.provider, "");
+  const label = provider.toLowerCase().startsWith("amazon")
+    ? "See full Amazon title"
+    : "See full source title";
+
+  if (!rawTitle || !displayTitle || rawTitle === displayTitle) {
+    return null;
+  }
+
+  return (
+    <View className="rounded-[18px] border border-line bg-white px-4 py-3">
+      <Pressable
+        accessibilityRole="button"
+        accessibilityState={{ expanded: isExpanded }}
+        onPress={() => setIsExpanded((currentValue) => !currentValue)}
+      >
+        <Text className="text-sm font-semibold text-stone-600">
+          {isExpanded ? "Hide full title" : label}
+        </Text>
+      </Pressable>
+      {isExpanded ? (
+        <Text className="mt-3 text-sm leading-5 text-stone-600">{rawTitle}</Text>
+      ) : null}
     </View>
   );
 }
@@ -190,6 +224,7 @@ export default function SearchResultDetailScreen({ navigation, route }) {
         <DetailHeader onBack={goBack} />
 
         <SearchResultDetailHero className="pb-1" item={item} rank={rank} />
+        <RawTitleDisclosure item={item} />
         {isStaleSnapshot ? (
           <QuietStatusPanel>
             <Text className="text-sm font-semibold text-slate-700">
