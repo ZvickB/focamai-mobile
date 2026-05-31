@@ -85,7 +85,11 @@ export default function RootNavigator() {
             <Stack.Screen name="About" component={AboutScreen} />
             <Stack.Screen name="Contact" component={ContactScreen} />
             <Stack.Screen name="Privacy" component={PrivacyScreen} />
-            <Stack.Screen name="Settings" component={SettingsScreen} />
+            <Stack.Screen
+              name="Settings"
+              component={SettingsScreen}
+              options={{ headerShown: false }}
+            />
             <Stack.Screen name="Region" component={RegionScreen} options={{ title: "Shopping region" }} />
             <Stack.Screen
               name="SearchResultDetail"
