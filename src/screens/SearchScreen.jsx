@@ -38,13 +38,13 @@ function SearchFocusHero() {
         <Text
           className={cx(
             "text-center font-semibold text-ink",
-            isCompact ? "text-[29px] leading-[36px]" : "text-[31px] leading-[38px]",
+            isCompact ? "text-[30px] leading-[37px]" : "text-[32px] leading-[39px]",
           )}
           testID="search.title"
         >
           Find the right{"\u00A0"}pick.
         </Text>
-        <Text className="mt-1 max-w-[300px] text-center text-[15px] leading-6 text-stone-600">
+        <Text className="mt-1.5 max-w-[300px] text-center text-[15px] leading-6 text-stone-600">
           Tell Focamai what you need. It narrows the noise to six useful picks.
         </Text>
       </View>
@@ -71,6 +71,10 @@ function SearchHeader({ onOpenSettings }) {
       right={<SettingsIconButton onPress={onOpenSettings} />}
     />
   );
+}
+
+function SearchFlexibleSpacer({ testID }) {
+  return <View style={{ flexGrow: 1, flexShrink: 1 }} testID={testID} />;
 }
 
 export default function SearchScreen({ navigation, route }) {
@@ -156,40 +160,46 @@ export default function SearchScreen({ navigation, route }) {
       keyboardShouldPersistTaps="handled"
       safeAreaEdges={["top", "bottom"]}
       contentContainerStyle={{
-        gap: isCompact ? 12 : 14,
+        flexGrow: 1,
+        gap: 0,
         paddingHorizontal: isCompact ? 16 : 24,
         paddingTop: 14,
         paddingBottom: 28,
       }}
     >
-      <View className={cx("w-full max-w-[430px] self-center", isCompact ? "gap-3" : "gap-4")}>
-        <SearchHeader
-          onOpenSettings={() => navigation.navigate("Settings")}
-        />
+      <View className="w-full max-w-[430px] flex-grow self-center">
+        <View className={isCompact ? "gap-3" : "gap-4"}>
+          <SearchHeader
+            onOpenSettings={() => navigation.navigate("Settings")}
+          />
 
-        <View className="w-full self-center">
-          <SearchFlowProgressCue activeStep="search" testID="search.flowProgressCue" />
+          <View className="w-full self-center">
+            <SearchFlowProgressCue activeStep="search" testID="search.flowProgressCue" />
+          </View>
         </View>
 
-        <SearchFocusHero />
+        <SearchFlexibleSpacer testID="search.flexibleSpacerTop" />
 
-        <View className={isCompact ? "mt-0.5" : "mt-1"}>
+        <View className={cx("w-full", isCompact ? "gap-3.5" : "gap-[18px]")}>
+          <SearchFocusHero />
           <SearchEntrySection
             isDiscovering={isDiscovering}
             productQuery={productQuery}
             setProductQuery={setProductQuery}
             startDiscoverySearch={submitSearch}
           />
+
+          {errorMessage === "Enter a product query first." ? (
+            <RecoveryPanel
+              detail={errorMessage}
+              message="Add the product you want help with, then start the search again."
+              testID="search.recoveryPanel"
+              title="Add a product first"
+            />
+          ) : null}
         </View>
 
-        {errorMessage === "Enter a product query first." ? (
-          <RecoveryPanel
-            detail={errorMessage}
-            message="Add the product you want help with, then start the search again."
-            testID="search.recoveryPanel"
-            title="Add a product first"
-          />
-        ) : null}
+        <SearchFlexibleSpacer testID="search.flexibleSpacerBottom" />
       </View>
 
       {showMarketplacePrompt ? (

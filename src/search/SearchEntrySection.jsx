@@ -27,7 +27,7 @@ export function SearchEntrySection({
   }
 
   return (
-    <View className="gap-3">
+    <View className="gap-3.5">
       <View
         className={cx(
           "rounded-[22px] border border-line bg-white shadow-sm",
@@ -94,7 +94,7 @@ export function SearchEntrySection({
         onPress={submitDraftQuery}
         accessibilityLabel="Start product search"
         className={cx(
-          "min-h-[52px]",
+          "mt-1 min-h-[52px]",
           isDiscovering ? "" : "bg-accent",
         )}
       >
