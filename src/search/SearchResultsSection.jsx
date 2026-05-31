@@ -46,9 +46,14 @@ export function SearchResultsSection({
           </Text>
         ) : null}
 
-        <View className="gap-1" onLayout={onFocusedPicksLayout} testID="results.focusedPicks">
+        <View
+          className="overflow-hidden border-y border-line"
+          onLayout={onFocusedPicksLayout}
+          testID="results.focusedPicks"
+        >
           {safeFinalResults.map((item, index) => (
             <FocusedPickRow
+              isLast={index === safeFinalResults.length - 1}
               isSelected={index === selectedIndex}
               key={item.id}
               item={item}
