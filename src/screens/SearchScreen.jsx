@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import { Settings } from "lucide-react-native";
 import { Text, useWindowDimensions, View } from "react-native";
 import Svg, { Defs, LinearGradient, Rect, Stop } from "react-native-svg";
-import { BrandWordmark, IconButton, RecoveryPanel, ScreenContainer, cx } from "../components/MobileUI";
+import { AppHeader, IconButton, RecoveryPanel, ScreenContainer, cx } from "../components/MobileUI";
 import { MarketplacePromptSection } from "../search/MarketplacePromptSection";
 import { SearchEntrySection } from "../search/SearchEntrySection";
 import { SearchFlowProgressCue } from "../search/SearchFlowProgressCue";
@@ -31,23 +31,20 @@ function SearchBackgroundWash() {
 function SearchFocusHero() {
   const { width } = useWindowDimensions();
   const isCompact = width <= 415;
-  const wordmarkWidth = Math.min(256, Math.max(isCompact ? 188 : 216, width - 72));
 
   return (
-    <View className={isCompact ? "gap-2" : "gap-2.5"}>
-      <BrandWordmark
-        className="items-center"
-        imageClassName={isCompact ? "h-12" : "h-14"}
-        imageStyle={{ width: wordmarkWidth }}
-      />
+    <View className={isCompact ? "gap-1.5" : "gap-2"}>
       <View className="items-center px-3">
         <Text
-          className="text-center text-[31px] font-semibold leading-[38px] text-ink"
+          className={cx(
+            "text-center font-semibold text-ink",
+            isCompact ? "text-[29px] leading-[36px]" : "text-[31px] leading-[38px]",
+          )}
           testID="search.title"
         >
           Find the right{"\u00A0"}pick.
         </Text>
-        <Text className="mt-1.5 max-w-[285px] text-center text-[15px] leading-6 text-stone-600">
+        <Text className="mt-1 max-w-[300px] text-center text-[15px] leading-6 text-stone-600">
           Tell Focamai what you need. It narrows the noise to six useful picks.
         </Text>
       </View>
@@ -67,17 +64,12 @@ function SettingsIconButton({ onPress }) {
   );
 }
 
-function SearchTopBar({ isCompact, onOpenSettings }) {
+function SearchHeader({ onOpenSettings }) {
   return (
-    <View className="min-h-[44px] flex-row items-center">
-      <View className="h-11 w-11" />
-      <View className={cx("flex-1 items-center px-2", isCompact ? "max-w-[230px]" : "max-w-[280px]")}>
-        <SearchFlowProgressCue activeStep="search" testID="search.flowProgressCue" />
-      </View>
-      <View className="h-11 w-11 items-end justify-center">
-        <SettingsIconButton onPress={onOpenSettings} />
-      </View>
-    </View>
+    <AppHeader
+      left={<View className="h-11 w-11" />}
+      right={<SettingsIconButton onPress={onOpenSettings} />}
+    />
   );
 }
 
@@ -164,23 +156,24 @@ export default function SearchScreen({ navigation, route }) {
       keyboardShouldPersistTaps="handled"
       safeAreaEdges={["top", "bottom"]}
       contentContainerStyle={{
-        gap: isCompact ? 16 : 20,
-        justifyContent: "center",
-        minHeight: "100%",
+        gap: isCompact ? 12 : 14,
         paddingHorizontal: isCompact ? 16 : 24,
-        paddingTop: isCompact ? 16 : 24,
-        paddingBottom: 32,
+        paddingTop: 14,
+        paddingBottom: 28,
       }}
     >
-      <View className={cx("w-full max-w-[430px] self-center", isCompact ? "gap-5" : "gap-6")}>
-        <SearchTopBar
-          isCompact={isCompact}
+      <View className={cx("w-full max-w-[430px] self-center", isCompact ? "gap-3" : "gap-4")}>
+        <SearchHeader
           onOpenSettings={() => navigation.navigate("Settings")}
         />
 
+        <View className="w-full self-center">
+          <SearchFlowProgressCue activeStep="search" testID="search.flowProgressCue" />
+        </View>
+
         <SearchFocusHero />
 
-        <View className={isCompact ? "mt-1" : "mt-3"}>
+        <View className={isCompact ? "mt-0.5" : "mt-1"}>
           <SearchEntrySection
             isDiscovering={isDiscovering}
             productQuery={productQuery}

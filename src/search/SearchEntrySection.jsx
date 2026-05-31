@@ -27,24 +27,24 @@ export function SearchEntrySection({
   }
 
   return (
-    <View className="gap-4">
+    <View className="gap-3">
       <View
         className={cx(
           "rounded-[22px] border border-line bg-white shadow-sm",
-          isCompact ? "px-4 py-4" : "px-5 py-5",
+          isCompact ? "px-4 py-4" : "px-5 py-4",
         )}
         style={{
-          elevation: 2,
+          elevation: 3,
           shadowColor: "#78573f",
-          shadowOffset: { width: 0, height: 10 },
-          shadowOpacity: 0.08,
-          shadowRadius: 18,
+          shadowOffset: { width: 0, height: 12 },
+          shadowOpacity: 0.1,
+          shadowRadius: 20,
         }}
       >
         <View
           className={cx(
             "flex-row items-center",
-            isCompact ? "min-h-[72px] gap-2" : "min-h-[82px] gap-3",
+            isCompact ? "min-h-[78px] gap-2" : "min-h-[92px] gap-3",
           )}
         >
           <View
@@ -66,8 +66,8 @@ export function SearchEntrySection({
             className={cx(
               "min-w-0 flex-1 text-ink",
               isCompact
-                ? "min-h-[56px] py-2 text-base leading-6"
-                : "min-h-[62px] py-3 text-[18px] leading-7",
+                ? "min-h-[62px] py-2 text-[18px] leading-7"
+                : "min-h-[72px] py-3 text-lg leading-7",
             )}
           />
           {isCompact ? null : (
@@ -84,13 +84,17 @@ export function SearchEntrySection({
         </View>
       </View>
 
+      <Text className="px-1 text-center text-sm leading-5 text-stone-600">
+        Start with what you need. Focamai will refine it into 6 useful picks.
+      </Text>
+
       <Button
         testID="search.submitButton"
         disabled={isDiscovering}
         onPress={submitDraftQuery}
         accessibilityLabel="Start product search"
         className={cx(
-          "min-h-[56px] shadow-sm",
+          "min-h-[52px]",
           isDiscovering ? "" : "bg-accent",
         )}
       >
