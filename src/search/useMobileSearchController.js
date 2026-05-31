@@ -532,6 +532,10 @@ export function useMobileSearchController() {
       normalizeAmazonDomain(amazonDomainOverride ?? selectedAmazonDomain) || DEFAULT_AMAZON_DOMAIN;
 
     if (!normalizedQuery) {
+      console.info("[Focamai API] search request not attempted", {
+        reason: "empty-query",
+        stage: "runDiscoverySearch",
+      });
       setErrorMessage("Enter a product query first.");
       setDiscoverySummary(null);
       return false;
@@ -751,12 +755,20 @@ export function useMobileSearchController() {
     const normalizedQuery = String(queryOverride ?? productQuery).trim();
 
     if (!normalizedQuery) {
+      console.info("[Focamai API] search request not attempted", {
+        reason: "empty-query",
+        stage: "startDiscoverySearch",
+      });
       setErrorMessage("Enter a product query first.");
       setDiscoverySummary(null);
       return false;
     }
 
     if (shouldAskMarketplaceBeforeSearch) {
+      console.info("[Focamai API] search request not attempted", {
+        reason: "awaiting-marketplace-confirmation",
+        stage: "startDiscoverySearch",
+      });
       if (queryOverride !== undefined) {
         setProductQuery(normalizedQuery);
       }
@@ -906,10 +918,18 @@ export function useMobileSearchController() {
     const notesForRequest = String(followUpNotesOverride ?? followUpNotes).trim();
 
     if (finalizingRequestIdRef.current) {
+      console.info("[Focamai API] finalize request not attempted", {
+        reason: "finalize-already-running",
+      });
       return false;
     }
 
     if (!session?.discoveryToken || !session?.submittedQuery) {
+      console.info("[Focamai API] finalize request not attempted", {
+        hasDiscoveryToken: Boolean(session?.discoveryToken),
+        hasSubmittedQuery: Boolean(session?.submittedQuery),
+        reason: "missing-session-data",
+      });
       const requestId = session?.requestId || searchRequestIdRef.current;
 
       setErrorMessage("This search session expired. Start the search again before showing focused picks.");
@@ -1061,10 +1081,18 @@ export function useMobileSearchController() {
     const normalizedFeedback = String(rejectionFeedback ?? normalizedVisibleFeedback).trim();
 
     if (finalResults.length === 0 || !normalizedFeedback || isGeneratingRetryAdvice) {
+      console.info("[Focamai API] retry-advice request not attempted", {
+        hasFeedback: Boolean(normalizedFeedback),
+        hasFinalResults: finalResults.length > 0,
+        isGeneratingRetryAdvice,
+      });
       return;
     }
 
     if (!session?.submittedQuery) {
+      console.info("[Focamai API] retry-advice request not attempted", {
+        reason: "missing-submitted-query",
+      });
       setRetryAdvice(null);
       setRetryAdviceError("Start a fresh search before asking for a better direction.");
       return;

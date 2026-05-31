@@ -30,6 +30,13 @@ export function getApiBaseUrl() {
   return API_BASE_URL;
 }
 
+export function logResolvedApiBaseUrl() {
+  console.info("[Focamai API] resolved API base URL at startup", {
+    apiBaseUrl: API_BASE_URL || "(empty)",
+    hasApiBaseUrl: Boolean(API_BASE_URL),
+  });
+}
+
 function assertApiBaseUrl() {
   if (!API_BASE_URL) {
     throw new Error("Set EXPO_PUBLIC_API_BASE_URL to the backend API URL, then restart Expo.");
@@ -39,17 +46,38 @@ function assertApiBaseUrl() {
 async function fetchWithTimeout(url, options = {}, timeoutMs) {
   const controller = new AbortController();
   let didTimeout = false;
+  const method = options.method || "GET";
   const timeoutId = setTimeout(() => {
     didTimeout = true;
     controller.abort();
   }, timeoutMs);
 
+  console.info("[Focamai API] request attempt", {
+    attempted: true,
+    method,
+    url,
+  });
+
   try {
-    return await fetch(url, {
+    const response = await fetch(url, {
       ...options,
       signal: controller.signal,
     });
+    console.info("[Focamai API] response received", {
+      method,
+      status: response.status,
+      url,
+    });
+    return response;
   } catch (error) {
+    console.error("[Focamai API] fetch/network error", {
+      didTimeout,
+      error,
+      message: error instanceof Error ? error.message : String(error),
+      method,
+      url,
+    });
+
     if (didTimeout) {
       throw new Error(REQUEST_TIMEOUT_MESSAGE);
     }
