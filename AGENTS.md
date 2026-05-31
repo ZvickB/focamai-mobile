@@ -57,7 +57,11 @@ All new components must follow `project-notes/design-system.md` — tokens, spac
 - Shortlists are 6 items end to end.
 - The homepage remains search-first with one strong main input and a refinement step that appears after submit.
 - AI copy should sound like a trusted assistant with honest caveats, not marketing.
-- Keep the product vendor-agnostic in UI and response shape even if provider choices change later.
+- Focamai should not feel like an Amazon clone or marketplace wall. Its product identity is the focused decision aid, not Amazon's browsing experience.
+- Amazon is the current primary commerce path and affiliate target. When the active source is Amazon, mobile copy, buttons, labels, and detail UI may say Amazon directly where it improves clarity, trust, or conversion.
+- Do not force generic `retailer` language in user-facing UI when `Amazon` is more accurate for the current experience.
+- Keep backend/provider logic, normalized product data, and search flow reasonably provider-flexible so another source can be added or swapped later.
+- Do not let future multi-retailer flexibility make today's Amazon-first UX vague. If more retailers become active, revisit frontend labels based on the real source mix.
 - Keep mobile recognizably aligned with web through the local PNG wordmark, Manrope, teal/orange/warm-neutral brand family, and calm trusted-assistant voice, while allowing native-specific screen layout and simpler mobile surfaces.
 - Prefer the PNG wordmark for now unless branding is being revisited on purpose.
 

@@ -28,7 +28,7 @@ For brand assets, use `../web` as reference only. Mobile must keep local copies 
   - retry advice
   - explicit saved store preference
   - candidate-id detail lookup
-  - retailer CTA plus nearby affiliate disclosure
+  - source-specific shopping CTA plus nearby affiliate disclosure
   - 6 focused picks
 - Avoid changing backend contracts, controller ownership, marketplace behavior, or product copy rules while doing visual polish.
 
@@ -45,7 +45,7 @@ For brand assets, use `../web` as reference only. Mobile must keep local copies 
 - History, profile, saved, and compare as primary navigation.
 - Percentage confidence scores.
 - Large top-pick hero treatment that makes one item feel over-certified.
-- Amazon-specific UI identity or permanent "View on Amazon" style labels.
+- Amazon-specific UI identity. Amazon-specific CTA labels are acceptable when Amazon is the active source and the label improves clarity, trust, or conversion.
 - Heavy onboarding before the first useful search.
 - Extra preference panels before the backend/product behavior needs them.
 - Decorative complexity that makes the app feel like a mockup instead of a native utility.
@@ -54,7 +54,8 @@ For brand assets, use `../web` as reference only. Mobile must keep local copies 
 - Focamai narrows a noisy marketplace before the user enters it.
 - The app should feel like a trusted assistant, not a retailer, review site, or marketplace.
 - AI copy should explain fit and surface tradeoffs without hype.
-- Retailer language should stay neutral: retailer, store, seller, price, availability.
+- Amazon is the current primary commerce path and affiliate target. Do not force neutral `retailer` language when `Amazon` is more accurate for the current experience.
+- Keep backend/provider logic and normalized product data provider-flexible so another source can be added or swapped later.
 - Confidence should be represented with plain labels only when the underlying source is clear.
 - Caveats should be visible in the result/detail journey, not buried.
 
@@ -166,7 +167,7 @@ Done when:
 - Retry replacement cards still render correctly.
 
 ### Slice 3 - Product detail screen
-Status: complete in code and Android export verified. The native detail page now leads with image/fallback, product title, price, rating/reviews, rank/source context, then places `Why this pick` and `Worth knowing` near the top. Feature notes, retailer CTA, pricing/availability note, and affiliate disclosure stay retailer-agnostic and close to the product decision. A later trust-polish pass made the missing-note copy status-aware, so the detail screen distinguishes enrichment that is still checking from enrichment that finished or timed out without extra fit/caveat/feature notes. A small CTA polish pass also keeps a compact retailer footer reachable while scrolling when a retailer link exists.
+Status: complete in code and Android export verified. The native detail page now leads with image/fallback, product title, price, rating/reviews, rank/source context, then places `Why this pick` and `Worth knowing` near the top. Feature notes, the source-specific shopping CTA, pricing/availability note, and affiliate disclosure stay close to the product decision. A later trust-polish pass made the missing-note copy status-aware, so the detail screen distinguishes enrichment that is still checking from enrichment that finished or timed out without extra fit/caveat/feature notes. A small CTA polish pass also keeps a compact shopping footer reachable while scrolling when a link exists.
 
 Goal: make each pick understandable enough to decide whether to leave for the retailer.
 
@@ -176,13 +177,13 @@ Do:
 - Keep `Why this pick` and `Worth knowing` near the top.
 - Show feature bullets with calm fallback copy while enrichment is absent.
 - Keep retailer CTA, pricing/availability note, and affiliate disclosure together.
-- Keep the CTA retailer-agnostic, such as `View retailer` or `Check availability`.
+- Use source-specific CTA language when it helps. If the active source is Amazon, `View on Amazon` is acceptable.
 - Make late enrichment hydration feel natural, not like the screen changed unexpectedly.
 
 Avoid:
 - Tabs inside the detail screen for V1 unless content genuinely needs them.
 - Share/save controls unless those features exist.
-- Amazon-specific final-click language unless the product decision explicitly changes.
+- Amazon-specific visual identity, navigation, or screen naming. CTA copy may name Amazon when Amazon is the active source.
 
 Likely files:
 - `src/screens/SearchResultDetailScreen.jsx`

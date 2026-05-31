@@ -23,7 +23,7 @@
 - Do not directly port the full web homepage UI.
 - Do not rebuild the old mobile debug harness.
 - Do not add heavy feature surfaces before the data path is proven.
-- Treat Amazon as the current near-term retailer/provider path only, not as the long-term product identity.
+- Treat Amazon as the current primary commerce path and affiliate target, while keeping Focamai's product identity focused on calm decision support rather than Amazon's browsing experience.
 - The mobile app should read clearly as the mobile version of Focamai, not a separate brand or luxury-shopping spinoff.
 - It should still feel like a native mobile app, not a PWA or a responsive copy of the website.
 
@@ -56,7 +56,7 @@
 - Avoid too many persistent tabs early. Search, picks, compare, saved, history, and profile imply product areas that may not exist yet.
 - Avoid exact percentage scores unless the score has a clear source and meaning. Prefer labels such as "Strong match", "High confidence", or "Good fit for your priorities".
 - Avoid overconfident "Top Pick" treatment if the app cannot explain why the first item is clearly stronger than the rest.
-- Avoid vendor-specific CTA copy such as "View on Amazon" in the core UI direction. Prefer "View deal", "Check availability", or "Go to retailer".
+- Do not force generic CTA copy when the active source is Amazon. Amazon-specific labels such as "View on Amazon" are acceptable where they improve clarity, trust, or conversion, as long as Amazon does not become the app's visual identity.
 - Avoid making onboarding too heavy. The first useful experience should be search.
 - Do not introduce a new editorial serif as a core brand font.
 - Do not let the mockup polish drift the app too far away from the existing Focamai vibe.
@@ -84,8 +84,9 @@
   - user-facing reason/description filtering from `homeContentUtils.js`
   - search input validation from shared search-input logic
 - Trust principles:
-  - vendor-agnostic result shape
-  - Amazon is current provider plumbing, not the future UI model
+  - provider-flexible result data and backend flow
+  - Amazon-first UX today when Amazon is the active source
+  - Amazon is the current source path, not Focamai's brand identity
   - clear affiliate disclosure near outbound links
   - prices and availability may change
   - search history remains internal telemetry, not user-facing history
@@ -241,24 +242,17 @@
   - make it reachable later from a help/settings surface if that surface exists
 - Rationale: this is useful on native mobile because a first-run app session can teach the flow once, then disappear. Web does not need the same pattern.
 
-## Retailer-Agnostic Direction
-- Mobile UI must stay retailer-agnostic.
-- Amazon is the current practical source path, but future product direction includes more retailers.
-- Do not make Amazon feel like the app's identity.
-- Avoid permanent Amazon-specific navigation, labels, iconography, colors, or screen names.
-- Prefer neutral language:
-  - "retailer"
-  - "seller"
-  - "store"
-  - "deal"
-  - "availability"
-  - "view option"
-  - "check price"
-- Keep provider labels small and factual when needed.
-- Keep outbound CTAs generic unless a specific retailer name is useful at the final click moment.
+## Amazon-First UX, Flexible Internals
+- Mobile should not feel like an Amazon clone or marketplace wall.
+- Amazon is the current primary commerce path and affiliate target.
+- When the active source is Amazon, user-facing copy, CTA labels, and detail UI may say Amazon directly where it improves clarity, trust, or conversion.
+- Do not force generic labels like "retailer" when "Amazon" is more accurate for the current experience.
+- Avoid Amazon-specific navigation, iconography, colors, or screen names that would make Amazon feel like Focamai's brand identity.
 - Keep result data normalized around product facts and fit, not marketplace branding.
-- Affiliate disclosure should stay clear and close to outbound CTAs, but it should not make the whole app feel Amazon-specific.
-- Rationale: Focamai's product promise is helping users narrow choices before entering a retailer marketplace. Amazon is the first implementation path, not the destination for the product model.
+- Keep backend/provider logic and normalized product data provider-flexible so another source can be added or swapped later.
+- If more retailers become active, revisit frontend labels and CTA copy based on the real source mix instead of prematurely abstracting today's Amazon-first flow.
+- Affiliate disclosure should stay clear and close to outbound CTAs, but it should support trust rather than make the whole app feel Amazon-branded.
+- Rationale: Focamai's product promise is helping users narrow choices before leaving to shop. Amazon is the current commerce path, not the destination for the product identity.
 
 ## Open Design Questions
 - Should mobile start with a short brand intro screen, or go directly to search?

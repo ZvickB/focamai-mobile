@@ -26,7 +26,7 @@ Purpose: verify the polished V1 search path after the controller/data audit fixe
 - Focused picks render as a ranked shortlist capped at 6.
 - Missing price, rating, image, or review count states look intentional and do not show `0.0`, empty stars, or `[object Object]`.
 - Fewer-than-six result copy appears only when fewer credible picks are returned.
-- Retailer CTA labels stay vendor-neutral as `View retailer`, with the Amazon affiliate disclosure nearby.
+- Shopping CTA labels may name Amazon when Amazon is the active source and that improves clarity, with the Amazon affiliate disclosure nearby.
 - Retry advice shows rationale, editable suggested query, and `Keeping` tags as reassurance only.
 - Same-session retry remains the fallback and replacement picks still cap at 6.
 
