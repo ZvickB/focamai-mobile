@@ -1,5 +1,5 @@
 import { Search } from "lucide-react-native";
-import { Text, TextInput, useWindowDimensions, View } from "react-native";
+import { Pressable, Text, TextInput, useWindowDimensions, View } from "react-native";
 import { GuidanceText, cx } from "../components/MobileUI";
 import { useVoiceRecorder } from "./useVoiceRecorder";
 import { VoiceMicButton } from "./VoiceMicButton";
