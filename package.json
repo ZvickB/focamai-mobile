@@ -44,6 +44,9 @@
   },
   "private": true,
   "jest": {
-    "preset": "jest-expo"
+    "preset": "jest-expo",
+    "moduleNameMapper": {
+      "^expo-av$": "<rootDir>/src/test/mocks/expo-av.js"
+    }
   }
 }
