@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import { Mic, Search } from "lucide-react-native";
-import { Pressable, Text, TextInput, useWindowDimensions, View } from "react-native";
+import { Search } from "lucide-react-native";
+import { Text, TextInput, useWindowDimensions, View } from "react-native";
 import { Button, cx } from "../components/MobileUI";
 import { useVoiceRecorder } from "./useVoiceRecorder";
+import { VoiceMicButton } from "./VoiceMicButton";
 
 export function SearchEntrySection({
   isDiscovering,
@@ -79,26 +80,13 @@ export function SearchEntrySection({
             )}
           />
           {isCompact ? null : (
-            <Pressable
-              accessibilityLabel={
-                voiceStatus === "recording"
-                  ? "Stop recording"
-                  : voiceStatus === "processing"
-                    ? "Transcribing…"
-                    : "Search by voice"
-              }
-              accessibilityRole="button"
-              className="h-12 w-12 items-center justify-center rounded-full bg-cream"
-              disabled={voiceStatus === "processing"}
+            <VoiceMicButton
+              voiceStatus={voiceStatus}
               onPress={handleMicPress}
+              className="h-12 w-12"
+              iconSize={24}
               testID="search.voiceButton"
-            >
-              <Mic
-                color={voiceStatus === "recording" ? "#C0392B" : voiceStatus === "error" ? "#C0392B" : "#0F6175"}
-                size={24}
-                strokeWidth={2.2}
-              />
-            </Pressable>
+            />
           )}
         </View>
       </View>
