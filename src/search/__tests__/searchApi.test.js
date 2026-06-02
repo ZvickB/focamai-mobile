@@ -135,7 +135,8 @@ describe("normalizeRefinementSuggestions", () => {
         refinement_suggestions: [
           "Easy cleaning",
           "",
-          "This label is much too long for a chip",
+          "Good for small kitchens maybe",
+          "This label is definitely too long for a chip",
           { label: "Quiet operation", prompt: "I need something that runs quietly" },
           123,
           "Small space",
@@ -143,8 +144,8 @@ describe("normalizeRefinementSuggestions", () => {
       }),
     ).toEqual([
       { label: "Easy cleaning" },
+      { label: "Good for small kitchens maybe" },
       { label: "Quiet operation", prompt: "I need something that runs quietly" },
-      { label: "Small space" },
     ]);
   });
 

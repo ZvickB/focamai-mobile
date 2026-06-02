@@ -2,6 +2,7 @@ import { fireEvent, render } from "@testing-library/react-native";
 import {
   MAX_FOLLOW_UP_NOTES_LENGTH,
   SearchRefineSection,
+  arrangeRefinementChipsForLayout,
 } from "../SearchRefineSection";
 
 const refinementPrompt = {
@@ -69,15 +70,46 @@ describe("SearchRefineSection", () => {
     const { getByText, queryByText } = renderRefineSection({
       suggestedRefinements: [
         { label: "Easy cleaning" },
-        { label: "Quiet operation" },
+        { label: "Good for small kitchens maybe" },
         { label: "Small batches" },
       ],
     });
 
     expect(getByText("Easy cleaning")).toBeTruthy();
-    expect(getByText("Quiet operation")).toBeTruthy();
+    expect(getByText("Good for small kitchens maybe")).toBeTruthy();
     expect(getByText("Small batches")).toBeTruthy();
     expect(queryByText("Good value")).toBeNull();
+  });
+
+  it("moves the longest long chip after the shorter chips on narrow screens", () => {
+    expect(
+      arrangeRefinementChipsForLayout([
+        { label: "Good for small kitchens maybe" },
+        { label: "Easy cleaning" },
+        { label: "Small batches" },
+      ]),
+    ).toEqual([
+      { label: "Easy cleaning" },
+      { label: "Small batches" },
+      { label: "Good for small kitchens maybe", isWide: true },
+    ]);
+  });
+
+  it("keeps long chips in their original order on screens wide enough for 3 columns", () => {
+    expect(
+      arrangeRefinementChipsForLayout(
+        [
+          { label: "Good for small kitchens maybe" },
+          { label: "Easy cleaning" },
+          { label: "Small batches" },
+        ],
+        { canFitLongThreeColumn: true },
+      ),
+    ).toEqual([
+      { label: "Good for small kitchens maybe" },
+      { label: "Easy cleaning" },
+      { label: "Small batches" },
+    ]);
   });
 
   it("adds AI refinement chips to the notes", () => {

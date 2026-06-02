@@ -11,6 +11,8 @@ const DEFAULT_REFINEMENT_CHIPS = [
 ];
 const MAX_REFINEMENT_CHIPS = 3;
 export const MAX_FOLLOW_UP_NOTES_LENGTH = 500;
+const WIDE_REFINEMENT_CHIP_LABEL_LENGTH = 22;
+const THREE_COLUMN_LONG_CHIP_MIN_WIDTH = 480;
 
 function clampFollowUpNotes(value) {
   return String(value ?? "").slice(0, MAX_FOLLOW_UP_NOTES_LENGTH);
@@ -53,6 +55,31 @@ function normalizeRefinementChips(suggestedRefinements) {
     .slice(0, MAX_REFINEMENT_CHIPS);
 }
 
+export function arrangeRefinementChipsForLayout(chips, { canFitLongThreeColumn = false } = {}) {
+  if (!Array.isArray(chips) || chips.length !== MAX_REFINEMENT_CHIPS) {
+    return chips;
+  }
+
+  const longestIndex = chips.reduce((bestIndex, chip, index) => {
+    const bestLength = String(chips[bestIndex]?.label ?? "").length;
+    const nextLength = String(chip?.label ?? "").length;
+    return nextLength > bestLength ? index : bestIndex;
+  }, 0);
+  const longestChip = chips[longestIndex];
+
+  if (
+    canFitLongThreeColumn ||
+    String(longestChip?.label ?? "").length <= WIDE_REFINEMENT_CHIP_LABEL_LENGTH
+  ) {
+    return chips;
+  }
+
+  return [
+    ...chips.filter((_chip, index) => index !== longestIndex),
+    { ...longestChip, isWide: true },
+  ];
+}
+
 function RefinementChip({ chip, isCompact, onPress, selected }) {
   return (
     <Pressable
@@ -60,13 +87,21 @@ function RefinementChip({ chip, isCompact, onPress, selected }) {
       accessibilityLabel={`Add ${chip.label} refinement`}
       className={cx(
         "flex-1 items-center justify-center rounded-full border px-3",
-        isCompact ? "min-h-[46px] basis-[47%]" : "min-h-[50px] basis-[31%]",
+        chip.isWide
+          ? isCompact
+            ? "min-h-[52px] basis-full"
+            : "min-h-[54px] basis-full"
+          : isCompact
+            ? "min-h-[46px] basis-[47%]"
+            : "min-h-[50px] basis-[31%]",
         selected ? "border-secondary bg-cream" : "border-line bg-mist",
       )}
       onPress={onPress}
       testID={`followup.refinementChip.${chip.label}`}
     >
-      <Text className="text-center text-sm font-semibold text-ink">{chip.label}</Text>
+      <Text className="text-center text-sm font-semibold leading-5 text-ink" numberOfLines={2}>
+        {chip.label}
+      </Text>
     </Pressable>
   );
 }
@@ -81,6 +116,7 @@ export function SearchRefineSection({
 }) {
   const { width } = useWindowDimensions();
   const isCompact = width <= 415;
+  const canFitLongThreeColumn = width >= THREE_COLUMN_LONG_CHIP_MIN_WIDTH;
   const { status: voiceStatus, handleMicPress } = useVoiceRecorder({
     onTranscribed: (text) => {
       setFollowUpNotes(clampFollowUpNotes(
@@ -92,6 +128,7 @@ export function SearchRefineSection({
   const visibleChips = normalizedSuggestedChips.length
     ? normalizedSuggestedChips
     : DEFAULT_REFINEMENT_CHIPS;
+  const arrangedChips = arrangeRefinementChipsForLayout(visibleChips, { canFitLongThreeColumn });
   const isPromptStillLoading = isGeneratingPrompt && !refinementPrompt;
 
   function handleChipPress(chip) {
@@ -134,7 +171,7 @@ export function SearchRefineSection({
       <View className="gap-3">
         <Text className="text-sm font-semibold text-stone-500">A few starting points</Text>
         <View className="flex-row flex-wrap gap-3">
-          {visibleChips.map((chip) => {
+          {arrangedChips.map((chip) => {
             const selected = String(followUpNotes ?? "")
               .toLowerCase()
               .includes(chip.label.toLowerCase());
