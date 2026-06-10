@@ -32,6 +32,10 @@ Mobile result rows, the selected-result display panel, and detail headings use n
 
 **Retry advice query length is intentionally 80 characters.** The web backend generates `/api/search/retry-advice` suggestions through OpenAI Responses. The backend prompt/schema and sanitizer now clamp `suggested_query` to the shared 80-character product-query limit, and mobile also normalizes returned suggestions before display/search plus caps the editable suggestion field at 80. Do not raise retry advice alone to 100 unless the shared product-query validation limit is raised everywhere. Retry advice is still wired to the backend refinement model selector until a separate retry-advice model selector is implemented.
 
+**Web auth and history — mobile parity needed:**
+- Web now has Supabase auth (email/password + Google sign-in via `AuthProvider`/`AuthModal`) and account-backed search history (`saved_searches` table with RLS). Signed-out users keep localStorage history; signed-in users get Supabase-backed history with local-to-remote migration on login. Search remains ungated.
+- Mobile now has local device search history only. Completed finalized searches save to `AsyncStorage`, dedupe by normalized query plus follow-up, and are reachable from Settings -> Search history with list/expand/delete/clear/re-run. Re-run pre-fills Search for review instead of auto-starting. Mobile still does not have auth or account-backed history yet. When adding these, align with the web implementation: reuse the same Supabase `saved_searches` table/RLS, keep search ungated, and migrate device-local history into the account on sign-in.
+
 **What not to do:**
 - Do not copy the 1552-line web `useGuidedSearch.js` wholesale. That's what broke `main`. The lesson was not "don't build complex things" — it was "don't port complexity before the foundation is proven."
 - Do not assume all web data-path features are done. Add missing product behavior in bounded slices when the mobile UX needs it.
