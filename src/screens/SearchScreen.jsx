@@ -1,8 +1,15 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Settings } from "lucide-react-native";
-import { Text, useWindowDimensions, View } from "react-native";
+import { Pressable, Text, useWindowDimensions, View } from "react-native";
 import Svg, { Defs, LinearGradient, Rect, Stop } from "react-native-svg";
-import { AppHeader, IconButton, RecoveryPanel, ScreenContainer, cx } from "../components/MobileUI";
+import {
+  AppHeader,
+  IconButton,
+  QuietStatusPanel,
+  RecoveryPanel,
+  ScreenContainer,
+  cx,
+} from "../components/MobileUI";
 import { MarketplacePromptSection } from "../search/MarketplacePromptSection";
 import { SearchEntrySection } from "../search/SearchEntrySection";
 import { SearchFlowProgressCue } from "../search/SearchFlowProgressCue";
@@ -77,18 +84,43 @@ function SearchFlexibleSpacer({ testID }) {
   return <View style={{ flexGrow: 1, flexShrink: 1 }} testID={testID} />;
 }
 
+function HistoryPrefillPanel({ followUp, onClear }) {
+  return (
+    <QuietStatusPanel className="gap-2" testID="search.historyPrefillPanel">
+      <Text className="text-sm font-semibold text-ink">Saved search ready</Text>
+      {followUp ? (
+        <Text className="text-sm leading-5 text-stone-600" numberOfLines={3}>
+          Notes for Refine: {followUp}
+        </Text>
+      ) : (
+        <Text className="text-sm leading-5 text-stone-600">
+          Start when you are ready, or adjust the search phrase first.
+        </Text>
+      )}
+      {followUp ? (
+        <Pressable accessibilityRole="button" onPress={onClear} testID="search.clearHistoryNotesButton">
+          <Text className="text-sm font-semibold text-accent">Clear saved notes</Text>
+        </Pressable>
+      ) : null}
+    </QuietStatusPanel>
+  );
+}
+
 export default function SearchScreen({ navigation, route }) {
   const { width } = useWindowDimensions();
   const isCompact = width <= 415;
   const pendingNavigationToFollowUpRef = useRef(null);
+  const [historyPrefill, setHistoryPrefill] = useState(null);
   const {
     activeSearchSession,
     confirmSelectedAmazonDomain,
     errorMessage,
+    followUpNotes,
     isDiscovering,
     productQuery,
     selectedAmazonDomain,
     showMarketplacePrompt,
+    setFollowUpNotes,
     setProductQuery,
     setSelectedAmazonDomain,
     startDiscoverySearch,
@@ -104,6 +136,22 @@ export default function SearchScreen({ navigation, route }) {
   }, [navigation, route?.params?.selectedAmazonDomain, setSelectedAmazonDomain]);
 
   useEffect(() => {
+    const historySearch = route?.params?.historySearch;
+
+    if (!historySearch) {
+      return;
+    }
+
+    const nextQuery = String(historySearch.query || "").trim();
+    const nextFollowUp = String(historySearch.followUp || "").trim();
+
+    setProductQuery(nextQuery);
+    setFollowUpNotes(nextFollowUp);
+    setHistoryPrefill({ followUp: nextFollowUp, query: nextQuery });
+    navigation.setParams({ historySearch: undefined });
+  }, [navigation, route?.params?.historySearch, setFollowUpNotes, setProductQuery]);
+
+  useEffect(() => {
     const pendingSearch = pendingNavigationToFollowUpRef.current;
     const startedMatchingSearch =
       pendingSearch &&
@@ -112,6 +160,7 @@ export default function SearchScreen({ navigation, route }) {
 
     if (startedMatchingSearch && !showMarketplacePrompt) {
       pendingNavigationToFollowUpRef.current = null;
+      setHistoryPrefill(null);
       navigation.navigate("FollowUp");
     }
   }, [activeSearchSession, navigation, showMarketplacePrompt]);
@@ -125,12 +174,15 @@ export default function SearchScreen({ navigation, route }) {
           query: nextQuery,
         }
       : null;
-    const didStartSearch = startDiscoverySearch(
-      queryOverride === undefined ? undefined : { queryOverride: nextQuery },
-    );
+    const initialFollowUpNotes = historyPrefill?.followUp || "";
+    const didStartSearch = startDiscoverySearch({
+      initialFollowUpNotes,
+      ...(queryOverride === undefined ? {} : { queryOverride: nextQuery }),
+    });
 
     if (hasQuery && didStartSearch) {
       pendingNavigationToFollowUpRef.current = null;
+      setHistoryPrefill(null);
       navigation.navigate("FollowUp");
     } else if (!hasQuery) {
       pendingNavigationToFollowUpRef.current = null;
@@ -149,8 +201,16 @@ export default function SearchScreen({ navigation, route }) {
 
     if (didStartSearch) {
       pendingNavigationToFollowUpRef.current = null;
+      setHistoryPrefill(null);
       navigation.navigate("FollowUp");
     }
+  }
+
+  function clearHistoryNotes() {
+    setFollowUpNotes("");
+    setHistoryPrefill((currentValue) =>
+      currentValue ? { ...currentValue, followUp: "" } : currentValue,
+    );
   }
 
   return (
@@ -195,6 +255,13 @@ export default function SearchScreen({ navigation, route }) {
               message="Add the product you want help with, then start the search again."
               testID="search.recoveryPanel"
               title="Add a product first"
+            />
+          ) : null}
+
+          {historyPrefill ? (
+            <HistoryPrefillPanel
+              followUp={followUpNotes}
+              onClear={clearHistoryNotes}
             />
           ) : null}
         </View>

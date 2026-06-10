@@ -20,6 +20,7 @@ import {
   normalizeAmazonDomain,
   saveAmazonMarketplaceSelection,
 } from "./amazonMarketplaces";
+import { historyStore } from "../lib/history/historyStore";
 import { buildPhaseEvent, replacePhaseEvent } from "./searchPhaseEvents";
 
 const ENRICHMENT_POLL_INTERVAL_MS = 1500;
@@ -526,7 +527,12 @@ export function useMobileSearchController() {
     };
   }, []);
 
-  function runDiscoverySearch({ amazonDomainOverride, cacheMode = "", queryOverride } = {}) {
+  function runDiscoverySearch({
+    amazonDomainOverride,
+    cacheMode = "",
+    initialFollowUpNotes = "",
+    queryOverride,
+  } = {}) {
     const normalizedQuery = String(queryOverride ?? productQuery).trim();
     const requestedAmazonDomain =
       normalizeAmazonDomain(amazonDomainOverride ?? selectedAmazonDomain) || DEFAULT_AMAZON_DOMAIN;
@@ -568,7 +574,7 @@ export function useMobileSearchController() {
     setErrorMessage("");
     setDiscoverySummary(null);
     setFinalResults([]);
-    setFollowUpNotes("");
+    setFollowUpNotes(String(initialFollowUpNotes ?? "").trim());
     setRetryFeedback("");
     setPhaseEvents([
       ...(previousSessionWasRunning
@@ -751,7 +757,7 @@ export function useMobileSearchController() {
     return true;
   }
 
-  function startDiscoverySearch({ cacheMode = "", queryOverride } = {}) {
+  function startDiscoverySearch({ cacheMode = "", initialFollowUpNotes = "", queryOverride } = {}) {
     const normalizedQuery = String(queryOverride ?? productQuery).trim();
 
     if (!normalizedQuery) {
@@ -775,6 +781,7 @@ export function useMobileSearchController() {
 
       pendingMarketplaceSearchRef.current = {
         cacheMode,
+        initialFollowUpNotes,
         queryOverride: normalizedQuery,
       };
       setErrorMessage("");
@@ -782,7 +789,7 @@ export function useMobileSearchController() {
       return false;
     }
 
-    return runDiscoverySearch({ cacheMode, queryOverride: normalizedQuery });
+    return runDiscoverySearch({ cacheMode, initialFollowUpNotes, queryOverride: normalizedQuery });
   }
 
   async function refreshDiscoveryForHardConstraints({
@@ -1019,6 +1026,14 @@ export function useMobileSearchController() {
       );
 
       setFinalResults(nextFinalResults);
+      if (nextFinalResults.length > 0) {
+        void historyStore.save({
+          amazonDomain: finalizeAmazonDomain,
+          followUp: notesForRequest,
+          query: session.submittedQuery,
+          results: nextFinalResults,
+        }).catch(() => {});
+      }
       updateSessionForRequest(requestId, (currentSession) => ({
         ...currentSession,
         phases: {

@@ -6,6 +6,7 @@ import {
   getRefinementPrompt,
   getRetryAdvice,
 } from "../searchApi";
+import { historyStore } from "../../lib/history/historyStore";
 
 jest.mock("../amazonMarketplaces", () => ({
   DEFAULT_AMAZON_DOMAIN: "amazon.com",
@@ -30,6 +31,12 @@ jest.mock("../searchApi", () => ({
   normalizeRefinementSuggestions: jest.fn(() => []),
   pollEnrichment: jest.fn(),
   pollQueryQuality: jest.fn(),
+}));
+
+jest.mock("../../lib/history/historyStore", () => ({
+  historyStore: {
+    save: jest.fn().mockResolvedValue({}),
+  },
 }));
 
 function createDeferred() {
@@ -80,6 +87,60 @@ describe("useMobileSearchController", () => {
       clientTimingMs: 21,
       results: [finalPick],
     });
+    historyStore.save.mockResolvedValue({});
+  });
+
+  it("saves completed finalized searches to history", async () => {
+    const { result, unmount } = renderHook(() => useMobileSearchController());
+
+    act(() => {
+      result.current.startDiscoverySearch({ queryOverride: "travel stroller" });
+    });
+
+    await waitFor(() => {
+      expect(result.current.canFinalize).toBe(true);
+    });
+
+    act(() => {
+      result.current.setFollowUpNotes("under $250");
+    });
+
+    await act(async () => {
+      await result.current.finalizeFocusedPicks();
+    });
+
+    expect(historyStore.save).toHaveBeenCalledWith({
+      amazonDomain: "amazon.com",
+      followUp: "under $250",
+      query: "travel stroller",
+      results: [finalPick],
+    });
+
+    unmount();
+  });
+
+  it("does not save empty finalize payloads", async () => {
+    finalizeSearch.mockResolvedValue({
+      clientTimingMs: 21,
+      results: [],
+    });
+    const { result, unmount } = renderHook(() => useMobileSearchController());
+
+    act(() => {
+      result.current.startDiscoverySearch({ queryOverride: "travel stroller" });
+    });
+
+    await waitFor(() => {
+      expect(result.current.canFinalize).toBe(true);
+    });
+
+    await act(async () => {
+      await result.current.finalizeFocusedPicks();
+    });
+
+    expect(historyStore.save).not.toHaveBeenCalled();
+
+    unmount();
   });
 
   it("ignores retry-advice responses after feedback changes", async () => {
