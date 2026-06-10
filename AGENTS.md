@@ -76,6 +76,15 @@ All new components must follow `project-notes/design-system.md` — tokens, spac
 - After the core endpoint calls are proven, move at a practical middle pace: bounded vertical slices around a thin mobile search data/controller layer, not endless tiny endpoint tests and not a naive web-hook copy.
 - Treat screen composition, layout, keyboard handling, safe areas, modal/sheet behavior, and navigation as native-first work.
 
+## File organization — cohesion over size
+- Organize code by **responsibility**, not by line count. Length alone is never a reason to split; shortness is never a reason to merge.
+- Default to leaving files as they are. A handful of small fragments is worse than one cohesive file.
+- **Split when** there's a real seam: a pure side-effect-free layer (helpers, constants, transforms), a god module doing multiple unrelated jobs, or a self-contained component reused by more than one file.
+- **Don't split** when: it's a cohesive single-purpose module (long ≠ wrong), a stateful hook whose `useState`/`useRef` threads through most of the body, an orchestrator that wires children together, or the split would produce single-function files or force state-threading just to hit a line count.
+- Size is a prompt to look, not a limit to enforce. If a file grows past a few hundred lines, ask "is this still one job?" — if yes, leave it.
+- When you do split, preserve the seam: same names, same signatures, no logic changes in the same step. Re-export moved names from the original file so callers don't change.
+- Bias toward less. If you're debating whether to extract, it usually isn't worth it yet.
+
 ## Notes update rules
 - After a meaningful mobile change, update:
   - `project-notes/current-status.md`
