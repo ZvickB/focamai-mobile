@@ -61,6 +61,7 @@ export default function SettingsScreen({ navigation }) {
   const isCompact = width <= 415;
   const menuItems = [
     { label: "Shopping region", routeName: "Region" },
+    { label: "Search history", routeName: "History" },
     { label: "About Focama", routeName: "About" },
     { label: "Contact", routeName: "Contact" },
     { label: "Privacy", routeName: "Privacy" },

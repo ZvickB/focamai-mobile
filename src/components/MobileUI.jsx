@@ -282,9 +282,9 @@ export function Pill({ children, selected, className = "" }) {
   );
 }
 
-export function QuietStatusPanel({ children, className = "" }) {
+export function QuietStatusPanel({ children, className = "", ...props }) {
   return (
-    <View className={cx("rounded-[18px] border border-line bg-cream px-4 py-4", className)}>
+    <View className={cx("rounded-[18px] border border-line bg-cream px-4 py-4", className)} {...props}>
       {children}
     </View>
   );

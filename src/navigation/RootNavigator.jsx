@@ -7,6 +7,7 @@ import AboutScreen from "../screens/AboutScreen";
 import AffiliateDisclosureScreen from "../screens/AffiliateDisclosureScreen";
 import ContactScreen from "../screens/ContactScreen";
 import FollowUpScreen from "../screens/FollowUpScreen";
+import HistoryScreen from "../screens/HistoryScreen";
 import HomeScreen from "../screens/HomeScreen";
 import PrivacyScreen from "../screens/PrivacyScreen";
 import RegionScreen from "../screens/RegionScreen";
@@ -88,6 +89,11 @@ export default function RootNavigator() {
             <Stack.Screen
               name="Settings"
               component={SettingsScreen}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="History"
+              component={HistoryScreen}
               options={{ headerShown: false }}
             />
             <Stack.Screen name="Region" component={RegionScreen} options={{ title: "Shopping region" }} />
