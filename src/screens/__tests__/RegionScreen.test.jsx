@@ -23,15 +23,14 @@ describe("RegionScreen", () => {
     jest.clearAllMocks();
   });
 
-  it("separates common regions from the longer region list", () => {
-    const { getByText, getByTestId } = renderRegionScreen();
+  it("shows only affiliate-tagged Amazon regions", () => {
+    const { getByText, getByTestId, queryByTestId } = renderRegionScreen();
 
-    expect(getByText("Common regions")).toBeTruthy();
-    expect(getByText("More regions")).toBeTruthy();
+    expect(getByText("Available regions")).toBeTruthy();
     expect(getByTestId("region.row.US")).toBeTruthy();
     expect(getByTestId("region.row.CA")).toBeTruthy();
-    expect(getByTestId("region.row.GB")).toBeTruthy();
-    expect(getByTestId("region.row.DE")).toBeTruthy();
+    expect(queryByTestId("region.row.GB")).toBeNull();
+    expect(queryByTestId("region.row.DE")).toBeNull();
   });
 
   it("saves the selected region and returns to Search", async () => {

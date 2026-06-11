@@ -9,8 +9,6 @@ import {
   saveAmazonMarketplaceSelection,
 } from "../search/amazonMarketplaces";
 
-const COMMON_AMAZON_COUNTRY_CODES = new Set(["US", "CA", "GB"]);
-
 function RegionIntro() {
   return (
     <View className="gap-2">
@@ -101,12 +99,6 @@ export default function RegionScreen({ navigation }) {
   const { width } = useWindowDimensions();
   const isCompact = width <= 415;
   const [selectedAmazonDomain, setSelectedAmazonDomain] = useState(DEFAULT_AMAZON_DOMAIN);
-  const commonMarketplaces = AMAZON_MARKETPLACES.filter((marketplace) =>
-    COMMON_AMAZON_COUNTRY_CODES.has(marketplace.countryCode),
-  );
-  const moreMarketplaces = AMAZON_MARKETPLACES.filter(
-    (marketplace) => !COMMON_AMAZON_COUNTRY_CODES.has(marketplace.countryCode),
-  );
 
   useEffect(() => {
     let isMounted = true;
@@ -147,18 +139,9 @@ export default function RegionScreen({ navigation }) {
 
       <View className={cx("w-full max-w-[430px] self-center", isCompact ? "gap-5" : "gap-6")}>
         <View className="gap-2">
-          <RegionSectionHeader title="Common regions" />
+          <RegionSectionHeader title="Available regions" />
           <RegionList
-            marketplaces={commonMarketplaces}
-            selectedAmazonDomain={selectedAmazonDomain}
-            onChoose={chooseMarketplace}
-          />
-        </View>
-
-        <View className="gap-2">
-          <RegionSectionHeader title="More regions" />
-          <RegionList
-            marketplaces={moreMarketplaces}
+            marketplaces={AMAZON_MARKETPLACES}
             selectedAmazonDomain={selectedAmazonDomain}
             onChoose={chooseMarketplace}
           />

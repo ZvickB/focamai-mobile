@@ -3,6 +3,8 @@ import {
   AMAZON_MARKETPLACE_PROMPT_SEEN_KEY,
   AMAZON_MARKETPLACE_STORAGE_KEY,
   DEFAULT_AMAZON_DOMAIN,
+  loadAmazonMarketplacePreference,
+  loadSavedAmazonDomain,
   saveAmazonDomainPreference,
   saveAmazonMarketplacePromptSeen,
   saveAmazonMarketplaceSelection,
@@ -72,6 +74,16 @@ describe("amazon marketplace persistence", () => {
       domain: DEFAULT_AMAZON_DOMAIN,
       promptSeenSaved: true,
       saved: true,
+    });
+  });
+
+  it("treats stale untagged marketplace preferences as the default store", async () => {
+    AsyncStorage.getItem.mockResolvedValue("amazon.co.uk");
+
+    await expect(loadSavedAmazonDomain()).resolves.toBe(DEFAULT_AMAZON_DOMAIN);
+    await expect(loadAmazonMarketplacePreference()).resolves.toEqual({
+      domain: DEFAULT_AMAZON_DOMAIN,
+      hasSavedPreference: false,
     });
   });
 });
