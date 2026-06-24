@@ -11,6 +11,7 @@ import {
   Surface,
   cx,
 } from "../components/MobileUI";
+import { useAuth } from "../contexts/useAuth";
 import { useSearchHistory } from "../components/history/useSearchHistory";
 import { getProductDisplayTitle } from "../search/productTitle";
 
@@ -48,7 +49,7 @@ function HistoryHeader({ onBack }) {
   );
 }
 
-function HistoryIntro({ entriesCount, onClear }) {
+function HistoryIntro({ entriesCount, isSignedIn, onClear }) {
   return (
     <View className="gap-3">
       <View className="gap-2">
@@ -56,7 +57,9 @@ function HistoryIntro({ entriesCount, onClear }) {
           Search history
         </Text>
         <Text className="text-[15px] leading-6 text-stone-600">
-          Completed searches are saved on this device after Focamai narrows them to six picks.
+          {isSignedIn
+            ? "Your searches are synced to your account."
+            : "Completed searches are saved on this device after Focamai narrows them to six picks."}
         </Text>
       </View>
       {entriesCount > 0 ? (
@@ -182,6 +185,7 @@ function HistoryEntryCard({ entry, isOpen, onRemove, onRerun, onToggle }) {
 export default function HistoryScreen({ navigation, route }) {
   const { width } = useWindowDimensions();
   const isCompact = width <= 415;
+  const { user } = useAuth();
   const { clear, entries, error, loading, remove } = useSearchHistory();
   const [openEntryId, setOpenEntryId] = useState("");
   const returnTo = route?.params?.returnTo || "Settings";
@@ -211,7 +215,7 @@ export default function HistoryScreen({ navigation, route }) {
       </View>
 
       <View className={cx("w-full max-w-[430px] self-center", isCompact ? "gap-5" : "gap-6")}>
-        <HistoryIntro entriesCount={entries.length} onClear={clear} />
+        <HistoryIntro entriesCount={entries.length} isSignedIn={Boolean(user)} onClear={clear} />
 
         {loading ? (
           <Surface variant="quiet">

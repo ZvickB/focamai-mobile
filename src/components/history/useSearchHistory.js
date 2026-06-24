@@ -1,7 +1,7 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useFocusEffect } from "@react-navigation/native";
 
-import { historyStore } from "../../lib/history/historyStore";
+import { historyStore, onHistoryStoreChanged } from "../../lib/history/historyStore";
 
 export function useSearchHistory() {
   const [entries, setEntries] = useState([]);
@@ -27,6 +27,9 @@ export function useSearchHistory() {
       void refresh();
     }, [refresh]),
   );
+
+  // Re-fetch when the active store switches (e.g., local → remote on sign-in).
+  useEffect(() => onHistoryStoreChanged(() => void refresh()), [refresh]);
 
   const clear = useCallback(async () => {
     await historyStore.clear();

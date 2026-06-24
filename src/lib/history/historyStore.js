@@ -2,12 +2,24 @@ import { localHistoryStore } from "./localHistoryStore";
 
 let activeHistoryStore = localHistoryStore;
 
+const listeners = new Set();
+
+export function onHistoryStoreChanged(fn) {
+  listeners.add(fn);
+  return () => listeners.delete(fn);
+}
+
+function notifyHistoryStoreChanged() {
+  listeners.forEach((fn) => fn());
+}
+
 export function getHistoryStore() {
   return activeHistoryStore;
 }
 
 export function setHistoryStore(store = localHistoryStore) {
   activeHistoryStore = store;
+  notifyHistoryStoreChanged();
 }
 
 export const historyStore = {

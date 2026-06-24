@@ -2,6 +2,7 @@ import { NavigationContainer, DefaultTheme } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
+import AuthScreen from "../screens/AuthScreen";
 import DevLauncherScreen from "../screens/DevLauncherScreen";
 import AboutScreen from "../screens/AboutScreen";
 import AffiliateDisclosureScreen from "../screens/AffiliateDisclosureScreen";
@@ -81,6 +82,11 @@ export default function RootNavigator() {
             <Stack.Screen
               name="Home"
               component={HomeScreen}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="Auth"
+              component={AuthScreen}
               options={{ headerShown: false }}
             />
             <Stack.Screen name="About" component={AboutScreen} />

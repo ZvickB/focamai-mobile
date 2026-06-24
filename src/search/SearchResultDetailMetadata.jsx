@@ -2,6 +2,7 @@ import { useState } from "react";
 import { CheckCircle2, ChevronDown, Info, ShieldCheck, Sparkles, Star } from "lucide-react-native";
 import { Pressable, Text, useWindowDimensions, View } from "react-native";
 import { cx, ProductImageFrame, Surface } from "../components/MobileUI";
+import { getDeliverySignal } from "./primeEligibility";
 import { getProductDisplayTitle } from "./productTitle";
 
 export function detailValue(value, fallback) {
@@ -276,6 +277,10 @@ export function SearchResultDetailHero({ className = "", item, rank }) {
           <HeroFact label="Price" value={price} />
           <HeroFact label="Rating" value={rating} />
           <HeroFact label="Reviews" value={reviews} />
+          {(() => {
+            const signal = getDeliverySignal(item);
+            return signal ? <HeroFact label="Delivery" value={signal.value} /> : null;
+          })()}
         </View>
         <View className="flex-row flex-wrap items-center gap-2">
           <DetailRatingStars rating={item.rating} />

@@ -310,7 +310,7 @@ Done when:
 ## Deferred until after V1 polish
 - Bottom tabs.
 - Saved, profile, history, compare.
-- Heavy onboarding or account/login flow.
+- Heavy onboarding or account/login flow. When auth is added, use a tappable avatar circle (user initial) that opens a dropdown/sheet with email and sign-out — matching the web header avatar dropdown pattern (added to web 2026-06-11).
 - User-facing search history.
 - Analytics UI or timing panel polish.
 - Exact confidence percentages.

@@ -1,6 +1,7 @@
-import { ChevronRight } from "lucide-react-native";
+import { ChevronRight, LogOut, UserCircle } from "lucide-react-native";
 import { Pressable, Text, useWindowDimensions, View } from "react-native";
-import { HeaderBackButton, ScreenContainer, cx } from "../components/MobileUI";
+import { HeaderBackButton, Button, ScreenContainer, cx } from "../components/MobileUI";
+import { useAuth } from "../contexts/useAuth";
 
 function SettingsHeader({ onBack }) {
   const { width } = useWindowDimensions();
@@ -56,6 +57,57 @@ function SettingsRow({ isLast = false, label, onPress }) {
   );
 }
 
+function AccountSection({ navigation }) {
+  const { configured, user, signOut } = useAuth();
+
+  if (!configured) return null;
+
+  if (!user) {
+    return (
+      <View className="gap-2">
+        <SettingsSectionHeader title="Account" />
+        <View className="border-b border-t border-line">
+          <SettingsRow
+            isLast
+            label="Sign in"
+            onPress={() => navigation.navigate("Auth")}
+          />
+        </View>
+      </View>
+    );
+  }
+
+  return (
+    <View className="gap-2">
+      <SettingsSectionHeader title="Account" />
+      <View className="rounded-[18px] border border-line bg-white px-4 py-4 gap-3">
+        <View className="flex-row items-center gap-3">
+          <View className="h-10 w-10 items-center justify-center rounded-full bg-cream">
+            <UserCircle color="#0F6175" size={22} strokeWidth={1.8} />
+          </View>
+          <View className="flex-1">
+            <Text className="text-sm font-semibold text-ink" numberOfLines={1}>
+              {user.email}
+            </Text>
+            <Text className="text-xs text-stone-500">Signed in</Text>
+          </View>
+        </View>
+        <Pressable
+          accessibilityLabel="Sign out"
+          accessibilityRole="button"
+          className="min-h-[44px] flex-row items-center justify-center gap-2 rounded-[18px] border border-line bg-white"
+          onPress={async () => {
+            await signOut();
+          }}
+        >
+          <LogOut color="#78716c" size={16} strokeWidth={2} />
+          <Text className="text-sm font-semibold text-stone-600">Sign out</Text>
+        </Pressable>
+      </View>
+    </View>
+  );
+}
+
 export default function SettingsScreen({ navigation }) {
   const { width } = useWindowDimensions();
   const isCompact = width <= 415;
@@ -85,6 +137,8 @@ export default function SettingsScreen({ navigation }) {
 
       <View className={cx("w-full max-w-[430px] self-center", isCompact ? "gap-5" : "gap-6")}>
         <SettingsIntro />
+
+        <AccountSection navigation={navigation} />
 
         <View className="gap-2">
           <SettingsSectionHeader title="App" />

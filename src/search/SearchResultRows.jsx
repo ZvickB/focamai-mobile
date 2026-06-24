@@ -1,6 +1,7 @@
 import { Star } from "lucide-react-native";
 import { Pressable, Text, useWindowDimensions, View } from "react-native";
 import { ProductImageFrame, cx } from "../components/MobileUI";
+import { getDeliverySignal } from "./primeEligibility";
 import { getProductDisplayTitle } from "./productTitle";
 
 function formatRatingLabel(rating) {
@@ -62,6 +63,7 @@ export function FocusedPickRow({
   const priceLabel = item.price || "Price not shown";
   const ratingLabel = formatRatingLabel(item.rating);
   const reviewLabel = formatReviewLabel(item.reviewCount);
+  const deliverySignal = getDeliverySignal(item);
   const displayTitle = getProductDisplayTitle(item.title);
 
   return (
@@ -122,6 +124,13 @@ export function FocusedPickRow({
                 <Text className="text-[11px] text-stone-400" numberOfLines={1}>
                   {item.provider}
                 </Text>
+              ) : null}
+              {deliverySignal ? (
+                <View className="rounded-full border border-secondary/30 bg-accent/5 px-2 py-0.5">
+                  <Text className="text-[10px] font-semibold text-accent">
+                    {deliverySignal.label}
+                  </Text>
+                </View>
               ) : null}
             </View>
             <Text className="mt-0.5 text-[11px] font-semibold text-accent">View details</Text>

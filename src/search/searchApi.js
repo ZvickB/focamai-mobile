@@ -1,5 +1,8 @@
+import { Platform } from "react-native";
+
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || "";
 const FINAL_RESULT_LIMIT = 6;
+const MOBILE_PLATFORM = Platform.OS === "ios" ? "mobile-ios" : "mobile-android";
 const PREVIEW_RESULT_LIMIT = 3;
 const RETRY_ADVICE_SUGGESTED_QUERY_MAX_LENGTH = 80;
 const REFINEMENT_SUGGESTION_LIMIT = 3;
@@ -122,7 +125,7 @@ export async function discoverProducts({ amazonDomain, cacheMode = "", query }) 
   assertApiBaseUrl();
 
   const requestStartedAt = Date.now();
-  const params = new URLSearchParams({ query });
+  const params = new URLSearchParams({ query, platform: MOBILE_PLATFORM });
 
   if (amazonDomain) {
     params.set("amazonDomain", amazonDomain);
@@ -176,6 +179,7 @@ export async function finalizeSearch({
         amazonDomain,
         discoveryToken,
         followUpNotes: normalizedNotes,
+        platform: MOBILE_PLATFORM,
         query,
         requestMode,
       }),
@@ -426,10 +430,12 @@ export function normalizeFinalResults(results, candidatePool, identityScope = ""
 
   return mergeFinalResultsWithCandidatePool(results, candidatePool).slice(0, FINAL_RESULT_LIMIT).map((item, index) => ({
     caveat: item?.caveat || "",
+    delivery: item?.delivery || "",
     feature_bullets: getFeatureBullets(item),
     fit_reason: item?.fit_reason || item?.fitReason || "",
     id: getCandidateId(item, buildFinalFallbackId(index, identityScope)),
     image: item?.image || "",
+    isPrime: item?.isPrime || item?.is_prime || false,
     link: item?.link || "",
     price: item?.price || "Price not shown",
     provider: item?.subtitle || item?.source || item?.provider || "Unknown source",
