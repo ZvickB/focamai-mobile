@@ -50,7 +50,7 @@ describe("SearchResultDetailScreen", () => {
   it("keeps retailer access visible in a fixed footer when a link exists", () => {
     const { getAllByText, getByText } = renderDetail();
 
-    expect(getAllByText("$199").length).toBeGreaterThan(0);
+    expect(getAllByText("$199.00").length).toBeGreaterThan(0);
     expect(getAllByText("Amazon").length).toBeGreaterThan(0);
     expect(getByText("As an Amazon Associate I earn from qualifying purchases.")).toBeTruthy();
     expect(getAllByText("View on Amazon")).toHaveLength(1);

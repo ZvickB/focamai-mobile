@@ -1,4 +1,5 @@
 import { Platform } from "react-native";
+import { isPositivePrimeFlag } from "./primeEligibility";
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || "";
 const FINAL_RESULT_LIMIT = 6;
@@ -435,7 +436,7 @@ export function normalizeFinalResults(results, candidatePool, identityScope = ""
     fit_reason: item?.fit_reason || item?.fitReason || "",
     id: getCandidateId(item, buildFinalFallbackId(index, identityScope)),
     image: item?.image || "",
-    isPrime: item?.isPrime || item?.is_prime || false,
+    isPrime: isPositivePrimeFlag(item?.isPrime) || isPositivePrimeFlag(item?.is_prime),
     link: item?.link || "",
     price: item?.price || "Price not shown",
     provider: item?.subtitle || item?.source || item?.provider || "Unknown source",

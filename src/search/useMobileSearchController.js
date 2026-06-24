@@ -12,6 +12,7 @@ import {
   pollQueryQuality,
 } from "./searchApi";
 import { buildConstraintRefreshQuery, detectHardConstraint } from "./searchConstraints";
+import { isPositivePrimeFlag } from "./primeEligibility";
 import {
   DEFAULT_AMAZON_DOMAIN,
   hasSeenAmazonMarketplacePrompt,
@@ -110,7 +111,7 @@ function buildRefinementPrompt(refinementPayload) {
   };
 }
 
-function mergeEnrichmentIntoResults(currentResults, entries) {
+export function mergeEnrichmentIntoResults(currentResults, entries) {
   if (!Array.isArray(currentResults) || !Array.isArray(entries) || entries.length === 0) {
     return currentResults;
   }
@@ -145,26 +146,50 @@ function mergeEnrichmentIntoResults(currentResults, entries) {
     return {
       ...result,
       caveat: caveat || result.caveat,
+      delivery: normalizeEnrichmentText(entry.delivery) || result.delivery || "",
       feature_bullets: featureBullets.length ? featureBullets : result.feature_bullets,
       fit_reason: fitReason || result.fit_reason,
       image: entry.image || result.image,
+      isPrime: Boolean(
+        result.isPrime ||
+        isPositivePrimeFlag(entry.isPrime) ||
+        isPositivePrimeFlag(entry.is_prime),
+      ),
       link: entry.link || result.link,
     };
   });
 }
 
-function normalizeEnrichmentText(value) {
-  if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
-    return String(value).trim();
+const ENRICHMENT_TEXT_KEYS = ["text", "value", "message", "suggestion", "query"];
+
+export function normalizeEnrichmentText(value) {
+  if (typeof value === "string") {
+    return value.trim();
+  }
+
+  if (typeof value === "number" || typeof value === "boolean") {
+    return String(value);
+  }
+
+  if (value && typeof value === "object" && !Array.isArray(value)) {
+    for (const key of ENRICHMENT_TEXT_KEYS) {
+      if (typeof value[key] === "string" && value[key].trim()) {
+        return value[key].trim();
+      }
+    }
   }
 
   return "";
 }
 
-function normalizeEnrichmentBullets(value) {
-  return Array.isArray(value)
-    ? value.map((bullet) => normalizeEnrichmentText(bullet)).filter(Boolean)
-    : [];
+export function normalizeEnrichmentBullets(value) {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .map((bullet) => normalizeEnrichmentText(bullet))
+    .filter((text) => typeof text === "string" && text.length > 0);
 }
 
 export function useMobileSearchController() {

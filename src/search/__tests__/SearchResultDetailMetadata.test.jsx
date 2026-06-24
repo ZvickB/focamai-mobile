@@ -1,5 +1,8 @@
 import { render } from "@testing-library/react-native";
 import {
+  detailValue,
+  formatRating,
+  formatReviews,
   SearchResultDetailHero,
   SearchResultDetailMetadata,
   SearchResultFeatureHighlights,
@@ -16,6 +19,62 @@ const baseItem = {
   reviewCount: 128,
   title: "Compact Travel Stroller",
 };
+
+describe("detailValue", () => {
+  it("returns the value for valid primitives", () => {
+    expect(detailValue("hello", "fallback")).toBe("hello");
+    expect(detailValue(42, "fallback")).toBe("42");
+    expect(detailValue(0, "fallback")).toBe("0");
+    expect(detailValue(false, "fallback")).toBe("false");
+  });
+
+  it("returns the fallback for null, undefined, empty string, objects, and functions", () => {
+    expect(detailValue(null, "fallback")).toBe("fallback");
+    expect(detailValue(undefined, "fallback")).toBe("fallback");
+    expect(detailValue("", "fallback")).toBe("fallback");
+    expect(detailValue({ text: "x" }, "fallback")).toBe("fallback");
+    expect(detailValue(() => {}, "fallback")).toBe("fallback");
+  });
+});
+
+describe("formatRating", () => {
+  it("formats numeric ratings to one decimal place", () => {
+    expect(formatRating(4.4)).toBe("4.4");
+    expect(formatRating(5)).toBe("5.0");
+    expect(formatRating(3.75)).toBe("3.8");
+  });
+
+  it("returns 'Rating not shown' for missing or invalid values", () => {
+    expect(formatRating(null)).toBe("Rating not shown");
+    expect(formatRating(undefined)).toBe("Rating not shown");
+    expect(formatRating("")).toBe("Rating not shown");
+    expect(formatRating(true)).toBe("Rating not shown");
+    expect(formatRating("not a number")).toBe("Rating not shown");
+  });
+
+  it("handles string numbers", () => {
+    expect(formatRating("4.5")).toBe("4.5");
+  });
+});
+
+describe("formatReviews", () => {
+  it("formats numeric review counts", () => {
+    expect(formatReviews(128)).toBe("128 reviews");
+    expect(formatReviews(0)).toBe("0 reviews");
+  });
+
+  it("passes through string review counts", () => {
+    expect(formatReviews("1,234")).toBe("1,234 reviews");
+    expect(formatReviews("128")).toBe("128 reviews");
+  });
+
+  it("returns 'Reviews not shown' for missing or invalid values", () => {
+    expect(formatReviews(null)).toBe("Reviews not shown");
+    expect(formatReviews(undefined)).toBe("Reviews not shown");
+    expect(formatReviews("")).toBe("Reviews not shown");
+    expect(formatReviews("   ")).toBe("Reviews not shown");
+  });
+});
 
 describe("SearchResultDetailMetadata", () => {
   it("shows in-progress enrichment copy when detail notes are still running", () => {

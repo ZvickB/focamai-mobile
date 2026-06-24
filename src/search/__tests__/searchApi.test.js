@@ -216,4 +216,101 @@ describe("normalizeFinalResults", () => {
       "final-search-2-token-0",
     );
   });
+
+  it("preserves delivery and isPrime fields for Prime eligibility", () => {
+    const result = normalizeFinalResults(
+      [
+        {
+          candidate_id: "prime-product",
+          title: "Prime Widget",
+          isPrime: true,
+          delivery: "FREE delivery Wed, Jul 2",
+        },
+      ],
+      null,
+    )[0];
+
+    expect(result.isPrime).toBe(true);
+    expect(result.delivery).toBe("FREE delivery Wed, Jul 2");
+  });
+
+  it("normalizes is_prime to isPrime", () => {
+    const result = normalizeFinalResults(
+      [{ candidate_id: "p1", title: "Widget", is_prime: true }],
+      null,
+    )[0];
+
+    expect(result.isPrime).toBe(true);
+  });
+
+  it("normalizes positive string Prime flags without treating string false as Prime", () => {
+    expect(
+      normalizeFinalResults(
+        [{ candidate_id: "p1", title: "Widget", is_prime: "true" }],
+        null,
+      )[0].isPrime,
+    ).toBe(true);
+    expect(
+      normalizeFinalResults(
+        [{ candidate_id: "p1", title: "Widget", is_prime: "false" }],
+        null,
+      )[0].isPrime,
+    ).toBe(false);
+  });
+
+  it("defaults delivery and isPrime when missing", () => {
+    const result = normalizeFinalResults(
+      [{ candidate_id: "p1", title: "Widget" }],
+      null,
+    )[0];
+
+    expect(result.isPrime).toBe(false);
+    expect(result.delivery).toBe("");
+  });
+
+  it("caps results at 6", () => {
+    const results = Array.from({ length: 10 }, (_, i) => ({
+      candidate_id: `p-${i}`,
+      title: `Product ${i}`,
+    }));
+
+    expect(normalizeFinalResults(results, null)).toHaveLength(6);
+  });
+
+  it("returns empty array for non-array inputs", () => {
+    expect(normalizeFinalResults(null, null)).toEqual([]);
+    expect(normalizeFinalResults(undefined, null)).toEqual([]);
+    expect(normalizeFinalResults("not an array", null)).toEqual([]);
+  });
+
+  it("fills default values for missing fields", () => {
+    const result = normalizeFinalResults([{}], null)[0];
+
+    expect(result.title).toBe("Untitled product");
+    expect(result.price).toBe("Price not shown");
+    expect(result.provider).toBe("Unknown source");
+    expect(result.caveat).toBe("");
+    expect(result.fit_reason).toBe("");
+    expect(result.feature_bullets).toEqual([]);
+    expect(result.image).toBe("");
+    expect(result.link).toBe("");
+    expect(result.rating).toBeNull();
+    expect(result.reviewCount).toBeNull();
+  });
+
+  it("merges candidate pool images and links into results", () => {
+    const results = [
+      { candidate_id: "c1", title: "Widget", image: "", link: "" },
+    ];
+    const candidatePool = {
+      candidates: [
+        { candidate_id: "c1", image: "pool-image.jpg", link: "pool-link" },
+      ],
+    };
+
+    const merged = normalizeFinalResults(results, candidatePool)[0];
+
+    expect(merged.image).toBe("pool-image.jpg");
+    expect(merged.link).toBe("pool-link");
+  });
 });

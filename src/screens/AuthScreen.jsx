@@ -43,9 +43,17 @@ export default function AuthScreen({ navigation }) {
     }
 
     setSubmitting(true);
-    const authAction = mode === "sign-in" ? signIn : signUp;
-    const { data, error } = await authAction({ email: trimmedEmail, password });
-    setSubmitting(false);
+    let data = null;
+    let error = null;
+
+    try {
+      const authAction = mode === "sign-in" ? signIn : signUp;
+      ({ data, error } = await authAction({ email: trimmedEmail, password }));
+    } catch (submitError) {
+      error = submitError;
+    } finally {
+      setSubmitting(false);
+    }
 
     if (error) {
       setErrorMessage(getAuthErrorMessage(error));
@@ -70,8 +78,15 @@ export default function AuthScreen({ navigation }) {
     }
 
     setSubmitting(true);
-    const { error } = await signInWithGoogle();
-    setSubmitting(false);
+    let error = null;
+
+    try {
+      ({ error } = await signInWithGoogle());
+    } catch (submitError) {
+      error = submitError;
+    } finally {
+      setSubmitting(false);
+    }
 
     if (error) {
       setErrorMessage(getAuthErrorMessage(error));

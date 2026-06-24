@@ -1,6 +1,7 @@
 import { Star } from "lucide-react-native";
 import { Pressable, Text, useWindowDimensions, View } from "react-native";
 import { ProductImageFrame, cx } from "../components/MobileUI";
+import { formatDisplayPrice } from "./formatDisplayPrice";
 import { getDeliverySignal } from "./primeEligibility";
 import { getProductDisplayTitle } from "./productTitle";
 
@@ -60,7 +61,7 @@ export function FocusedPickRow({
     ? item.feature_bullets.map((bullet) => String(bullet).trim()).filter(Boolean)
     : [];
   const reason = getPickReason(item, featureBullets);
-  const priceLabel = item.price || "Price not shown";
+  const priceLabel = formatDisplayPrice(item.price) || "Price not shown";
   const ratingLabel = formatRatingLabel(item.rating);
   const reviewLabel = formatReviewLabel(item.reviewCount);
   const deliverySignal = getDeliverySignal(item);

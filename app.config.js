@@ -44,6 +44,6 @@ export default {
         projectId: "cfc4fd1e-d40c-424e-91c0-a24866bb09d7",
       },
     },
-    plugins: ["expo-font", "expo-av"],
+    plugins: ["expo-font", "expo-av", "expo-secure-store"],
   },
 };

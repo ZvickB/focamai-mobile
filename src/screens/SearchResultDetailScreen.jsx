@@ -13,6 +13,7 @@ import {
   SearchResultFeatureHighlights,
 } from "../search/SearchResultDetailMetadata";
 import { AffiliateDisclosureNote } from "../search/AffiliateDisclosureNote";
+import { formatDisplayPrice } from "../search/formatDisplayPrice";
 import { useSearchFlow } from "../search/SearchFlowContext";
 import { getProductDisplayTitle } from "../search/productTitle";
 
@@ -28,7 +29,7 @@ function openRetailerLink(link) {
 
 function DetailRetailerFooter({ item }) {
   const provider = detailValue(item.provider, "");
-  const price = detailValue(item.price, "Price not shown");
+  const price = formatDisplayPrice(item.price) || "Price not shown";
   const displayTitle = getProductDisplayTitle(item.title) || detailValue(item.title, "this product");
 
   return (

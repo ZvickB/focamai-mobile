@@ -2,6 +2,7 @@ import { useState } from "react";
 import { CheckCircle2, ChevronDown, Info, ShieldCheck, Sparkles, Star } from "lucide-react-native";
 import { Pressable, Text, useWindowDimensions, View } from "react-native";
 import { cx, ProductImageFrame, Surface } from "../components/MobileUI";
+import { formatDisplayPrice } from "./formatDisplayPrice";
 import { getDeliverySignal } from "./primeEligibility";
 import { getProductDisplayTitle } from "./productTitle";
 
@@ -242,7 +243,7 @@ export function SearchResultDetailHero({ className = "", item, rank }) {
   const { width } = useWindowDimensions();
   const isCompact = width <= 415;
   const provider = detailValue(item.provider, "Unknown source");
-  const price = detailValue(item.price, "Price not shown");
+  const price = formatDisplayPrice(item.price) || "Price not shown";
   const rating = formatRating(item.rating);
   const reviews = formatReviews(item.reviewCount);
   const displayTitle = getProductDisplayTitle(item.title);

@@ -6,18 +6,28 @@ import { createRemoteHistoryStore } from "../lib/history/remoteHistoryStore";
 import { setHistoryStore } from "../lib/history/historyStore";
 import { localHistoryStore } from "../lib/history/localHistoryStore";
 
-async function migrateLocalHistoryToAccount(remoteStore) {
+export async function migrateLocalHistoryToAccount(remoteStore, shouldContinue = () => true) {
   const localEntries = await localHistoryStore.list();
 
-  if (localEntries.length === 0) {
+  if (localEntries.length === 0 || !shouldContinue()) {
     return;
   }
 
   for (const entry of localEntries) {
+    if (!shouldContinue()) {
+      return;
+    }
+
     await remoteStore.save(entry);
   }
 
-  await localHistoryStore.clear();
+  if (!shouldContinue()) {
+    return;
+  }
+
+  for (const entry of localEntries) {
+    await localHistoryStore.remove(entry.id);
+  }
 }
 
 export function AuthProvider({ children }) {
@@ -33,11 +43,19 @@ export function AuthProvider({ children }) {
     const client = getSupabaseClient();
     if (!client) return undefined;
 
-    client.auth.getSession().then(({ data }) => {
-      if (!isMounted) return;
-      setSession(data.session || null);
-      setLoading(false);
-    });
+    client.auth.getSession()
+      .then(({ data }) => {
+        if (!isMounted) return;
+        setSession(data.session || null);
+      })
+      .catch(() => {
+        if (!isMounted) return;
+        setSession(null);
+      })
+      .finally(() => {
+        if (!isMounted) return;
+        setLoading(false);
+      });
 
     const { data: subscriptionData } = client.auth.onAuthStateChange((_event, nextSession) => {
       setSession(nextSession || null);
@@ -69,7 +87,7 @@ export function AuthProvider({ children }) {
 
     setHistoryStore(remoteStore);
 
-    migrateLocalHistoryToAccount(remoteStore)
+    migrateLocalHistoryToAccount(remoteStore, () => !isCancelled)
       .then(() => {
         if (!isCancelled) {
           // Re-set after migration so listeners pick up the remote entries.
