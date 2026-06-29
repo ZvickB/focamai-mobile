@@ -307,14 +307,21 @@ Likely files:
 Done when:
 - Loading and failure states are understandable without exposing implementation noise first.
 
+### Feature slice - Price Watch and Deep Dive
+Status: implemented; full Jest (`30` suites / `179` tests) and Android Expo export passed. Live-device backend QA remains the release check.
+
+- Finalized detail owns optional Price Watch and eligibility-controlled Deep Dive actions; shortlist rows stay unchanged.
+- Deep Dive uses a dedicated native stack screen for verified offers, caveats, and review evidence. Provider work starts only after the user opens it.
+- Settings -> Price watches manages account-backed email alerts with an explicit native editor; there is no local watch storage or push-notification permission.
+- `Alert baseline` is intentional mobile copy because the backend resets the baseline after a successful email.
+
 ## Deferred until after V1 polish
 - Bottom tabs.
-- Saved, profile, history, compare.
-- Heavy onboarding or account/login flow. When auth is added, use a tappable avatar circle (user initial) that opens a dropdown/sheet with email and sign-out — matching the web header avatar dropdown pattern (added to web 2026-06-11).
-- User-facing search history.
+- Saved-product/profile hubs and multi-product compare.
+- Heavy onboarding or expanded social sign-in work beyond the current email/password account flow.
 - Analytics UI or timing panel polish.
 - Exact confidence percentages.
-- A full compare mode.
+- A full multi-product compare mode; the implemented Deep Dive is a single-product store/review check.
 - Deep links.
 - Broad persistence beyond the current store preference.
 - TanStack Query migration unless it directly simplifies a UI slice.
