@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Alert, Linking, Text, useWindowDimensions, View } from "react-native";
 import {
   AppHeader,
@@ -16,6 +17,8 @@ import { AffiliateDisclosureNote } from "../search/AffiliateDisclosureNote";
 import { formatDisplayPrice } from "../search/formatDisplayPrice";
 import { useSearchFlow } from "../search/SearchFlowContext";
 import { getProductDisplayTitle } from "../search/productTitle";
+import { useAuth } from "../contexts/useAuth";
+import { useWatches } from "../components/watch/useWatches";
 
 function openRetailerLink(link) {
   if (!link) {
@@ -94,26 +97,119 @@ function normalizeFeatureBullets(value) {
     : [];
 }
 
+function normalizePositiveNumber(value) {
+  const numericValue = Number(value);
+  return Number.isFinite(numericValue) && numericValue > 0 ? numericValue : null;
+}
+
 function normalizeDetailRouteItem(routeItem) {
   if (!routeItem || typeof routeItem !== "object" || Array.isArray(routeItem)) {
     return null;
   }
 
   const item = {
+    asin: normalizePrimitive(routeItem.asin || routeItem.product_id),
     caveat: normalizePrimitive(routeItem.caveat),
+    deepDiveEligibility:
+      routeItem.deepDiveEligibility && typeof routeItem.deepDiveEligibility === "object"
+        ? routeItem.deepDiveEligibility
+        : null,
     feature_bullets: normalizeFeatureBullets(routeItem.feature_bullets || routeItem.featureBullets),
     fit_reason: normalizePrimitive(routeItem.fit_reason || routeItem.fitReason),
     id: normalizePrimitive(routeItem.id || routeItem.candidateId || routeItem.candidate_id),
     image: normalizePrimitive(routeItem.image || routeItem.imageUrl),
     link: normalizePrimitive(routeItem.link || routeItem.url),
+    numericPrice: normalizePositiveNumber(
+      routeItem.numericPrice ?? routeItem.numeric_price ?? routeItem.extracted_price,
+    ),
     price: normalizePrimitive(routeItem.price),
     provider: normalizePrimitive(routeItem.provider || routeItem.source),
     rating: routeItem.rating,
     reviewCount: routeItem.reviewCount ?? routeItem.review_count,
+    sourceTitle: normalizePrimitive(routeItem.sourceTitle || routeItem.source_title),
     title: normalizePrimitive(routeItem.title || routeItem.name),
   };
 
   return item.id || item.title || item.link ? item : null;
+}
+
+function ProductActions({ activeSearchSession, isFinalizedItem, item, navigation }) {
+  const { user } = useAuth();
+  const { create, watches } = useWatches({ enabled: Boolean(user && isFinalizedItem) });
+  const [watchMessage, setWatchMessage] = useState("");
+  const [watchSaving, setWatchSaving] = useState(false);
+  const amazonDomain = activeSearchSession?.amazonDomain || "amazon.com";
+  const eligibility = item.deepDiveEligibility;
+  const canShowDeepDive = isFinalizedItem && ["show", "maybe"].includes(eligibility?.recommendation);
+  const canWatch = Boolean(isFinalizedItem && item.asin && item.numericPrice);
+  const existingWatch = watches.find(
+    (watch) => watch.asin === item.asin && watch.amazonDomain === amazonDomain,
+  );
+
+  if (!canShowDeepDive && !canWatch) return null;
+
+  async function handleWatchPrice() {
+    if (!user) {
+      navigation.navigate("Auth", { backLabel: "Product" });
+      return;
+    }
+    if (existingWatch) {
+      setWatchMessage("Already watching this product.");
+      return;
+    }
+
+    setWatchSaving(true);
+    setWatchMessage("");
+    try {
+      await create({
+        amazonDomain,
+        asin: item.asin,
+        baselinePrice: item.numericPrice,
+        imageUrl: item.image || "",
+        productTitle: getProductDisplayTitle(item.title) || item.sourceTitle || item.asin,
+        productUrl: item.link || "",
+        targetPrice: null,
+        thresholdPct: 5,
+      });
+      setWatchMessage("Watching this price. We’ll email you when it reaches your alert.");
+    } catch (error) {
+      setWatchMessage(error instanceof Error ? error.message : "Unable to add this watch right now.");
+    } finally {
+      setWatchSaving(false);
+    }
+  }
+
+  return (
+    <View className="gap-3 border-t border-line pt-5" testID="detail.productActions">
+      <Text className="text-base font-semibold text-ink">Optional tools</Text>
+      {canShowDeepDive ? (
+        <Button
+          onPress={() => {
+            if (!user) {
+              navigation.navigate("Auth", { backLabel: "Product" });
+              return;
+            }
+            navigation.navigate("DeepDive", { candidateId: item.id });
+          }}
+          variant="secondary"
+        >
+          {eligibility?.recommendation === "maybe" || eligibility?.mode === "reviews_only"
+            ? "Check reviews and other stores"
+            : "Deep dive — store prices and reviews"}
+        </Button>
+      ) : null}
+      {canWatch ? (
+        <Button
+          disabled={watchSaving || Boolean(user && existingWatch)}
+          onPress={handleWatchPrice}
+          variant="secondary"
+        >
+          {user && existingWatch ? "Price watch added" : watchSaving ? "Adding price watch..." : "Watch price"}
+        </Button>
+      ) : null}
+      {watchMessage ? <Text className="text-center text-xs leading-5 text-stone-500">{watchMessage}</Text> : null}
+    </View>
+  );
 }
 
 function UnavailableDetailState({ onBack }) {
@@ -206,6 +302,12 @@ export default function SearchResultDetailScreen({ navigation, route }) {
         ) : null}
         <SearchResultDetailMetadata enrichmentStatus={enrichmentStatus} item={item} />
         <SearchResultFeatureHighlights enrichmentStatus={enrichmentStatus} item={item} />
+        <ProductActions
+          activeSearchSession={activeSearchSession}
+          isFinalizedItem={Boolean(matchedItem)}
+          item={item}
+          navigation={navigation}
+        />
       </View>
     </ScreenContainer>
   );

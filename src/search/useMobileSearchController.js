@@ -64,20 +64,6 @@ function getFinalResultsKey(results) {
   return Array.isArray(results) ? results.map((item) => String(item?.id || "")).join("|") : "";
 }
 
-function resultNeedsEnrichment(result) {
-  const featureBullets = Array.isArray(result?.feature_bullets)
-    ? result.feature_bullets.map((bullet) => normalizeEnrichmentText(bullet)).filter(Boolean)
-    : [];
-
-  return !normalizeEnrichmentText(result?.fit_reason) ||
-    !normalizeEnrichmentText(result?.caveat) ||
-    featureBullets.length === 0;
-}
-
-function shouldStartEnrichmentPolling(results) {
-  return Array.isArray(results) && results.length > 0 && results.some(resultNeedsEnrichment);
-}
-
 function buildDiscoverySummary(discoveryPayload, query) {
   const candidates = Array.isArray(discoveryPayload.candidatePool?.candidates)
     ? discoveryPayload.candidatePool.candidates
@@ -156,6 +142,43 @@ export function mergeEnrichmentIntoResults(currentResults, entries) {
         isPositivePrimeFlag(entry.is_prime),
       ),
       link: entry.link || result.link,
+    };
+  });
+}
+
+export function mergeDeepDiveEligibilityIntoResults(currentResults, eligibility) {
+  const decisions = Array.isArray(eligibility?.decisions)
+    ? eligibility.decisions
+    : Array.isArray(eligibility)
+      ? eligibility
+      : [];
+
+  if (!Array.isArray(currentResults) || decisions.length === 0) {
+    return currentResults;
+  }
+
+  const decisionsByCandidateId = new Map(
+    decisions
+      .map((decision) => {
+        const candidateId = decision?.candidate_id || decision?.candidateId || decision?.id;
+        return candidateId ? [String(candidateId), decision] : null;
+      })
+      .filter(Boolean),
+  );
+
+  return currentResults.map((result) => {
+    const decision = decisionsByCandidateId.get(String(result.id));
+
+    if (!decision) return result;
+
+    return {
+      ...result,
+      deepDiveEligibility: {
+        confidence: String(decision.confidence || "low"),
+        mode: String(decision.mode || "hide"),
+        reason: String(decision.reason || ""),
+        recommendation: String(decision.recommendation || "hide"),
+      },
     };
   });
 }
@@ -409,6 +432,8 @@ export function useMobileSearchController() {
 
   function startEnrichmentPolling({ amazonDomain, query, requestId, token }) {
     const pollingStartedAt = Date.now();
+    let hasReceivedEligibility = false;
+    let hasReceivedEnrichment = false;
 
     updateSessionForRequest(requestId, (currentSession) => ({
       ...currentSession,
@@ -440,15 +465,17 @@ export function useMobileSearchController() {
           ...currentSession,
           phases: {
             ...currentSession.phases,
-            enrich: "timeout",
+            enrich: hasReceivedEnrichment ? "complete" : "timeout",
           },
         }));
         updatePhaseEvent(
           buildPhaseEvent({
-            detail: "Enrichment was not ready yet",
+            detail: hasReceivedEnrichment
+              ? "Pick explanations ready; optional comparison check ended"
+              : "Enrichment was not ready yet",
             phase: "enrich",
             requestId,
-            status: "timeout",
+            status: hasReceivedEnrichment ? "complete" : "timeout",
           }),
         );
         return;
@@ -474,8 +501,10 @@ export function useMobileSearchController() {
         }
 
         const entries = Array.isArray(payload.entries) ? payload.entries : [];
+        const eligibilitySettled = Array.isArray(payload.deepDiveEligibility?.decisions);
 
         if (payload.ready && entries.length > 0) {
+          hasReceivedEnrichment = true;
           setFinalResults((currentResults) => mergeEnrichmentIntoResults(currentResults, entries));
           updateSessionForRequest(requestId, (currentSession) => ({
             ...currentSession,
@@ -493,6 +522,16 @@ export function useMobileSearchController() {
               timingMs: payload.clientTimingMs,
             }),
           );
+        }
+
+        if (eligibilitySettled) {
+          hasReceivedEligibility = true;
+          setFinalResults((currentResults) =>
+            mergeDeepDiveEligibilityIntoResults(currentResults, payload.deepDiveEligibility),
+          );
+        }
+
+        if (hasReceivedEnrichment && hasReceivedEligibility) {
           stopEnrichmentPolling();
           return;
         }
@@ -1075,14 +1114,12 @@ export function useMobileSearchController() {
           timingMs: payload.clientTimingMs,
         }),
       );
-      if (shouldStartEnrichmentPolling(nextFinalResults)) {
-        startEnrichmentPolling({
-          amazonDomain: finalizeAmazonDomain,
-          query: finalizeQuery,
-          requestId,
-          token: finalizeDiscoveryToken,
-        });
-      }
+      startEnrichmentPolling({
+        amazonDomain: finalizeAmazonDomain,
+        query: finalizeQuery,
+        requestId,
+        token: finalizeDiscoveryToken,
+      });
 
       return true;
     } catch (error) {

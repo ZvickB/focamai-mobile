@@ -1,10 +1,14 @@
-import { render } from "@testing-library/react-native";
+import { fireEvent, render, waitFor } from "@testing-library/react-native";
 import SearchResultDetailScreen from "../SearchResultDetailScreen";
 import { useSearchFlow } from "../../search/SearchFlowContext";
+import { useAuth } from "../../contexts/useAuth";
+import { useWatches } from "../../components/watch/useWatches";
 
 jest.mock("../../search/SearchFlowContext", () => ({
   useSearchFlow: jest.fn(),
 }));
+jest.mock("../../contexts/useAuth", () => ({ useAuth: jest.fn() }));
+jest.mock("../../components/watch/useWatches", () => ({ useWatches: jest.fn() }));
 
 const linkedItem = {
   caveat: "",
@@ -20,7 +24,7 @@ const linkedItem = {
   title: "Compact Travel Stroller",
 };
 
-function renderDetail(item = linkedItem) {
+function renderDetail(item = linkedItem, navigation = { goBack: jest.fn(), navigate: jest.fn() }) {
   useSearchFlow.mockReturnValue({
     activeSearchSession: {
       phases: {
@@ -30,8 +34,10 @@ function renderDetail(item = linkedItem) {
     finalResults: [item],
   });
 
-  return render(
+  return {
+    ...render(
     <SearchResultDetailScreen
+      navigation={navigation}
       route={{
         params: {
           candidateId: item.id,
@@ -39,12 +45,16 @@ function renderDetail(item = linkedItem) {
         },
       }}
     />,
-  );
+    ),
+    navigation,
+  };
 }
 
 describe("SearchResultDetailScreen", () => {
   beforeEach(() => {
     useSearchFlow.mockReset();
+    useAuth.mockReturnValue({ user: null });
+    useWatches.mockReturnValue({ create: jest.fn(), watches: [] });
   });
 
   it("keeps retailer access visible in a fixed footer when a link exists", () => {
@@ -143,5 +153,43 @@ describe("SearchResultDetailScreen", () => {
     expect(getByText("Pick details unavailable")).toBeTruthy();
     expect(getByText("Go back and select a current pick.")).toBeTruthy();
     expect(queryByText("Extra analysis is still running.")).toBeNull();
+  });
+
+  it("keeps finalized watch and Deep Dive actions behind the account return flow", () => {
+    const actionableItem = {
+      ...linkedItem,
+      asin: "B012345678",
+      numericPrice: 199,
+      deepDiveEligibility: { recommendation: "show", mode: "offers_and_reviews" },
+    };
+    const { getByText, navigation } = renderDetail(actionableItem);
+
+    fireEvent.press(getByText("Deep dive — store prices and reviews"));
+    fireEvent.press(getByText("Watch price"));
+
+    expect(navigation.navigate).toHaveBeenNthCalledWith(1, "Auth", { backLabel: "Product" });
+    expect(navigation.navigate).toHaveBeenNthCalledWith(2, "Auth", { backLabel: "Product" });
+  });
+
+  it("creates the default five-percent watch for a signed-in finalized pick", async () => {
+    const create = jest.fn().mockResolvedValue({ id: "watch-1" });
+    useAuth.mockReturnValue({ user: { id: "user-1" } });
+    useWatches.mockReturnValue({ create, watches: [] });
+    const actionableItem = {
+      ...linkedItem,
+      asin: "B012345678",
+      numericPrice: 199,
+    };
+    const { getByText } = renderDetail(actionableItem);
+
+    fireEvent.press(getByText("Watch price"));
+    await waitFor(() => expect(create).toHaveBeenCalledWith(expect.objectContaining({
+      amazonDomain: "amazon.com",
+      asin: "B012345678",
+      baselinePrice: 199,
+      targetPrice: null,
+      thresholdPct: 5,
+    })));
+    expect(getByText(/We’ll email you/)).toBeTruthy();
   });
 });

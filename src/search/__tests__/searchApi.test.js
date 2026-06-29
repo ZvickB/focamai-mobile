@@ -45,6 +45,67 @@ describe("request timeouts", () => {
       "This is taking longer than expected. Try again, or adjust the search.",
     );
   });
+
+  it("uses a dedicated 60-second timeout for Deep Dive", async () => {
+    jest.resetModules();
+    const { fetchProductDeepDive } = require("../searchApi");
+    global.fetch = jest.fn(
+      (_url, options = {}) =>
+        new Promise((_resolve, reject) => {
+          options.signal?.addEventListener("abort", () => reject(new Error("aborted")));
+        }),
+    );
+
+    const request = fetchProductDeepDive({
+      amazonDomain: "amazon.com",
+      candidateId: "candidate-1",
+      discoveryToken: "token-1",
+      query: "travel stroller",
+      token: "session-token",
+    });
+
+    jest.advanceTimersByTime(60000);
+
+    await expect(request).rejects.toThrow(
+      "The store comparison is taking longer than expected. Please try again.",
+    );
+  });
+
+  it("sends the authenticated Deep Dive contract", async () => {
+    jest.resetModules();
+    const { fetchProductDeepDive } = require("../searchApi");
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      headers: { get: jest.fn(() => "application/json") },
+      text: jest.fn().mockResolvedValue(JSON.stringify({ status: "ready", offers: [] })),
+    });
+
+    await fetchProductDeepDive({
+      amazonDomain: "amazon.ca",
+      candidateId: "candidate-1",
+      crossMarketFallback: true,
+      discoveryToken: "token-1",
+      query: "travel stroller",
+      token: "session-token",
+    });
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      "https://api.example.test/api/product/deep-dive",
+      expect.objectContaining({
+        method: "POST",
+        headers: expect.objectContaining({ Authorization: "Bearer session-token" }),
+        body: JSON.stringify({
+          amazonDomain: "amazon.ca",
+          candidateId: "candidate-1",
+          crossMarketFallback: true,
+          discoveryToken: "token-1",
+          includeSynthesis: true,
+          query: "travel stroller",
+        }),
+      }),
+    );
+  });
 });
 
 describe("coerceDisplayText", () => {
@@ -187,6 +248,38 @@ describe("isSafeQuerySuggestionText", () => {
 });
 
 describe("normalizeFinalResults", () => {
+  it("preserves product identity, numeric price, and Deep Dive eligibility", () => {
+    const result = normalizeFinalResults(
+      [{ candidate_id: "candidate-1", title: "Travel Stroller", price: "$199.99" }],
+      {
+        candidates: [{
+          id: "candidate-1",
+          asin: "B012345678",
+          source_title: "Travel Stroller Full Amazon Title",
+          extracted_price: 199.99,
+          deepDiveEligibility: {
+            recommendation: "show",
+            mode: "offers_and_reviews",
+            confidence: "high",
+            reason: "stable product identity",
+          },
+        }],
+      },
+    )[0];
+
+    expect(result).toMatchObject({
+      asin: "B012345678",
+      numericPrice: 199.99,
+      sourceTitle: "Travel Stroller Full Amazon Title",
+      deepDiveEligibility: {
+        recommendation: "show",
+        mode: "offers_and_reviews",
+        confidence: "high",
+        reason: "stable product identity",
+      },
+    });
+  });
+
   it("keeps stable backend candidate IDs when present", () => {
     expect(
       normalizeFinalResults(

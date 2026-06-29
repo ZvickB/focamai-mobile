@@ -11,12 +11,16 @@ const REFINEMENT_SUGGESTION_MAX_LENGTH = 30;
 const REQUEST_TIMEOUT_MESSAGE =
   "This is taking longer than expected. Try again, or adjust the search.";
 const REQUEST_TIMEOUTS_MS = {
+  deepDive: 60000,
   discover: 25000,
   finalize: 35000,
   poll: 8000,
   refine: 15000,
   retryAdvice: 20000,
 };
+
+const DEEP_DIVE_TIMEOUT_MESSAGE =
+  "The store comparison is taking longer than expected. Please try again.";
 const TEXT_FIELD_KEYS = [
   "query",
   "text",
@@ -89,6 +93,17 @@ async function fetchWithTimeout(url, options = {}, timeoutMs) {
     throw error;
   } finally {
     clearTimeout(timeoutId);
+  }
+}
+
+async function fetchDeepDiveWithTimeout(url, options = {}) {
+  try {
+    return await fetchWithTimeout(url, options, REQUEST_TIMEOUTS_MS.deepDive);
+  } catch (error) {
+    if (error instanceof Error && error.message === REQUEST_TIMEOUT_MESSAGE) {
+      throw new Error(DEEP_DIVE_TIMEOUT_MESSAGE);
+    }
+    throw error;
   }
 }
 
@@ -189,6 +204,39 @@ export async function finalizeSearch({
   );
 
   return readJsonResponse(response, requestStartedAt, "Finalize request failed.");
+}
+
+export async function fetchProductDeepDive({
+  amazonDomain,
+  candidateId,
+  crossMarketFallback = false,
+  discoveryToken,
+  query,
+  token,
+}) {
+  assertApiBaseUrl();
+
+  const requestStartedAt = Date.now();
+  const response = await fetchDeepDiveWithTimeout(
+    `${API_BASE_URL}/api/product/deep-dive`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({
+        amazonDomain,
+        candidateId,
+        crossMarketFallback,
+        discoveryToken,
+        includeSynthesis: true,
+        query,
+      }),
+    },
+  );
+
+  return readJsonResponse(response, requestStartedAt, "Deep Dive request failed.");
 }
 
 export async function pollEnrichment({ amazonDomain, query, token }) {
@@ -399,6 +447,34 @@ function getFeatureBullets(item) {
   return [];
 }
 
+function getPositiveNumericPrice(item) {
+  const directValue = Number(
+    item?.numericPrice ?? item?.numeric_price ?? item?.extracted_price ?? item?.price_value,
+  );
+
+  if (Number.isFinite(directValue) && directValue > 0) {
+    return directValue;
+  }
+
+  const priceMatch = String(item?.price || "").match(/\d[\d,]*(?:\.\d+)?/);
+  const parsedValue = priceMatch ? Number(priceMatch[0].replace(/,/g, "")) : null;
+
+  return Number.isFinite(parsedValue) && parsedValue > 0 ? parsedValue : null;
+}
+
+function normalizeDeepDiveEligibility(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return null;
+  }
+
+  return {
+    confidence: String(value.confidence || "low"),
+    mode: String(value.mode || "hide"),
+    reason: String(value.reason || ""),
+    recommendation: String(value.recommendation || "hide"),
+  };
+}
+
 function mergeFinalResultsWithCandidatePool(results, candidatePool) {
   if (!Array.isArray(results)) {
     return [];
@@ -417,6 +493,7 @@ function mergeFinalResultsWithCandidatePool(results, candidatePool) {
     }
 
     return {
+      ...candidate,
       ...result,
       image: candidate.image || result.image,
       link: candidate.link || result.link,
@@ -430,7 +507,11 @@ export function normalizeFinalResults(results, candidatePool, identityScope = ""
   }
 
   return mergeFinalResultsWithCandidatePool(results, candidatePool).slice(0, FINAL_RESULT_LIMIT).map((item, index) => ({
+    asin: String(item?.asin || item?.product_id || "").trim(),
     caveat: item?.caveat || "",
+    deepDiveEligibility: normalizeDeepDiveEligibility(
+      item?.deepDiveEligibility || item?.deep_dive_eligibility,
+    ),
     delivery: item?.delivery || "",
     feature_bullets: getFeatureBullets(item),
     fit_reason: item?.fit_reason || item?.fitReason || "",
@@ -438,10 +519,12 @@ export function normalizeFinalResults(results, candidatePool, identityScope = ""
     image: item?.image || "",
     isPrime: isPositivePrimeFlag(item?.isPrime) || isPositivePrimeFlag(item?.is_prime),
     link: item?.link || "",
+    numericPrice: getPositiveNumericPrice(item),
     price: item?.price || "Price not shown",
     provider: item?.subtitle || item?.source || item?.provider || "Unknown source",
     rating: item?.rating ?? null,
     reviewCount: item?.reviewCount ?? item?.reviews ?? null,
+    sourceTitle: item?.source_title || item?.sourceTitle || item?.title || "",
     title: item?.title || "Untitled product",
   }));
 }

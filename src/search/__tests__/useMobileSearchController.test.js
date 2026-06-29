@@ -1,10 +1,14 @@
 import { act, renderHook, waitFor } from "@testing-library/react-native";
-import { useMobileSearchController } from "../useMobileSearchController";
+import {
+  mergeDeepDiveEligibilityIntoResults,
+  useMobileSearchController,
+} from "../useMobileSearchController";
 import {
   discoverProducts,
   finalizeSearch,
   getRefinementPrompt,
   getRetryAdvice,
+  pollEnrichment,
 } from "../searchApi";
 import { historyStore } from "../../lib/history/historyStore";
 
@@ -143,6 +147,48 @@ describe("useMobileSearchController", () => {
     unmount();
   });
 
+  it("keeps polling after explanations until Deep Dive eligibility arrives", async () => {
+    pollEnrichment
+      .mockResolvedValueOnce({ ready: true, entries: [finalPick] })
+      .mockResolvedValueOnce({
+        ready: true,
+        entries: [finalPick],
+        deepDiveEligibility: {
+          decisions: [{
+            candidate_id: "candidate-1",
+            recommendation: "show",
+            mode: "offers_and_reviews",
+          }],
+        },
+      });
+    const { result, unmount } = renderHook(() => useMobileSearchController());
+
+    act(() => result.current.startDiscoverySearch({ queryOverride: "travel stroller" }));
+    await waitFor(() => expect(result.current.canFinalize).toBe(true));
+    jest.useFakeTimers();
+    await act(async () => { await result.current.finalizeFocusedPicks(); });
+
+    await act(async () => {
+      jest.advanceTimersByTime(1500);
+      await Promise.resolve();
+    });
+    expect(pollEnrichment).toHaveBeenCalledTimes(1);
+    expect(result.current.finalResults[0].deepDiveEligibility).toBeUndefined();
+
+    await act(async () => {
+      jest.advanceTimersByTime(1500);
+      await Promise.resolve();
+    });
+    expect(pollEnrichment).toHaveBeenCalledTimes(2);
+    expect(result.current.finalResults[0].deepDiveEligibility).toMatchObject({
+      recommendation: "show",
+      mode: "offers_and_reviews",
+    });
+
+    unmount();
+    jest.useRealTimers();
+  });
+
   it("ignores retry-advice responses after feedback changes", async () => {
     const retryAdviceRequest = createDeferred();
     getRetryAdvice.mockReturnValue(retryAdviceRequest.promise);
@@ -201,5 +247,28 @@ describe("useMobileSearchController", () => {
     expect(result.current.isGeneratingRetryAdvice).toBe(false);
 
     unmount();
+  });
+});
+
+describe("mergeDeepDiveEligibilityIntoResults", () => {
+  it("merges eligibility by stable candidate id without changing unmatched results", () => {
+    const results = [{ id: "candidate-1" }, { id: "candidate-2" }];
+    const merged = mergeDeepDiveEligibilityIntoResults(results, {
+      decisions: [{
+        candidate_id: "candidate-1",
+        recommendation: "maybe",
+        mode: "reviews_only",
+        confidence: "medium",
+        reason: "review evidence available",
+      }],
+    });
+
+    expect(merged[0].deepDiveEligibility).toEqual({
+      recommendation: "maybe",
+      mode: "reviews_only",
+      confidence: "medium",
+      reason: "review evidence available",
+    });
+    expect(merged[1]).toBe(results[1]);
   });
 });

@@ -7,10 +7,12 @@ import DevLauncherScreen from "../screens/DevLauncherScreen";
 import AboutScreen from "../screens/AboutScreen";
 import AffiliateDisclosureScreen from "../screens/AffiliateDisclosureScreen";
 import ContactScreen from "../screens/ContactScreen";
+import DeepDiveScreen from "../screens/DeepDiveScreen";
 import FollowUpScreen from "../screens/FollowUpScreen";
 import HistoryScreen from "../screens/HistoryScreen";
 import HomeScreen from "../screens/HomeScreen";
 import PrivacyScreen from "../screens/PrivacyScreen";
+import PriceWatchesScreen from "../screens/PriceWatchesScreen";
 import RegionScreen from "../screens/RegionScreen";
 import ResultsScreen from "../screens/ResultsScreen";
 import SearchResultDetailScreen from "../screens/SearchResultDetailScreen";
@@ -106,6 +108,16 @@ export default function RootNavigator() {
             <Stack.Screen
               name="SearchResultDetail"
               component={SearchResultDetailScreen}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="DeepDive"
+              component={DeepDiveScreen}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="PriceWatches"
+              component={PriceWatchesScreen}
               options={{ headerShown: false }}
             />
             <Stack.Screen

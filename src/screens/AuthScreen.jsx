@@ -10,7 +10,7 @@ function getAuthErrorMessage(error) {
   return error.message || "Something went wrong. Please try again.";
 }
 
-export default function AuthScreen({ navigation }) {
+export default function AuthScreen({ navigation, route }) {
   const { width } = useWindowDimensions();
   const isCompact = width <= 415;
 
@@ -108,7 +108,11 @@ export default function AuthScreen({ navigation }) {
         {/* Header */}
         <View className="relative min-h-[44px] w-full flex-row items-center justify-between">
           <View className={cx("z-10 flex-row items-center justify-start", isCompact ? "min-w-[72px]" : "min-w-[96px]")}>
-            <HeaderBackButton label="Settings" onPress={() => navigation.goBack()} testID="auth.backButton" />
+            <HeaderBackButton
+              label={route?.params?.backLabel || "Settings"}
+              onPress={() => navigation.goBack()}
+              testID="auth.backButton"
+            />
           </View>
           <Text className="absolute inset-x-0 text-center text-base font-semibold text-ink">
             Account

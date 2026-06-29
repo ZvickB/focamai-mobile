@@ -68,9 +68,13 @@ function AccountSection({ navigation }) {
         <SettingsSectionHeader title="Account" />
         <View className="border-b border-t border-line">
           <SettingsRow
-            isLast
             label="Sign in"
             onPress={() => navigation.navigate("Auth")}
+          />
+          <SettingsRow
+            isLast
+            label="Price watches"
+            onPress={() => navigation.navigate("PriceWatches")}
           />
         </View>
       </View>
@@ -103,6 +107,13 @@ function AccountSection({ navigation }) {
           <LogOut color="#78716c" size={16} strokeWidth={2} />
           <Text className="text-sm font-semibold text-stone-600">Sign out</Text>
         </Pressable>
+      </View>
+      <View className="border-b border-t border-line">
+        <SettingsRow
+          isLast
+          label="Price watches"
+          onPress={() => navigation.navigate("PriceWatches")}
+        />
       </View>
     </View>
   );
