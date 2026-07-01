@@ -6,7 +6,6 @@ import {
   HeaderBackButton,
   ProductImageFrame,
   ScreenContainer,
-  Surface,
 } from "../components/MobileUI";
 import { FinalizeLoadingState } from "../search/FinalizeLoadingState";
 import { SearchProgressStatus } from "../search/SearchProgressStatus";
@@ -145,27 +144,13 @@ function SelectedResultImagePanel({ isCompact, item, onPress }) {
   }
 
   return (
-    <Surface className="overflow-hidden bg-white px-0 py-0">
+    <View className="overflow-hidden">
       <Pressable
         accessibilityLabel={`Open selected result details: ${item.title}`}
         accessibilityRole="button"
-        className={
-          isCompact
-            ? "gap-4 px-4 py-4"
-            : "min-h-[190px] flex-row items-stretch gap-4 px-4 py-5"
-        }
+        className="min-h-[190px] flex-row items-stretch gap-4 px-4 py-5"
         onPress={onPress}
       >
-        {isCompact ? (
-          <ProductImageFrame
-            containerClassName="h-40 w-full"
-            frameClassName="rounded-[18px] bg-white p-1.5"
-            image={item.image}
-            imageClassName="rounded-[14px]"
-            title={displayTitle || item.title}
-          />
-        ) : null}
-
         <View className="min-w-0 flex-1 justify-between gap-4">
           <View className="gap-2">
             <Text
@@ -186,17 +171,15 @@ function SelectedResultImagePanel({ isCompact, item, onPress }) {
           </View>
         </View>
 
-        {isCompact ? null : (
-          <ProductImageFrame
-            containerClassName="h-44 w-[176px]"
-            frameClassName="-mt-2 rounded-[18px] bg-white p-1.5"
-            image={item.image}
-            imageClassName="rounded-[14px]"
-            title={displayTitle || item.title}
-          />
-        )}
+        <ProductImageFrame
+          containerClassName="h-44 w-[176px]"
+          frameClassName="-mt-2 rounded-[18px] bg-white p-1.5"
+          image={item.image}
+          imageClassName="rounded-[14px]"
+          title={displayTitle || item.title}
+        />
       </Pressable>
-    </Surface>
+    </View>
   );
 }
 
