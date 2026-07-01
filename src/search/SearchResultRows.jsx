@@ -110,7 +110,7 @@ export function FocusedPickRow({
               <Text className="text-[11px] font-medium text-stone-500" numberOfLines={1}>
                 {priceLabel}
               </Text>
-              <View className="flex-row items-center gap-1">
+              <View className="flex-row items-center gap-1" style={{ minHeight: 16 }}>
                 <Star color="#0F6175" opacity={0.55} size={10} strokeWidth={2} />
                 <Text className="text-[11px] text-stone-500" numberOfLines={1}>
                   {ratingLabel}

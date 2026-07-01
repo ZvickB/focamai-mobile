@@ -375,7 +375,10 @@ export function ProductImageFrame({
       <Image
         accessibilityLabel={title}
         className={cx("h-full w-full", imageClassName)}
-        onError={() => setHasImageError(true)}
+        onError={(event) => {
+          console.warn("ProductImageFrame failed to load", image, event.nativeEvent?.error);
+          setHasImageError(true);
+        }}
         resizeMode="contain"
         source={{ uri: image }}
       />

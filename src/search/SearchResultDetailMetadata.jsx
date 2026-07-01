@@ -178,7 +178,7 @@ export function DetailRatingStars({ rating }) {
   const roundedRating = Math.round(ratingValue);
 
   return (
-    <View className="flex-row gap-0.5" accessibilityLabel={formatRating(rating)}>
+    <View className="flex-row gap-0.5" style={{ minHeight: 18 }} accessibilityLabel={formatRating(rating)}>
       {Array.from({ length: 5 }).map((_, index) => (
         <Star
           key={index}
