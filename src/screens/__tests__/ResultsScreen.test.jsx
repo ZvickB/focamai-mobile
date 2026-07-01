@@ -102,6 +102,14 @@ describe("ResultsScreen", () => {
     });
 
     expect(getByLabelText("Selected result. Open result: Second compact stroller")).toBeTruthy();
+
+    fireEvent.scroll(UNSAFE_getByType(ScrollView), {
+      nativeEvent: {
+        contentOffset: { y: 199 },
+      },
+    });
+
+    expect(getByLabelText("Selected result. Open result: First travel stroller")).toBeTruthy();
   });
 
   it("starts a retry suggestion as a fresh refine flow", () => {

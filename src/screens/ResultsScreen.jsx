@@ -15,6 +15,8 @@ import { SearchResultsSection } from "../search/SearchResultsSection";
 import { useSearchFlow } from "../search/SearchFlowContext";
 import { getProductDisplayTitle } from "../search/productTitle";
 
+const RESULT_ROW_HANDOFF_PX = 10;
+
 function ResultsTopBar({ onBack, onNewSearch }) {
   return (
     <View className="w-full max-w-[430px] self-center">
@@ -77,7 +79,7 @@ function SelectedRating({ rating }) {
   const filledStars = Math.max(0, Math.min(5, Math.round(ratingValue)));
 
   return (
-    <View className="flex-row items-center gap-1">
+    <View className="flex-row items-center gap-1" style={{ minHeight: 18 }}>
       {[0, 1, 2, 3, 4].map((starIndex) => (
         <Star
           color="#0F6175"
@@ -109,6 +111,38 @@ function SelectedResultImagePanel({ isCompact, item, onPress }) {
     item.caveat ||
     featureBullets[0] ||
     "A focused match for this search.";
+
+  if (isCompact) {
+    return (
+      <View className="overflow-hidden">
+        <Pressable
+          accessibilityLabel={`Open selected result details: ${item.title}`}
+          accessibilityRole="button"
+          className="min-h-[136px] flex-row items-center gap-4 px-[10px] py-2"
+          onPress={onPress}
+        >
+          <View className="min-w-0 flex-1 gap-2">
+            <Text
+              className="text-base font-semibold leading-[22px] text-ink"
+              ellipsizeMode="tail"
+              numberOfLines={3}
+            >
+              {displayTitle || item.title}
+            </Text>
+            <Text className="text-sm font-semibold text-stone-700">{priceLabel}</Text>
+          </View>
+
+          <ProductImageFrame
+            containerClassName="h-32 w-[48%]"
+            frameClassName="rounded-[18px] bg-white p-1.5"
+            image={item.image}
+            imageClassName="rounded-[14px]"
+            title={displayTitle || item.title}
+          />
+        </Pressable>
+      </View>
+    );
+  }
 
   return (
     <Surface className="overflow-hidden bg-white px-0 py-0">
@@ -223,7 +257,7 @@ export default function ResultsScreen({ navigation }) {
         return;
       }
 
-      const visibleTop = scrollY + 4;
+      const selectionLine = scrollY + RESULT_ROW_HANDOFF_PX;
       const rows = Object.entries(rowLayouts)
         .map(([index, layout]) => ({
           index: Number(index),
@@ -232,7 +266,7 @@ export default function ResultsScreen({ navigation }) {
         }))
         .filter((row) => row.index >= 0 && row.index < focusedPickCount)
         .sort((firstRow, secondRow) => firstRow.top - secondRow.top);
-      const topVisibleRow = rows.find((row) => row.bottom > visibleTop) || rows[0];
+      const topVisibleRow = rows.find((row) => row.bottom > selectionLine) || rows[0];
 
       if (topVisibleRow) {
         setSelectedIndex((currentIndex) =>
