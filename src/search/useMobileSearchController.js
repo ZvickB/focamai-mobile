@@ -135,13 +135,17 @@ export function mergeEnrichmentIntoResults(currentResults, entries) {
       delivery: normalizeEnrichmentText(entry.delivery) || result.delivery || "",
       feature_bullets: featureBullets.length ? featureBullets : result.feature_bullets,
       fit_reason: fitReason || result.fit_reason,
-      image: entry.image || result.image,
+      image:
+        result.moderation?.outcome === "hide_image" || entry.moderation?.outcome === "hide_image"
+          ? ""
+          : entry.image || result.image,
       isPrime: Boolean(
         result.isPrime ||
         isPositivePrimeFlag(entry.isPrime) ||
         isPositivePrimeFlag(entry.is_prime),
       ),
       link: entry.link || result.link,
+      moderation: entry.moderation || result.moderation,
     };
   });
 }

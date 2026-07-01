@@ -42,6 +42,7 @@ Mobile result rows, the selected-result display panel, and detail headings use n
 - Deep Dive stays eligibility-controlled and explicit. Mobile keeps enrichment polling quietly until eligibility settles or the 30-second window ends, never runs the provider automatically, and opens a dedicated native screen for verified lower offers plus available review signals. The authenticated request has a 60-second app cutoff and preserves the web CA-to-US USD fallback. Keep Deep Dive off shortlist rows and keep Amazon as the primary detail CTA.
 
 **What not to do:**
+- Do not copy the web/backend content-moderation rule engine into mobile. The shared backend owns the frum-default policy, cache sanitation, and AI-suggestion checks; mobile only preserves returned moderation metadata and renders the native hidden-image state.
 - Do not copy the 1552-line web `useGuidedSearch.js` wholesale. That's what broke `main`. The lesson was not "don't build complex things" — it was "don't port complexity before the foundation is proven."
 - Do not assume all web data-path features are done. Add missing product behavior in bounded slices when the mobile UX needs it.
 - Do not add analytics, broader persistence, or new marketplace behavior yet.

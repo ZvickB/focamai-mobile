@@ -119,6 +119,10 @@ function normalizeDetailRouteItem(routeItem) {
     id: normalizePrimitive(routeItem.id || routeItem.candidateId || routeItem.candidate_id),
     image: normalizePrimitive(routeItem.image || routeItem.imageUrl),
     link: normalizePrimitive(routeItem.link || routeItem.url),
+    moderation:
+      routeItem.moderation && typeof routeItem.moderation === "object"
+        ? routeItem.moderation
+        : null,
     numericPrice: normalizePositiveNumber(
       routeItem.numericPrice ?? routeItem.numeric_price ?? routeItem.extracted_price,
     ),

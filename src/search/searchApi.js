@@ -475,6 +475,24 @@ function normalizeDeepDiveEligibility(value) {
   };
 }
 
+function normalizeModeration(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return null;
+  }
+
+  const outcome = String(value.outcome || "").trim();
+
+  if (!['allow', 'hide_image'].includes(outcome)) {
+    return null;
+  }
+
+  return {
+    matchedField: String(value.matchedField || "").trim(),
+    outcome,
+    reason: String(value.reason || "").trim(),
+  };
+}
+
 function mergeFinalResultsWithCandidatePool(results, candidatePool) {
   if (!Array.isArray(results)) {
     return [];
@@ -495,8 +513,11 @@ function mergeFinalResultsWithCandidatePool(results, candidatePool) {
     return {
       ...candidate,
       ...result,
-      image: candidate.image || result.image,
+      image: candidate.moderation?.outcome === "hide_image"
+        ? ""
+        : candidate.image || result.image,
       link: candidate.link || result.link,
+      moderation: candidate.moderation || result.moderation,
     };
   });
 }
@@ -519,6 +540,7 @@ export function normalizeFinalResults(results, candidatePool, identityScope = ""
     image: item?.image || "",
     isPrime: isPositivePrimeFlag(item?.isPrime) || isPositivePrimeFlag(item?.is_prime),
     link: item?.link || "",
+    moderation: normalizeModeration(item?.moderation),
     numericPrice: getPositiveNumericPrice(item),
     price: item?.price || "Price not shown",
     provider: item?.subtitle || item?.source || item?.provider || "Unknown source",

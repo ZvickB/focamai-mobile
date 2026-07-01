@@ -242,7 +242,12 @@ export default function DeepDiveScreen({ navigation, route }) {
 
         {item ? (
           <Surface className="flex-row items-center gap-4">
-            <ProductImageFrame containerClassName="h-20 w-20" image={item.image} title={item.title} />
+            <ProductImageFrame
+              containerClassName="h-20 w-20"
+              image={item.image}
+              moderation={item.moderation}
+              title={item.title}
+            />
             <View className="min-w-0 flex-1 gap-1">
               <Text className="text-base font-semibold leading-6 text-ink" numberOfLines={2}>
                 {getProductDisplayTitle(item.title)}

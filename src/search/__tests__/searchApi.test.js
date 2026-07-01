@@ -406,4 +406,30 @@ describe("normalizeFinalResults", () => {
     expect(merged.image).toBe("pool-image.jpg");
     expect(merged.link).toBe("pool-link");
   });
+
+  it("preserves hidden-image moderation and does not restore the image", () => {
+    const result = normalizeFinalResults(
+      [{ candidate_id: "c1", title: "Sensitive product", image: "final-image.jpg" }],
+      {
+        candidates: [
+          {
+            candidate_id: "c1",
+            image: "pool-image.jpg",
+            moderation: {
+              outcome: "hide_image",
+              reason: "swimwear",
+              matchedField: "title",
+            },
+          },
+        ],
+      },
+    )[0];
+
+    expect(result.image).toBe("");
+    expect(result.moderation).toEqual({
+      outcome: "hide_image",
+      reason: "swimwear",
+      matchedField: "title",
+    });
+  });
 });

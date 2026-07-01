@@ -87,6 +87,7 @@ function HistoryPickPreview({ item, index }) {
         frameClassName="rounded-[14px] border border-line bg-white p-1"
         image={item?.image}
         imageClassName="rounded-[10px]"
+        moderation={item?.moderation}
         title={title}
       />
       <View className="min-w-0 flex-1 gap-1">

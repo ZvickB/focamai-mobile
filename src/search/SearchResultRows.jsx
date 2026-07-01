@@ -91,6 +91,7 @@ export function FocusedPickRow({
             frameClassName="rounded-[12px] bg-white p-1"
             image={item.image}
             imageClassName="rounded-[9px]"
+            moderation={item.moderation}
             title={displayTitle || item.title}
           />
           <View className="min-w-0 flex-1">

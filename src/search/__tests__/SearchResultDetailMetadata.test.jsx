@@ -115,6 +115,21 @@ describe("SearchResultDetailMetadata", () => {
 });
 
 describe("SearchResultDetailHero", () => {
+  it("shows the sensitive-content placeholder for moderated images", () => {
+    const { getByText } = render(
+      <SearchResultDetailHero
+        item={{
+          ...baseItem,
+          image: "https://example.com/sensitive.jpg",
+          moderation: { outcome: "hide_image", reason: "swimwear" },
+        }}
+        rank={1}
+      />,
+    );
+
+    expect(getByText("Image hidden for sensitive content")).toBeTruthy();
+  });
+
   it("treats missing rating and reviews as unavailable instead of zero", () => {
     const { getByText, queryByText } = render(
       <SearchResultDetailHero

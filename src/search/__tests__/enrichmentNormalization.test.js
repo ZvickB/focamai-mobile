@@ -137,6 +137,23 @@ describe("mergeEnrichmentIntoResults", () => {
     expect(merged[1]).toEqual(baseResults[1]);
   });
 
+  it("does not restore an image hidden by moderation", () => {
+    const results = [
+      {
+        ...baseResults[0],
+        image: "",
+        moderation: { outcome: "hide_image", reason: "swimwear" },
+      },
+    ];
+
+    const merged = mergeEnrichmentIntoResults(results, [
+      { candidate_id: "product-1", image: "enriched-image.jpg" },
+    ]);
+
+    expect(merged[0].image).toBe("");
+    expect(merged[0].moderation.outcome).toBe("hide_image");
+  });
+
   it("preserves existing values when enrichment fields are empty", () => {
     const entries = [
       {

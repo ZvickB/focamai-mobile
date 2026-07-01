@@ -351,9 +351,26 @@ export function ProductImageFrame({
   frameClassName = "rounded-[18px] border border-line bg-white p-2",
   image,
   imageClassName = "rounded-md",
+  moderation,
   title,
 }) {
   const [hasImageError, setHasImageError] = useState(false);
+
+  if (moderation?.outcome === "hide_image") {
+    return (
+      <View
+        accessibilityLabel="Image hidden for sensitive content"
+        className={cx(
+          "items-center justify-center rounded-[18px] border border-line bg-cream px-3",
+          containerClassName,
+        )}
+      >
+        <Text className="text-center text-xs font-semibold leading-4 text-stone-500">
+          Image hidden for sensitive content
+        </Text>
+      </View>
+    );
+  }
 
   if (!image || hasImageError) {
     return (

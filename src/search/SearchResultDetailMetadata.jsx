@@ -254,6 +254,7 @@ export function SearchResultDetailHero({ className = "", item, rank }) {
         containerClassName={isCompact ? "h-56 w-full" : "h-72 w-full"}
         image={item.image}
         imageClassName="rounded-md"
+        moderation={item.moderation}
         title={displayTitle || detailValue(item.title, "Focused pick")}
       />
       <View className="gap-4">

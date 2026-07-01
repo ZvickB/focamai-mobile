@@ -136,6 +136,7 @@ function SelectedResultImagePanel({ isCompact, item, onPress }) {
             frameClassName="rounded-[18px] bg-white p-1.5"
             image={item.image}
             imageClassName="rounded-[14px]"
+            moderation={item.moderation}
             title={displayTitle || item.title}
           />
         </Pressable>
@@ -176,6 +177,7 @@ function SelectedResultImagePanel({ isCompact, item, onPress }) {
           frameClassName="-mt-2 rounded-[18px] bg-white p-1.5"
           image={item.image}
           imageClassName="rounded-[14px]"
+          moderation={item.moderation}
           title={displayTitle || item.title}
         />
       </Pressable>
