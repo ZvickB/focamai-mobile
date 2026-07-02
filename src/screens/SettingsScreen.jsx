@@ -1,7 +1,11 @@
-import { ChevronRight, LogOut, UserCircle } from "lucide-react-native";
-import { Pressable, Text, useWindowDimensions, View } from "react-native";
-import { HeaderBackButton, Button, ScreenContainer, cx } from "../components/MobileUI";
+import { ChevronRight, LogOut, Trash2, UserCircle } from "lucide-react-native";
+import { Alert, Pressable, Text, useWindowDimensions, View } from "react-native";
+import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { HeaderBackButton, ScreenContainer, cx } from "../components/MobileUI";
 import { useAuth } from "../contexts/useAuth";
+import { deleteAccount } from "../lib/account/deleteAccount";
+import { localHistoryStore } from "../lib/history/localHistoryStore";
 
 function SettingsHeader({ onBack }) {
   const { width } = useWindowDimensions();
@@ -58,7 +62,38 @@ function SettingsRow({ isLast = false, label, onPress }) {
 }
 
 function AccountSection({ navigation }) {
-  const { configured, user, signOut } = useAuth();
+  const { configured, session, user, signOut } = useAuth();
+  const queryClient = useQueryClient();
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
+
+  async function handleConfirmedDelete() {
+    setIsDeleting(true);
+    setDeleteError("");
+
+    try {
+      await deleteAccount(session?.access_token);
+      await localHistoryStore.clear();
+      queryClient.clear();
+      await signOut({ scope: "local" });
+      navigation.reset({ index: 0, routes: [{ name: "Search" }] });
+    } catch (error) {
+      setDeleteError(error instanceof Error ? error.message : "We could not delete your account. Please try again.");
+    } finally {
+      setIsDeleting(false);
+    }
+  }
+
+  function confirmDelete() {
+    Alert.alert(
+      "Delete your Focamai account?",
+      "This permanently deletes your account, saved searches, price watches, and Deep Dive usage record. This cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        { text: "Delete account", style: "destructive", onPress: handleConfirmedDelete },
+      ],
+    );
+  }
 
   if (!configured) return null;
 
@@ -107,6 +142,28 @@ function AccountSection({ navigation }) {
           <LogOut color="#78716c" size={16} strokeWidth={2} />
           <Text className="text-sm font-semibold text-stone-600">Sign out</Text>
         </Pressable>
+        <View className="border-t border-line pt-3">
+          <Text className="text-sm leading-5 text-stone-600">
+            Permanently delete your account and account-associated data.
+          </Text>
+          <Pressable
+            accessibilityLabel="Delete account"
+            accessibilityRole="button"
+            className="mt-3 min-h-[44px] flex-row items-center justify-center gap-2 rounded-[18px] border border-red-200 bg-red-50"
+            disabled={isDeleting}
+            onPress={confirmDelete}
+          >
+            <Trash2 color="#b91c1c" size={16} strokeWidth={2} />
+            <Text className="text-sm font-semibold text-red-700">
+              {isDeleting ? "Deleting account…" : deleteError ? "Try deleting again" : "Delete account"}
+            </Text>
+          </Pressable>
+          {deleteError ? (
+            <Text accessibilityRole="alert" className="mt-2 text-sm leading-5 text-red-700">
+              {deleteError}
+            </Text>
+          ) : null}
+        </View>
       </View>
       <View className="border-b border-t border-line">
         <SettingsRow

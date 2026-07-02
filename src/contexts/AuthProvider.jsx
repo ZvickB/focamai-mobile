@@ -126,13 +126,13 @@ export function AuthProvider({ children }) {
     return { error: new Error("Google sign-in is not yet available on mobile.") };
   }, []);
 
-  const signOut = useCallback(async () => {
+  const signOut = useCallback(async (options) => {
     const client = getSupabaseClient();
     if (!client) {
       return { error: null };
     }
 
-    return client.auth.signOut();
+    return client.auth.signOut(options);
   }, []);
 
   const value = useMemo(
