@@ -10,6 +10,7 @@ import {
   ScreenContainer,
   cx,
 } from "../components/MobileUI";
+import { useAuth } from "../contexts/useAuth";
 import { MarketplacePromptSection } from "../search/MarketplacePromptSection";
 import { SearchEntrySection } from "../search/SearchEntrySection";
 import { SearchFlowProgressCue } from "../search/SearchFlowProgressCue";
@@ -71,10 +72,19 @@ function SettingsIconButton({ onPress }) {
   );
 }
 
-function SearchHeader({ onOpenSettings }) {
+function SearchHeader({ onOpenSettings, onSignIn, showSignIn }) {
   return (
     <AppHeader
-      left={<View className="h-11 w-11" />}
+      left={showSignIn ? (
+        <Pressable
+          accessibilityRole="button"
+          className="min-h-[44px] justify-center pr-2"
+          onPress={onSignIn}
+          testID="search.signInButton"
+        >
+          <Text className="text-sm font-semibold text-accent">Sign in</Text>
+        </Pressable>
+      ) : <View className="h-11 w-11" />}
       right={<SettingsIconButton onPress={onOpenSettings} />}
     />
   );
@@ -111,13 +121,16 @@ export default function SearchScreen({ navigation, route }) {
   const isCompact = width <= 415;
   const pendingNavigationToFollowUpRef = useRef(null);
   const [historyPrefill, setHistoryPrefill] = useState(null);
+  const { configured: authConfigured, user } = useAuth();
   const {
     activeSearchSession,
+    clearRestoredFlowPhase,
     confirmSelectedAmazonDomain,
     errorMessage,
     followUpNotes,
     isDiscovering,
     productQuery,
+    restoredFlowPhase,
     selectedAmazonDomain,
     showMarketplacePrompt,
     setFollowUpNotes,
@@ -125,6 +138,15 @@ export default function SearchScreen({ navigation, route }) {
     setSelectedAmazonDomain,
     startDiscoverySearch,
   } = useSearchFlow();
+
+  useEffect(() => {
+    if (!restoredFlowPhase) {
+      return;
+    }
+
+    clearRestoredFlowPhase();
+    navigation.navigate(restoredFlowPhase === "results" ? "Results" : "FollowUp");
+  }, [clearRestoredFlowPhase, navigation, restoredFlowPhase]);
 
   useEffect(() => {
     const routeAmazonDomain = route?.params?.selectedAmazonDomain;
@@ -231,6 +253,8 @@ export default function SearchScreen({ navigation, route }) {
         <View className={isCompact ? "gap-3" : "gap-4"}>
           <SearchHeader
             onOpenSettings={() => navigation.navigate("Settings")}
+            onSignIn={() => navigation.navigate("Auth", { backLabel: "Search" })}
+            showSignIn={authConfigured && !user}
           />
 
           <View className="w-full self-center">

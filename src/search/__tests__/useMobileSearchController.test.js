@@ -43,6 +43,12 @@ jest.mock("../../lib/history/historyStore", () => ({
   },
 }));
 
+jest.mock("../searchFlowSnapshot", () => ({
+  clearFlowSnapshot: jest.fn().mockResolvedValue(undefined),
+  readFlowSnapshot: jest.fn().mockResolvedValue(null),
+  saveFlowSnapshot: jest.fn().mockResolvedValue(undefined),
+}));
+
 function createDeferred() {
   let reject;
   let resolve;

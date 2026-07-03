@@ -23,6 +23,7 @@ import {
 } from "./amazonMarketplaces";
 import { historyStore } from "../lib/history/historyStore";
 import { buildPhaseEvent, replacePhaseEvent } from "./searchPhaseEvents";
+import { clearFlowSnapshot, readFlowSnapshot, saveFlowSnapshot } from "./searchFlowSnapshot";
 
 const ENRICHMENT_POLL_INTERVAL_MS = 1500;
 const ENRICHMENT_POLL_TIMEOUT_MS = 30000;
@@ -250,6 +251,7 @@ export function useMobileSearchController() {
   const [retryFeedback, setRetryFeedback] = useState("");
   const [shouldAskMarketplaceBeforeSearch, setShouldAskMarketplaceBeforeSearch] = useState(false);
   const [showMarketplacePrompt, setShowMarketplacePrompt] = useState(false);
+  const [restoredFlowPhase, setRestoredFlowPhase] = useState(null);
   const pendingMarketplaceSearchRef = useRef(null);
 
   function updatePhaseEvent(nextEvent) {
@@ -569,6 +571,35 @@ export function useMobileSearchController() {
   }, [retryFeedback]);
 
   useEffect(() => {
+    const discoveryToken = activeSearchSession?.discoveryToken || discoverySummary?.discoveryToken;
+    const submittedQuery = activeSearchSession?.submittedQuery || discoverySummary?.query;
+
+    if (!discoveryToken || !submittedQuery) {
+      return;
+    }
+
+    const baseSnapshot = {
+      amazonDomain: activeSearchSession?.amazonDomain || discoverySummary?.amazonDomain || "",
+      candidatePool: activeSearchSession?.candidatePool || discoverySummary?.candidatePool || null,
+      discoveryToken,
+      followUpNotes: followUpNotesRef.current,
+      previewItems: Array.isArray(discoverySummary?.previewItems) ? discoverySummary.previewItems : [],
+      productQuery,
+      refinementPrompt,
+      submittedQuery,
+    };
+
+    if (finalResults.length > 0) {
+      void saveFlowSnapshot({ ...baseSnapshot, finalResults, phase: "results" });
+      return;
+    }
+
+    if (refinementPrompt) {
+      void saveFlowSnapshot({ ...baseSnapshot, phase: "refine" });
+    }
+  }, [activeSearchSession, discoverySummary, finalResults, productQuery, refinementPrompt]);
+
+  useEffect(() => {
     let isMounted = true;
 
     Promise.all([
@@ -594,6 +625,70 @@ export function useMobileSearchController() {
       isMounted = false;
     };
   }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    readFlowSnapshot().then((snapshot) => {
+      if (!isMounted || !snapshot || activeSearchSessionRef.current) {
+        return;
+      }
+
+      const requestId = searchRequestIdRef.current + 1;
+      searchRequestIdRef.current = requestId;
+
+      const restoredSession = {
+        amazonDomain: snapshot.amazonDomain || DEFAULT_AMAZON_DOMAIN,
+        candidatePool: snapshot.candidatePool || null,
+        candidateCount: Array.isArray(snapshot.candidatePool?.candidates)
+          ? snapshot.candidatePool.candidates.length
+          : 0,
+        constraintRefresh: null,
+        discoveryToken: snapshot.discoveryToken,
+        phases: {
+          discover: "complete",
+          finalize: snapshot.phase === "results" ? "complete" : "idle",
+          refine: "complete",
+        },
+        previewCount: Array.isArray(snapshot.previewItems) ? snapshot.previewItems.length : 0,
+        requestId,
+        submittedQuery: snapshot.submittedQuery,
+      };
+
+      setSession(restoredSession);
+      setProductQuery(snapshot.productQuery || snapshot.submittedQuery || "");
+      setFollowUpNotes(snapshot.followUpNotes || "");
+      setDiscoverySummary({
+        amazonDomain: restoredSession.amazonDomain,
+        candidateCount: restoredSession.candidateCount,
+        candidatePool: restoredSession.candidatePool,
+        discoveryToken: restoredSession.discoveryToken,
+        previewCount: restoredSession.previewCount,
+        previewItems: Array.isArray(snapshot.previewItems) ? snapshot.previewItems : [],
+        query: snapshot.submittedQuery,
+        source: "restored",
+        timingMs: undefined,
+      });
+
+      if (snapshot.refinementPrompt) {
+        setRefinementPrompt(snapshot.refinementPrompt);
+      }
+
+      if (snapshot.phase === "results" && Array.isArray(snapshot.finalResults)) {
+        setFinalResults(snapshot.finalResults);
+      }
+
+      setRestoredFlowPhase(snapshot.phase);
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  function clearRestoredFlowPhase() {
+    setRestoredFlowPhase(null);
+  }
 
   function runDiscoverySearch({
     amazonDomainOverride,
@@ -643,6 +738,7 @@ export function useMobileSearchController() {
     setDiscoverySummary(null);
     setFinalResults([]);
     setFollowUpNotes(String(initialFollowUpNotes ?? "").trim());
+    void clearFlowSnapshot();
     setRetryFeedback("");
     setPhaseEvents([
       ...(previousSessionWasRunning
@@ -1438,6 +1534,7 @@ export function useMobileSearchController() {
     activeSearchSession,
     canFinalize,
     canRequestRetryAdvice,
+    clearRestoredFlowPhase,
     dismissQuerySuggestion,
     discoverySummary,
     errorMessage,
@@ -1457,6 +1554,7 @@ export function useMobileSearchController() {
     querySuggestion,
     refinementPrompt,
     requestRetryAdvice,
+    restoredFlowPhase,
     retryAdvice,
     retryAdviceError,
     retryFeedback,
