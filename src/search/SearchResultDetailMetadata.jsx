@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { CheckCircle2, ChevronDown, Info, ShieldCheck, Sparkles, Star } from "lucide-react-native";
 import { Pressable, Text, useWindowDimensions, View } from "react-native";
-import { cx, ProductImageFrame, Surface } from "../components/MobileUI";
+import { cx, ProductImageFrame, SoftHeroGradient, Surface } from "../components/MobileUI";
 import { formatDisplayPrice } from "./formatDisplayPrice";
 import { getDeliverySignal } from "./primeEligibility";
 import { getProductDisplayTitle } from "./productTitle";
@@ -249,49 +249,52 @@ export function SearchResultDetailHero({ className = "", item, rank }) {
   const displayTitle = getProductDisplayTitle(item.title);
 
   return (
-    <View className={cx("gap-4", className)}>
-      <ProductImageFrame
-        containerClassName={isCompact ? "h-56 w-full" : "h-72 w-full"}
-        image={item.image}
-        imageClassName="rounded-md"
-        moderation={item.moderation}
-        title={displayTitle || detailValue(item.title, "Focused pick")}
-      />
-      <View className="gap-4">
-        <View className="flex-row flex-wrap items-center justify-between gap-2">
-          <View className="rounded-full border border-line bg-white px-3 py-1.5">
-            <Text className="text-xs font-semibold text-accent">
-              {rank ? `Pick #${rank}` : "Focused pick"}
+    <SoftHeroGradient>
+      <View className={cx("gap-4 px-3 pb-5 pt-3", className)}>
+        <ProductImageFrame
+          containerClassName={isCompact ? "h-56 w-full" : "h-72 w-full"}
+          frameClassName="rounded-[18px] bg-transparent p-0"
+          image={item.image}
+          imageClassName="rounded-[18px]"
+          moderation={item.moderation}
+          title={displayTitle || detailValue(item.title, "Focused pick")}
+        />
+        <View className="gap-4">
+          <View className="flex-row flex-wrap items-center justify-between gap-2">
+            <View className="rounded-full border border-line bg-white px-3 py-1.5">
+              <Text className="text-xs font-semibold text-accent">
+                {rank ? `Pick #${rank}` : "Focused pick"}
+              </Text>
+            </View>
+            <View className="flex-row items-center gap-1.5">
+              <ShieldCheck color="#0F6175" size={17} strokeWidth={2} />
+              <Text className="text-sm font-semibold text-stone-600">{provider}</Text>
+            </View>
+          </View>
+          <View className="gap-1">
+            <Text className="text-lg font-semibold leading-6 text-ink">
+              {displayTitle || detailValue(item.title, "Untitled product")}
+            </Text>
+            <RawTitleDisclosure item={item} />
+          </View>
+          <View className="flex-row flex-wrap gap-2">
+            <HeroFact label="Price" value={price} />
+            <HeroFact label="Rating" value={rating} />
+            <HeroFact label="Reviews" value={reviews} />
+            {(() => {
+              const signal = getDeliverySignal(item);
+              return signal ? <HeroFact label="Delivery" value={signal.value} /> : null;
+            })()}
+          </View>
+          <View className="flex-row flex-wrap items-center gap-2">
+            <DetailRatingStars rating={item.rating} />
+            <Text className="text-sm font-medium text-stone-600">
+              {rating} - {reviews}
             </Text>
           </View>
-          <View className="flex-row items-center gap-1.5">
-            <ShieldCheck color="#0F6175" size={17} strokeWidth={2} />
-            <Text className="text-sm font-semibold text-stone-600">{provider}</Text>
-          </View>
-        </View>
-        <View className="gap-1">
-          <Text className="text-lg font-semibold leading-6 text-ink">
-            {displayTitle || detailValue(item.title, "Untitled product")}
-          </Text>
-          <RawTitleDisclosure item={item} />
-        </View>
-        <View className="flex-row flex-wrap gap-2">
-          <HeroFact label="Price" value={price} />
-          <HeroFact label="Rating" value={rating} />
-          <HeroFact label="Reviews" value={reviews} />
-          {(() => {
-            const signal = getDeliverySignal(item);
-            return signal ? <HeroFact label="Delivery" value={signal.value} /> : null;
-          })()}
-        </View>
-        <View className="flex-row flex-wrap items-center gap-2">
-          <DetailRatingStars rating={item.rating} />
-          <Text className="text-sm font-medium text-stone-600">
-            {rating} - {reviews}
-          </Text>
         </View>
       </View>
-    </View>
+    </SoftHeroGradient>
   );
 }
 

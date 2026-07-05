@@ -6,6 +6,7 @@ import {
   HeaderBackButton,
   ProductImageFrame,
   ScreenContainer,
+  SoftHeroGradient,
 } from "../components/MobileUI";
 import { FinalizeLoadingState } from "../search/FinalizeLoadingState";
 import { SearchProgressStatus } from "../search/SearchProgressStatus";
@@ -113,13 +114,22 @@ function SelectedResultImagePanel({ isCompact, item, onPress }) {
 
   if (isCompact) {
     return (
-      <View className="overflow-hidden">
+      <SoftHeroGradient>
         <Pressable
           accessibilityLabel={`Open selected result details: ${item.title}`}
           accessibilityRole="button"
           className="min-h-[136px] flex-row items-center gap-4 px-[10px] py-2"
           onPress={onPress}
         >
+          <ProductImageFrame
+            containerClassName="h-32 w-[48%]"
+            frameClassName="rounded-[18px] bg-white p-1.5"
+            image={item.image}
+            imageClassName="rounded-[14px]"
+            moderation={item.moderation}
+            title={displayTitle || item.title}
+          />
+
           <View className="min-w-0 flex-1 gap-2">
             <Text
               className="text-base font-semibold leading-[22px] text-ink"
@@ -130,28 +140,28 @@ function SelectedResultImagePanel({ isCompact, item, onPress }) {
             </Text>
             <Text className="text-sm font-semibold text-stone-700">{priceLabel}</Text>
           </View>
-
-          <ProductImageFrame
-            containerClassName="h-32 w-[48%]"
-            frameClassName="rounded-[18px] bg-white p-1.5"
-            image={item.image}
-            imageClassName="rounded-[14px]"
-            moderation={item.moderation}
-            title={displayTitle || item.title}
-          />
         </Pressable>
-      </View>
+      </SoftHeroGradient>
     );
   }
 
   return (
-    <View className="overflow-hidden">
+    <SoftHeroGradient>
       <Pressable
         accessibilityLabel={`Open selected result details: ${item.title}`}
         accessibilityRole="button"
         className="min-h-[190px] flex-row items-stretch gap-4 px-4 py-5"
         onPress={onPress}
       >
+        <ProductImageFrame
+          containerClassName="h-44 w-[176px]"
+          frameClassName="-mt-2 rounded-[18px] bg-white p-1.5"
+          image={item.image}
+          imageClassName="rounded-[14px]"
+          moderation={item.moderation}
+          title={displayTitle || item.title}
+        />
+
         <View className="min-w-0 flex-1 justify-between gap-4">
           <View className="gap-2">
             <Text
@@ -171,17 +181,8 @@ function SelectedResultImagePanel({ isCompact, item, onPress }) {
             <SelectedRating rating={item.rating} />
           </View>
         </View>
-
-        <ProductImageFrame
-          containerClassName="h-44 w-[176px]"
-          frameClassName="-mt-2 rounded-[18px] bg-white p-1.5"
-          image={item.image}
-          imageClassName="rounded-[14px]"
-          moderation={item.moderation}
-          title={displayTitle || item.title}
-        />
       </Pressable>
-    </View>
+    </SoftHeroGradient>
   );
 }
 

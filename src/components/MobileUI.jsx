@@ -1,15 +1,46 @@
 import { Image, Pressable, ScrollView, Text, useWindowDimensions, View } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ChevronLeft } from "lucide-react-native";
 import { appThemeTokens } from "../theme/themeTokens";
 
 const wordmarkImage = require("../../assets/wordmark.png");
 
+const PRODUCT_IMAGE_MAX_RETRIES = 1;
+const PRODUCT_IMAGE_RETRY_BASE_DELAY_MS = 350;
+const PRODUCT_IMAGE_RETRY_STAGGER_MS = 300;
+
+function getProductImageRetryDelay(image) {
+  const hash = String(image || "")
+    .split("")
+    .reduce((total, character) => (total + character.charCodeAt(0)) % PRODUCT_IMAGE_RETRY_STAGGER_MS, 0);
+
+  return PRODUCT_IMAGE_RETRY_BASE_DELAY_MS + hash;
+}
+
 export const fontGuidance = "font-guidance";
 
 export function cx(...classNames) {
   return classNames.filter(Boolean).join(" ");
+}
+
+export function SoftHeroGradient({ children, style }) {
+  return (
+    <LinearGradient
+      colors={[
+        "rgba(255, 255, 255, 0.4)",
+        "rgba(255, 255, 255, 0.4)",
+        "rgba(255, 255, 255, 0)",
+      ]}
+      end={{ x: 0.5, y: 1 }}
+      locations={[0, 0.75, 1]}
+      start={{ x: 0.5, y: 0 }}
+      style={[{ borderRadius: 24, overflow: "hidden" }, style]}
+    >
+      {children}
+    </LinearGradient>
+  );
 }
 
 export function ScreenContainer({
@@ -355,6 +386,25 @@ export function ProductImageFrame({
   title,
 }) {
   const [hasImageError, setHasImageError] = useState(false);
+  const [loadAttempt, setLoadAttempt] = useState(0);
+  const retryTimeoutRef = useRef(null);
+
+  useEffect(() => {
+    if (retryTimeoutRef.current) {
+      clearTimeout(retryTimeoutRef.current);
+      retryTimeoutRef.current = null;
+    }
+
+    setHasImageError(false);
+    setLoadAttempt(0);
+
+    return () => {
+      if (retryTimeoutRef.current) {
+        clearTimeout(retryTimeoutRef.current);
+        retryTimeoutRef.current = null;
+      }
+    };
+  }, [image]);
 
   if (moderation?.outcome === "hide_image") {
     return (
@@ -390,10 +440,24 @@ export function ProductImageFrame({
   return (
     <View className={cx(frameClassName, containerClassName)}>
       <Image
+        key={`${image}:${loadAttempt}`}
         accessibilityLabel={title}
         className={cx("h-full w-full", imageClassName)}
         onError={(event) => {
           console.warn("ProductImageFrame failed to load", image, event.nativeEvent?.error);
+
+          if (retryTimeoutRef.current) {
+            return;
+          }
+
+          if (loadAttempt < PRODUCT_IMAGE_MAX_RETRIES) {
+            retryTimeoutRef.current = setTimeout(() => {
+              retryTimeoutRef.current = null;
+              setLoadAttempt((currentAttempt) => currentAttempt + 1);
+            }, getProductImageRetryDelay(image));
+            return;
+          }
+
           setHasImageError(true);
         }}
         resizeMode="contain"
