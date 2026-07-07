@@ -34,6 +34,7 @@ function renderWithAuth(authOverrides = {}, routeOverrides = {}) {
   const authValue = {
     configured: true,
     loading: false,
+    requestPasswordReset: jest.fn().mockResolvedValue({ error: null }),
     session: null,
     signIn: jest.fn().mockResolvedValue({ data: { session: {} }, error: null }),
     signInWithGoogle: jest.fn().mockResolvedValue({ error: null }),
@@ -198,6 +199,29 @@ describe("AuthScreen", () => {
     await waitFor(() => {
       expect(getByText(/not configured/i)).toBeTruthy();
     });
+  });
+
+  it("requests a password reset for the entered email", async () => {
+    const { getByTestId, getByText, authValue } = renderWithAuth();
+
+    fireEvent.changeText(getByTestId("auth.emailInput"), "  test@example.com  ");
+    fireEvent.press(getByTestId("auth.forgotPasswordButton"));
+
+    await waitFor(() => {
+      expect(authValue.requestPasswordReset).toHaveBeenCalledWith({ email: "test@example.com" });
+      expect(getByText(/sent a password-reset link/i)).toBeTruthy();
+    });
+  });
+
+  it("requires an email before requesting a password reset", async () => {
+    const { getByTestId, getByText, authValue } = renderWithAuth();
+
+    fireEvent.press(getByTestId("auth.forgotPasswordButton"));
+
+    await waitFor(() => {
+      expect(getByText("Enter your email address first.")).toBeTruthy();
+    });
+    expect(authValue.requestPasswordReset).not.toHaveBeenCalled();
   });
 
   it("navigates back when back button is pressed", () => {

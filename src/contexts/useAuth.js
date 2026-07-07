@@ -5,6 +5,7 @@ export const AuthContext = createContext(null);
 const fallback = {
   configured: false,
   loading: false,
+  requestPasswordReset: async () => ({ error: new Error("Supabase auth is not configured.") }),
   session: null,
   signIn: async () => ({ error: new Error("Supabase auth is not configured.") }),
   signInWithGoogle: async () => ({ error: new Error("Supabase auth is not configured.") }),

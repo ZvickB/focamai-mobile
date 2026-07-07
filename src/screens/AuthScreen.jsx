@@ -14,7 +14,7 @@ export default function AuthScreen({ navigation, route }) {
   const { width } = useWindowDimensions();
   const isCompact = width <= 415;
 
-  const { configured, loading: authLoading, signIn, signUp } = useAuth();
+  const { configured, loading: authLoading, requestPasswordReset, signIn, signUp } = useAuth();
   const mode = route?.name === "CreateAccount" ? "sign-up" : "sign-in";
   const [email, setEmail] = useState(route?.params?.draftEmail || "");
   const [password, setPassword] = useState("");
@@ -71,6 +71,34 @@ export default function AuthScreen({ navigation, route }) {
     }
 
     navigation.goBack();
+  }
+
+  async function handleForgotPassword() {
+    setErrorMessage("");
+    setStatusMessage("");
+
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail) {
+      setErrorMessage("Enter your email address first.");
+      return;
+    }
+
+    setSubmitting(true);
+    let error = null;
+    try {
+      ({ error } = await requestPasswordReset({ email: trimmedEmail }));
+    } catch (resetError) {
+      error = resetError;
+    } finally {
+      setSubmitting(false);
+    }
+
+    if (error) {
+      setErrorMessage(getAuthErrorMessage(error));
+      return;
+    }
+
+    setStatusMessage("If an account exists for that email, we sent a password-reset link. Open it to choose a new password.");
   }
 
   return (
@@ -201,7 +229,16 @@ export default function AuthScreen({ navigation, route }) {
             </View>
             {mode === "sign-up" ? (
               <Text className="text-xs leading-5 text-stone-500">At least 6 characters.</Text>
-            ) : null}
+            ) : (
+              <Pressable
+                accessibilityRole="button"
+                disabled={isBusy}
+                onPress={handleForgotPassword}
+                testID="auth.forgotPasswordButton"
+              >
+                <Text className="text-right text-sm font-semibold text-accent">Forgot password?</Text>
+              </Pressable>
+            )}
           </View>
 
           {errorMessage ? (

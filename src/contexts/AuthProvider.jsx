@@ -121,6 +121,17 @@ export function AuthProvider({ children }) {
     return client.auth.signUp({ email, password });
   }, []);
 
+  const requestPasswordReset = useCallback(async ({ email }) => {
+    const client = getSupabaseClient();
+    if (!client) {
+      return { error: new Error("Supabase auth is not configured.") };
+    }
+
+    return client.auth.resetPasswordForEmail(email, {
+      redirectTo: "https://focamai.com/reset-password",
+    });
+  }, []);
+
   const signInWithGoogle = useCallback(async () => {
     // Stubbed until Slice 5 wires up expo-auth-session.
     return { error: new Error("Google sign-in is not yet available on mobile.") };
@@ -139,6 +150,7 @@ export function AuthProvider({ children }) {
     () => ({
       configured: isSupabaseAuthConfigured,
       loading,
+      requestPasswordReset,
       session,
       signIn,
       signInWithGoogle,
@@ -146,7 +158,7 @@ export function AuthProvider({ children }) {
       signUp,
       user: session?.user || null,
     }),
-    [loading, session, signIn, signInWithGoogle, signOut, signUp],
+    [loading, requestPasswordReset, session, signIn, signInWithGoogle, signOut, signUp],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
