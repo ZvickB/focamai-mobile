@@ -19,6 +19,10 @@ import { useSearchFlow } from "../search/SearchFlowContext";
 import { getProductDisplayTitle } from "../search/productTitle";
 import { useAuth } from "../contexts/useAuth";
 import { useWatches } from "../components/watch/useWatches";
+import {
+  isMobileDeepDiveUiEnabled,
+  isMobilePriceWatchUiEnabled,
+} from "../config/features";
 
 function openRetailerLink(link) {
   if (!link) {
@@ -139,13 +143,22 @@ function normalizeDetailRouteItem(routeItem) {
 
 function ProductActions({ activeSearchSession, isFinalizedItem, item, navigation }) {
   const { user } = useAuth();
-  const { create, watches } = useWatches({ enabled: Boolean(user && isFinalizedItem) });
+  const deepDiveUiEnabled = isMobileDeepDiveUiEnabled();
+  const priceWatchUiEnabled = isMobilePriceWatchUiEnabled();
+  const { create, watches } = useWatches({
+    enabled: Boolean(priceWatchUiEnabled && user && isFinalizedItem),
+  });
   const [watchMessage, setWatchMessage] = useState("");
   const [watchSaving, setWatchSaving] = useState(false);
   const amazonDomain = activeSearchSession?.amazonDomain || "amazon.com";
   const eligibility = item.deepDiveEligibility;
-  const canShowDeepDive = isFinalizedItem && ["show", "maybe"].includes(eligibility?.recommendation);
-  const canWatch = Boolean(isFinalizedItem && item.asin && item.numericPrice);
+  const canShowDeepDive =
+    deepDiveUiEnabled &&
+    isFinalizedItem &&
+    ["show", "maybe"].includes(eligibility?.recommendation);
+  const canWatch = Boolean(
+    priceWatchUiEnabled && isFinalizedItem && item.asin && item.numericPrice,
+  );
   const existingWatch = watches.find(
     (watch) => watch.asin === item.asin && watch.amazonDomain === amazonDomain,
   );

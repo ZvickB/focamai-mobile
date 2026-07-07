@@ -22,6 +22,7 @@ jest.mock("@tanstack/react-query", () => ({ useQueryClient: () => ({ clear: mock
 
 describe("SettingsScreen", () => {
   beforeEach(() => {
+    delete process.env.EXPO_PUBLIC_ACCOUNT_UI_ENABLED;
     mockAuth.session = null;
     mockAuth.user = null;
     mockAuth.signOut.mockReset().mockResolvedValue({ error: null });
@@ -43,7 +44,15 @@ describe("SettingsScreen", () => {
     expect(navigation.navigate).toHaveBeenCalledWith("History");
   });
 
+  it("hides the Price watches entry by default for the Play release", () => {
+    const navigation = { navigate: jest.fn() };
+    const { queryByText } = render(<SettingsScreen navigation={navigation} />);
+
+    expect(queryByText("Price watches")).toBeNull();
+  });
+
   it("shows account deletion only for signed-in users", () => {
+    process.env.EXPO_PUBLIC_ACCOUNT_UI_ENABLED = "true";
     const navigation = { navigate: jest.fn(), reset: jest.fn() };
     const signedOut = render(<SettingsScreen navigation={navigation} />);
     expect(signedOut.queryByText("Delete account")).toBeNull();
@@ -56,6 +65,7 @@ describe("SettingsScreen", () => {
   });
 
   it("requires destructive confirmation then clears session, account state, and local history", async () => {
+    process.env.EXPO_PUBLIC_ACCOUNT_UI_ENABLED = "true";
     mockAuth.user = { email: "person@example.com" };
     mockAuth.session = { access_token: "access-token" };
     mockDeleteAccount.mockResolvedValue({ ok: true });
@@ -75,6 +85,7 @@ describe("SettingsScreen", () => {
   });
 
   it("shows a retry action after deletion fails", async () => {
+    process.env.EXPO_PUBLIC_ACCOUNT_UI_ENABLED = "true";
     mockAuth.user = { email: "person@example.com" };
     mockAuth.session = { access_token: "access-token" };
     mockDeleteAccount.mockRejectedValue(new Error("Temporary deletion failure."));
@@ -87,5 +98,15 @@ describe("SettingsScreen", () => {
     await waitFor(() => expect(getByText("Temporary deletion failure.")).toBeTruthy());
     expect(getByText("Try deleting again")).toBeTruthy();
     expect(mockAuth.signOut).not.toHaveBeenCalled();
+  });
+
+  it("hides the Account section by default for the account-free Play release", () => {
+    mockAuth.user = { email: "person@example.com" };
+    const navigation = { navigate: jest.fn(), reset: jest.fn() };
+    const { queryByText } = render(<SettingsScreen navigation={navigation} />);
+
+    expect(queryByText("Account")).toBeNull();
+    expect(queryByText("Sign out")).toBeNull();
+    expect(queryByText("Delete account")).toBeNull();
   });
 });

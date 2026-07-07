@@ -4,6 +4,10 @@ import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { HeaderBackButton, ScreenContainer, cx } from "../components/MobileUI";
 import { useAuth } from "../contexts/useAuth";
+import {
+  isMobileAccountUiEnabled,
+  isMobilePriceWatchUiEnabled,
+} from "../config/features";
 import { deleteAccount } from "../lib/account/deleteAccount";
 import { localHistoryStore } from "../lib/history/localHistoryStore";
 
@@ -66,6 +70,7 @@ function AccountSection({ navigation }) {
   const queryClient = useQueryClient();
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState("");
+  const priceWatchUiEnabled = isMobilePriceWatchUiEnabled();
 
   async function handleConfirmedDelete() {
     setIsDeleting(true);
@@ -103,14 +108,17 @@ function AccountSection({ navigation }) {
         <SettingsSectionHeader title="Account" />
         <View className="border-b border-t border-line">
           <SettingsRow
+            isLast={!priceWatchUiEnabled}
             label="Sign in"
             onPress={() => navigation.navigate("Auth")}
           />
-          <SettingsRow
-            isLast
-            label="Price watches"
-            onPress={() => navigation.navigate("PriceWatches")}
-          />
+          {priceWatchUiEnabled ? (
+            <SettingsRow
+              isLast
+              label="Price watches"
+              onPress={() => navigation.navigate("PriceWatches")}
+            />
+          ) : null}
         </View>
       </View>
     );
@@ -165,13 +173,15 @@ function AccountSection({ navigation }) {
           ) : null}
         </View>
       </View>
-      <View className="border-b border-t border-line">
-        <SettingsRow
-          isLast
-          label="Price watches"
-          onPress={() => navigation.navigate("PriceWatches")}
-        />
-      </View>
+      {priceWatchUiEnabled ? (
+        <View className="border-b border-t border-line">
+          <SettingsRow
+            isLast
+            label="Price watches"
+            onPress={() => navigation.navigate("PriceWatches")}
+          />
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -179,6 +189,7 @@ function AccountSection({ navigation }) {
 export default function SettingsScreen({ navigation }) {
   const { width } = useWindowDimensions();
   const isCompact = width <= 415;
+  const accountUiEnabled = isMobileAccountUiEnabled();
   const menuItems = [
     { label: "Shopping region", routeName: "Region" },
     { label: "Search history", routeName: "History" },
@@ -206,7 +217,7 @@ export default function SettingsScreen({ navigation }) {
       <View className={cx("w-full max-w-[430px] self-center", isCompact ? "gap-5" : "gap-6")}>
         <SettingsIntro />
 
-        <AccountSection navigation={navigation} />
+        {accountUiEnabled ? <AccountSection navigation={navigation} /> : null}
 
         <View className="gap-2">
           <SettingsSectionHeader title="App" />

@@ -43,7 +43,7 @@ export default function PrivacyScreen() {
       <ScreenIntro
         eyebrow="Privacy Policy"
         title="How Focamai handles your information."
-        description="This policy applies to the Focamai website and mobile app and reflects the features implemented as of July 2, 2026."
+        description="This policy applies to the Focamai website and mobile app and reflects the features implemented as of July 6, 2026."
       />
 
       <View className="mt-8 gap-7">
@@ -64,6 +64,10 @@ export default function PrivacyScreen() {
           <PolicyBullet>
             Optional feedback, support details, and search diagnostics such as random session/search
             IDs, app version, platform, timestamps, errors, and performance information.
+          </PolicyBullet>
+          <PolicyBullet>
+            Production mobile crash reports and serious app errors, including stack traces, app
+            version, and device and operating-system context, when Sentry reporting is configured.
           </PolicyBullet>
           <PolicyBullet>
             Ordinary request data received by hosting providers, such as IP address and user-agent
@@ -98,7 +102,7 @@ export default function PrivacyScreen() {
             Anthropic for AI processing; Rainforest API for Amazon product data and price checks;
             SerpApi when an eligible signed-in user explicitly runs Deep Dive; Render for backend
             hosting; Vercel for website hosting and web performance analytics; Sentry for backend
-            error monitoring when enabled; Resend for enabled price-watch emails; Google for
+            errors and configured production mobile crash reporting; Resend for enabled price-watch emails; Google for
             optional website sign-in and web fonts; and Amazon and product-image hosts for product
             images, product pages, and affiliate attribution. Focamai's current code does not sell
             personal information or use it for targeted ads.
@@ -112,6 +116,11 @@ export default function PrivacyScreen() {
             The mobile app does not include an advertising analytics SDK. Search requests can still
             create backend operational, analytics, and diagnostic records. The website separately
             uses browser local storage plus Vercel Analytics and Speed Insights.
+          </PolicyText>
+          <PolicyText>
+            Mobile Sentry reporting is limited to crashes and serious errors. Performance tracing,
+            profiling, session replay, automatic session tracking, breadcrumbs, app-hang tracking,
+            and default personally identifying information are disabled.
           </PolicyText>
           <PolicyText>
             Focamai does not currently add advertising cookies. After you open an Amazon link,
@@ -133,8 +142,9 @@ export default function PrivacyScreen() {
           <PolicyText>
             Search caches normally expire after 24 hours, although underlying database or hosting
             records may remain until cleanup. The code does not currently define one automatic
-            deletion period for account records, internal search logs, analytics, diagnostics, or
-            feedback. Third-party providers may retain data under their own policies.
+            deletion period for account records, internal search logs, analytics, diagnostics,
+            crash reports, or feedback. Third-party providers may retain data under their own
+            policies.
           </PolicyText>
           <PolicyText>
             Signed-in users can permanently delete their Focamai account under Settings → Account
@@ -152,8 +162,9 @@ export default function PrivacyScreen() {
             Production traffic uses encrypted HTTPS connections. Mobile authentication sessions are
             kept in secure device storage, and account-owned saved searches and price watches use
             Supabase row-level access controls. Server credentials remain on the backend, and known
-            secret and authorization fields are removed from configured error context. No system can
-            guarantee absolute security.
+            secret and authorization fields are removed from configured error context. Mobile crash
+            reporting also removes user, request, extra, and breadcrumb fields before sending a
+            JavaScript error event. No system can guarantee absolute security.
           </PolicyText>
         </PolicySection>
 

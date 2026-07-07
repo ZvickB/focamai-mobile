@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<style>
+  @font-face {
+    font-family: "Manrope";
+    font-weight: 400;
+    src: url("file:///Users/zvibasser/Documents/Projects/focamai-mobile/node_modules/@expo-google-fonts/manrope/400Regular/Manrope_400Regular.ttf");
+  }
+  @font-face {
+    font-family: "Manrope";
+    font-weight: 600;
+    src: url("file:///Users/zvibasser/Documents/Projects/focamai-mobile/node_modules/@expo-google-fonts/manrope/600SemiBold/Manrope_600SemiBold.ttf");
+  }
+  @font-face {
+    font-family: "Manrope";
+    font-weight: 700;
+    src: url("file:///Users/zvibasser/Documents/Projects/focamai-mobile/node_modules/@expo-google-fonts/manrope/700Bold/Manrope_700Bold.ttf");
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1024px; height: 500px; overflow: hidden; }
+  body {
+    background: #fbf7ef;
+    font-family: "Manrope", sans-serif;
+    color: #14222b;
+    position: relative;
+  }
+  /* soft warm wash in the corner for depth without noise */
+  .wash {
+    position: absolute;
+    right: -180px;
+    top: -220px;
+    width: 620px;
+    height: 620px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(47, 127, 138, 0.10) 0%, rgba(47, 127, 138, 0) 70%);
+  }
+  .frame {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    padding: 0 72px 0 76px;
+    gap: 64px;
+  }
+  .copy { flex: 1; }
+  .copy img.wordmark { width: 386px; height: auto; display: block; }
+  .tagline {
+    margin-top: 34px;
+    font-size: 34px;
+    line-height: 1.32;
+    font-weight: 600;
+    color: #14222b;
+    max-width: 460px;
+  }
+  .tagline .teal { color: #0F6175; }
+  .sub {
+    margin-top: 18px;
+    font-size: 21px;
+    font-weight: 400;
+    color: #4a5a63;
+  }
+  /* right-side shortlist motif */
+  .list {
+    width: 332px;
+    background: #fcf9f3;
+    border: 1px solid #e4d7c6;
+    border-radius: 22px;
+    padding: 22px 24px;
+    box-shadow: 0 18px 40px rgba(20, 34, 43, 0.07);
+  }
+  .list-title {
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #0F6175;
+    margin-bottom: 14px;
+  }
+  .row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 11px 0;
+    border-top: 1px solid #efe5d6;
+  }
+  .row:first-of-type { border-top: none; }
+  .rank {
+    width: 26px;
+    height: 26px;
+    border-radius: 9px;
+    background: rgba(15, 97, 117, 0.10);
+    color: #0F6175;
+    font-size: 14px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .bars { flex: 1; }
+  .pick-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #14222b;
+    line-height: 1;
+    margin-bottom: 8px;
+    white-space: nowrap;
+  }
+  .bar { height: 9px; border-radius: 5px; background: #e8ddcc; }
+  .bar.bottom { width: 58%; }
+  .row.selected {
+    background: rgba(15, 97, 117, 0.05);
+    border-radius: 12px;
+    padding-left: 10px;
+    padding-right: 10px;
+    margin: 0 -10px;
+    border-top-color: transparent;
+  }
+  .row.selected + .row { border-top-color: transparent; }
+  .row.selected .rank { background: #0F6175; color: #fcf9f3; }
+  .caveat {
+    margin-top: 14px;
+    font-size: 14.5px;
+    line-height: 1.45;
+    color: #4a5a63;
+    background: rgba(229, 155, 38, 0.10);
+    border-radius: 12px;
+    padding: 11px 13px;
+  }
+  .caveat b { color: #14222b; font-weight: 700; }
+</style>
+</head>
+<body>
+  <div class="wash"></div>
+  <div class="frame">
+    <div class="copy">
+      <img class="wordmark" src="file:///Users/zvibasser/Documents/Projects/focamai-mobile/assets/wordmark.png" />
+      <div class="tagline">Describe what you need.<br/>Get <span class="teal">6 honest picks</span> — then get on with your day.</div>
+      <div class="sub">No feeds. No rabbit holes. Real caveats.</div>
+    </div>
+    <div class="list">
+      <div class="list-title">Your 6 picks</div>
+      <div class="row"><div class="rank">1</div><div class="bars"><div class="pick-title">Mesh back, firm lumbar</div><div class="bar bottom"></div></div></div>
+      <div class="row selected"><div class="rank">2</div><div class="bars"><div class="pick-title">High-back, all-day support</div><div class="bar bottom"></div></div></div>
+      <div class="row"><div class="rank">3</div><div class="bars"><div class="pick-title">Compact, small-desk fit</div><div class="bar bottom"></div></div></div>
+      <div class="row"><div class="rank">4</div><div class="bars"><div class="pick-title">Easy assembly, light frame</div><div class="bar bottom"></div></div></div>
+      <div class="caveat"><b>Worth knowing:</b> runs about $15 over your budget.</div>
+    </div>
+  </div>
+</body>
+</html>

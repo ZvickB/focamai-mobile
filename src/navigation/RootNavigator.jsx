@@ -1,5 +1,6 @@
 import { NavigationContainer, DefaultTheme } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { Platform } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import AuthScreen from "../screens/AuthScreen";
@@ -45,6 +46,13 @@ export default function RootNavigator() {
           <Stack.Navigator
             initialRouteName={__DEV__ ? "DevLauncher" : "Search"}
             screenOptions={{
+              ...(Platform.OS === "ios"
+                ? {
+                    fullScreenGestureEnabled: true,
+                    gestureDirection: "horizontal",
+                    gestureEnabled: true,
+                  }
+                : {}),
               headerShadowVisible: false,
               headerStyle: {
                 backgroundColor: appThemeTokens.appBackground,
@@ -88,6 +96,11 @@ export default function RootNavigator() {
             />
             <Stack.Screen
               name="Auth"
+              component={AuthScreen}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="CreateAccount"
               component={AuthScreen}
               options={{ headerShown: false }}
             />

@@ -1,6 +1,13 @@
 import { useCallback, useEffect, useState } from "react";
 import { Search, Star } from "lucide-react-native";
-import { Pressable, Text, useWindowDimensions, View } from "react-native";
+import {
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  Text,
+  useWindowDimensions,
+  View,
+} from "react-native";
 import {
   AppHeader,
   HeaderBackButton,
@@ -358,21 +365,27 @@ export default function ResultsScreen({ navigation }) {
       ];
 
   return (
-    <ScreenContainer
-      testID="results.screen"
-      keyboardShouldPersistTaps="handled"
-      safeAreaEdges={["top", "bottom"]}
-      contentContainerStyle={{
-        gap: 12,
-        paddingHorizontal: isCompact ? 16 : 24,
-        paddingTop: 0,
-        paddingBottom: height,
-      }}
-      fixedHeader={fixedHeader}
-      onScroll={handleScroll}
-      scrollEventThrottle={16}
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      className="flex-1"
+      testID="results.keyboardAvoidingView"
     >
-      {scrollContent}
-    </ScreenContainer>
+      <ScreenContainer
+        testID="results.screen"
+        keyboardShouldPersistTaps="handled"
+        safeAreaEdges={["top", "bottom"]}
+        contentContainerStyle={{
+          gap: 12,
+          paddingHorizontal: isCompact ? 16 : 24,
+          paddingTop: 0,
+          paddingBottom: height,
+        }}
+        fixedHeader={fixedHeader}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
+      >
+        {scrollContent}
+      </ScreenContainer>
+    </KeyboardAvoidingView>
   );
 }

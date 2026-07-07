@@ -2,9 +2,14 @@ import { fireEvent, render } from "@testing-library/react-native";
 
 import HistoryScreen from "../HistoryScreen";
 import { useSearchHistory } from "../../components/history/useSearchHistory";
+import { useAuth } from "../../contexts/useAuth";
 
 jest.mock("../../components/history/useSearchHistory", () => ({
   useSearchHistory: jest.fn(),
+}));
+
+jest.mock("../../contexts/useAuth", () => ({
+  useAuth: jest.fn(),
 }));
 
 const savedEntry = {
@@ -51,7 +56,24 @@ function renderHistory(historyOverrides = {}) {
 
 describe("HistoryScreen", () => {
   beforeEach(() => {
+    delete process.env.EXPO_PUBLIC_ACCOUNT_UI_ENABLED;
+    useAuth.mockReset();
+    useAuth.mockReturnValue({ configured: true, user: null });
     useSearchHistory.mockReset();
+  });
+
+  it("offers account sync when signed out", () => {
+    process.env.EXPO_PUBLIC_ACCOUNT_UI_ENABLED = "true";
+    const { getByTestId, navigation } = renderHistory();
+
+    fireEvent.press(getByTestId("history.signInButton"));
+    expect(navigation.navigate).toHaveBeenCalledWith("Auth", { backLabel: "History" });
+  });
+
+  it("hides account sync by default for the account-free Play release", () => {
+    const { queryByTestId } = renderHistory();
+
+    expect(queryByTestId("history.signInButton")).toBeNull();
   });
 
   it("lists, expands, deletes, clears, and re-runs saved searches", () => {

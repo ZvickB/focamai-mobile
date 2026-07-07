@@ -1,5 +1,6 @@
 import { Component } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
+import { captureReactError } from "../lib/sentry";
 
 export class AppErrorBoundary extends Component {
   constructor(props) {
@@ -9,6 +10,15 @@ export class AppErrorBoundary extends Component {
 
   static getDerivedStateFromError(error) {
     return { error };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    captureReactError(error, errorInfo);
+    if (__DEV__) {
+      console.error(
+        `[Focamai] uncaught render error\n${error?.message || String(error)}\n\nJavaScript stack:\n${error?.stack || "Unavailable"}\n\nComponent stack:\n${errorInfo?.componentStack || "Unavailable"}`,
+      );
+    }
   }
 
   reset() {

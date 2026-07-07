@@ -112,6 +112,13 @@ describe("ResultsScreen", () => {
     expect(getByLabelText("Selected result. Open result: First travel stroller")).toBeTruthy();
   });
 
+  it("keeps retry controls inside a keyboard-aware layout", () => {
+    const { getByTestId, getByText } = renderResults();
+
+    expect(getByTestId("results.keyboardAvoidingView")).toBeTruthy();
+    expect(getByText("Want to correct the direction?")).toBeTruthy();
+  });
+
   it("starts a retry suggestion as a fresh refine flow", () => {
     const applyRetrySuggestion = jest.fn().mockReturnValue(true);
     const { getByText, navigation } = renderResults({

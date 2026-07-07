@@ -1,5 +1,12 @@
 import { Settings } from "lucide-react-native";
-import { Pressable, Text, useWindowDimensions, View } from "react-native";
+import {
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  Text,
+  useWindowDimensions,
+  View,
+} from "react-native";
 import {
   AppHeader,
   Button,
@@ -36,6 +43,7 @@ export default function FollowUpScreen({ navigation }) {
   const {
     canFinalize,
     errorMessage,
+    finalResults,
     finalizeFocusedPicks,
     followUpNotes,
     hasStartedSearch,
@@ -45,6 +53,8 @@ export default function FollowUpScreen({ navigation }) {
     refinementPrompt,
     setFollowUpNotes,
   } = useSearchFlow();
+  const currentPickCount = Array.isArray(finalResults) ? finalResults.length : 0;
+  const canUseSecondaryAction = currentPickCount > 0 || canFinalize;
 
   async function finalizeAndOpenResults() {
     const didFinalize = await finalizeFocusedPicks();
@@ -55,6 +65,11 @@ export default function FollowUpScreen({ navigation }) {
   }
 
   async function skipAndOpenResults() {
+    if (currentPickCount > 0) {
+      navigation.navigate("Results");
+      return;
+    }
+
     const didFinalize = await finalizeFocusedPicks({ followUpNotesOverride: "" });
 
     if (didFinalize) {
@@ -70,52 +85,57 @@ export default function FollowUpScreen({ navigation }) {
     : "Go back and check the product phrase, region, or backend connection before trying again.";
 
   return (
-    <ScreenContainer
-      testID="followup.screen"
-      keyboardShouldPersistTaps="handled"
-      safeAreaEdges={["top", "bottom"]}
-      contentContainerStyle={{
-        gap: isCompact ? 16 : 20,
-        paddingHorizontal: isCompact ? 16 : 24,
-        paddingTop: 14,
-        paddingBottom: 20,
-      }}
-      footer={
-        isFinalizing ? undefined :
-        <View className="w-full max-w-[430px] self-center gap-3 py-1">
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      className="flex-1"
+      testID="followup.keyboardAvoidingView"
+    >
+      <ScreenContainer
+        testID="followup.screen"
+        keyboardShouldPersistTaps="handled"
+        safeAreaEdges={["top", "bottom"]}
+        contentContainerStyle={{
+          gap: isCompact ? 16 : 20,
+          paddingHorizontal: isCompact ? 16 : 24,
+          paddingTop: 14,
+          paddingBottom: 20,
+        }}
+        footer={
+          isFinalizing ? undefined :
+          <View className="w-full max-w-[430px] self-center gap-3 py-1">
           <Button
             testID="followup.showFocusedPicksButton"
             disabled={!canFinalize}
             onPress={finalizeAndOpenResults}
             className="min-h-[56px] bg-accent shadow-sm"
           >
-            {isFinalizing ? "Updating picks..." : "Update my picks"}
+            Update my picks
           </Button>
           <View className="flex-row items-center justify-center gap-3">
             <View className="h-[2px] w-11 rounded-full bg-ember opacity-60" />
             <Pressable
               accessibilityRole="button"
               className="min-h-[44px] items-center justify-center px-4"
-              disabled={!canFinalize}
+              disabled={!canUseSecondaryAction}
               onPress={skipAndOpenResults}
               testID="followup.skipButton"
             >
               <Text
                 className={
-                  canFinalize
+                  canUseSecondaryAction
                     ? "text-base font-semibold text-accent"
                     : "text-base font-semibold text-stone-400"
                 }
               >
-                Skip for now
+                {currentPickCount > 0 ? "Return to picks" : "Skip for now"}
               </Text>
             </Pressable>
             <View className="h-[2px] w-11 rounded-full bg-ember opacity-60" />
           </View>
-        </View>
-      }
-    >
-      <View className={isCompact ? "w-full max-w-[430px] self-center gap-6" : "w-full max-w-[430px] self-center gap-8"}>
+          </View>
+        }
+      >
+        <View className={isCompact ? "w-full max-w-[430px] self-center gap-6" : "w-full max-w-[430px] self-center gap-8"}>
         <RefineHeader
           onBack={() => navigation.navigate("Search")}
           onSettings={() => navigation.navigate("Settings")}
@@ -154,7 +174,8 @@ export default function FollowUpScreen({ navigation }) {
             ) : null}
           </>
         )}
-      </View>
-    </ScreenContainer>
+        </View>
+      </ScreenContainer>
+    </KeyboardAvoidingView>
   );
 }

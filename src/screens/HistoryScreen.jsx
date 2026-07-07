@@ -12,6 +12,7 @@ import {
   cx,
 } from "../components/MobileUI";
 import { useAuth } from "../contexts/useAuth";
+import { isMobileAccountUiEnabled } from "../config/features";
 import { useSearchHistory } from "../components/history/useSearchHistory";
 import { getProductDisplayTitle } from "../search/productTitle";
 
@@ -49,7 +50,7 @@ function HistoryHeader({ onBack }) {
   );
 }
 
-function HistoryIntro({ entriesCount, isSignedIn, onClear }) {
+function HistoryIntro({ canSignIn, entriesCount, isSignedIn, onClear, onSignIn }) {
   return (
     <View className="gap-3">
       <View className="gap-2">
@@ -61,6 +62,16 @@ function HistoryIntro({ entriesCount, isSignedIn, onClear }) {
             ? "Your searches are synced to your account."
             : "Completed searches are saved on this device after Focamai narrows them to six picks."}
         </Text>
+        {canSignIn ? (
+          <Pressable
+            accessibilityRole="button"
+            className="min-h-[44px] self-start justify-center"
+            onPress={onSignIn}
+            testID="history.signInButton"
+          >
+            <Text className="text-sm font-semibold text-accent">Sign in to sync</Text>
+          </Pressable>
+        ) : null}
       </View>
       {entriesCount > 0 ? (
         <Pressable
@@ -186,7 +197,8 @@ function HistoryEntryCard({ entry, isOpen, onRemove, onRerun, onToggle }) {
 export default function HistoryScreen({ navigation, route }) {
   const { width } = useWindowDimensions();
   const isCompact = width <= 415;
-  const { user } = useAuth();
+  const { configured: authConfigured, user } = useAuth();
+  const accountUiEnabled = isMobileAccountUiEnabled();
   const { clear, entries, error, loading, remove } = useSearchHistory();
   const [openEntryId, setOpenEntryId] = useState("");
   const returnTo = route?.params?.returnTo || "Settings";
@@ -216,7 +228,13 @@ export default function HistoryScreen({ navigation, route }) {
       </View>
 
       <View className={cx("w-full max-w-[430px] self-center", isCompact ? "gap-5" : "gap-6")}>
-        <HistoryIntro entriesCount={entries.length} isSignedIn={Boolean(user)} onClear={clear} />
+        <HistoryIntro
+          canSignIn={accountUiEnabled && authConfigured && !user}
+          entriesCount={entries.length}
+          isSignedIn={Boolean(user)}
+          onClear={clear}
+          onSignIn={() => navigation.navigate("Auth", { backLabel: "History" })}
+        />
 
         {loading ? (
           <Surface variant="quiet">

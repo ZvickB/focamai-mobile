@@ -10,6 +10,7 @@ function buildSearchFlow(overrides = {}) {
   return {
     canFinalize: true,
     errorMessage: "",
+    finalResults: [],
     finalizeFocusedPicks: jest.fn().mockResolvedValue(true),
     followUpNotes: "",
     hasStartedSearch: true,
@@ -73,6 +74,38 @@ describe("FollowUpScreen", () => {
     await waitFor(() => {
       expect(navigation.navigate).toHaveBeenCalledWith("Results");
     });
+  });
+
+  it("replaces skip with a return to existing picks", () => {
+    const finalizeFocusedPicks = jest.fn();
+    const { getByTestId, getByText, navigation } = renderFollowUp({
+      finalResults: [{ id: "pick-1" }, { id: "pick-2" }],
+      finalizeFocusedPicks,
+    });
+
+    expect(getByText("Return to picks")).toBeTruthy();
+    fireEvent.press(getByTestId("followup.skipButton"));
+
+    expect(navigation.navigate).toHaveBeenCalledWith("Results");
+    expect(finalizeFocusedPicks).not.toHaveBeenCalled();
+  });
+
+  it("can return to loaded picks even when finalize is unavailable", () => {
+    const { getByTestId, navigation } = renderFollowUp({
+      canFinalize: false,
+      finalResults: [{ id: "pick-1" }],
+    });
+
+    fireEvent.press(getByTestId("followup.skipButton"));
+
+    expect(navigation.navigate).toHaveBeenCalledWith("Results");
+  });
+
+  it("keeps the refine layout keyboard-aware", () => {
+    const { getByTestId } = renderFollowUp();
+
+    expect(getByTestId("followup.keyboardAvoidingView")).toBeTruthy();
+    expect(getByTestId("followup.showFocusedPicksButton")).toBeTruthy();
   });
 
   it("shows the finalize loading state while waiting for focused picks", () => {

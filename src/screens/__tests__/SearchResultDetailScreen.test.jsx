@@ -52,9 +52,32 @@ function renderDetail(item = linkedItem, navigation = { goBack: jest.fn(), navig
 
 describe("SearchResultDetailScreen", () => {
   beforeEach(() => {
+    process.env.EXPO_PUBLIC_DEEP_DIVE_UI_ENABLED = "true";
+    process.env.EXPO_PUBLIC_PRICE_WATCH_UI_ENABLED = "true";
     useSearchFlow.mockReset();
     useAuth.mockReturnValue({ user: null });
     useWatches.mockReturnValue({ create: jest.fn(), watches: [] });
+  });
+
+  afterEach(() => {
+    delete process.env.EXPO_PUBLIC_DEEP_DIVE_UI_ENABLED;
+    delete process.env.EXPO_PUBLIC_PRICE_WATCH_UI_ENABLED;
+  });
+
+  it("hides optional product tools by default for the Play release", () => {
+    delete process.env.EXPO_PUBLIC_DEEP_DIVE_UI_ENABLED;
+    delete process.env.EXPO_PUBLIC_PRICE_WATCH_UI_ENABLED;
+    const actionableItem = {
+      ...linkedItem,
+      asin: "B012345678",
+      numericPrice: 199,
+      deepDiveEligibility: { recommendation: "show", mode: "offers_and_reviews" },
+    };
+    const { queryByText } = renderDetail(actionableItem);
+
+    expect(queryByText("Optional tools")).toBeNull();
+    expect(queryByText("Deep dive — store prices and reviews")).toBeNull();
+    expect(queryByText("Watch price")).toBeNull();
   });
 
   it("keeps retailer access visible in a fixed footer when a link exists", () => {

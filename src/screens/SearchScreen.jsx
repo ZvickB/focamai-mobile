@@ -11,6 +11,7 @@ import {
   cx,
 } from "../components/MobileUI";
 import { useAuth } from "../contexts/useAuth";
+import { isMobileAccountUiEnabled } from "../config/features";
 import { MarketplacePromptSection } from "../search/MarketplacePromptSection";
 import { SearchEntrySection } from "../search/SearchEntrySection";
 import { SearchFlowProgressCue } from "../search/SearchFlowProgressCue";
@@ -122,6 +123,7 @@ export default function SearchScreen({ navigation, route }) {
   const pendingNavigationToFollowUpRef = useRef(null);
   const [historyPrefill, setHistoryPrefill] = useState(null);
   const { configured: authConfigured, user } = useAuth();
+  const accountUiEnabled = isMobileAccountUiEnabled();
   const {
     activeSearchSession,
     clearRestoredFlowPhase,
@@ -254,7 +256,7 @@ export default function SearchScreen({ navigation, route }) {
           <SearchHeader
             onOpenSettings={() => navigation.navigate("Settings")}
             onSignIn={() => navigation.navigate("Auth", { backLabel: "Search" })}
-            showSignIn={authConfigured && !user}
+            showSignIn={accountUiEnabled && authConfigured && !user}
           />
 
           <View className="w-full self-center">

@@ -14,14 +14,17 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import { AuthProvider } from "./src/contexts/AuthProvider";
 import RootNavigator from "./src/navigation/RootNavigator";
+import { initializeSentry, wrapWithSentry } from "./src/lib/sentry";
 import { logResolvedApiBaseUrl } from "./src/search/searchApi";
+
+initializeSentry();
 
 Text.defaultProps = Text.defaultProps || {};
 Text.defaultProps.style = [{ fontFamily: "Manrope_400Regular" }, Text.defaultProps.style];
 TextInput.defaultProps = TextInput.defaultProps || {};
 TextInput.defaultProps.style = [{ fontFamily: "Manrope_400Regular" }, TextInput.defaultProps.style];
 
-export default function App() {
+function App() {
   useEffect(() => {
     logResolvedApiBaseUrl();
   }, []);
@@ -59,3 +62,5 @@ export default function App() {
     </QueryClientProvider>
   );
 }
+
+export default wrapWithSentry(App);

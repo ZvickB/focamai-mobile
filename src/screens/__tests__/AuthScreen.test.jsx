@@ -30,7 +30,7 @@ jest.mock("../../components/MobileUI", () => {
   };
 });
 
-function renderWithAuth(authOverrides = {}) {
+function renderWithAuth(authOverrides = {}, routeOverrides = {}) {
   const authValue = {
     configured: true,
     loading: false,
@@ -43,8 +43,8 @@ function renderWithAuth(authOverrides = {}) {
     ...authOverrides,
   };
 
-  const navigation = { goBack: jest.fn() };
-  const route = { params: {} };
+  const navigation = { goBack: jest.fn(), replace: jest.fn() };
+  const route = { name: "Auth", params: {}, ...routeOverrides };
 
   const result = render(
     <AuthContext.Provider value={authValue}>
@@ -133,10 +133,20 @@ describe("AuthScreen", () => {
     });
   });
 
-  it("switches to sign up mode and calls signUp", async () => {
-    const { getByTestId, getByText, authValue } = renderWithAuth();
+  it("opens create account as a replacement route", () => {
+    const { getByText, navigation } = renderWithAuth();
 
     fireEvent.press(getByText("Create account"));
+
+    expect(navigation.replace).toHaveBeenCalledWith("CreateAccount", {
+      backLabel: undefined,
+      draftEmail: "",
+    });
+  });
+
+  it("calls signUp from the create-account route", async () => {
+    const { getByTestId, authValue } = renderWithAuth({}, { name: "CreateAccount" });
+
     fireEvent.changeText(getByTestId("auth.emailInput"), "new@example.com");
     fireEvent.changeText(getByTestId("auth.passwordInput"), "newpassword");
     fireEvent.press(getByTestId("auth.submitButton"));
@@ -151,16 +161,31 @@ describe("AuthScreen", () => {
 
   it("shows confirmation message on sign up without session", async () => {
     const signUp = jest.fn().mockResolvedValue({ data: { session: null }, error: null });
-    const { getByTestId, getByText } = renderWithAuth({ signUp });
+    const { getByTestId, getByText } = renderWithAuth(
+      { signUp },
+      { name: "CreateAccount" },
+    );
 
-    fireEvent.press(getByText("Create account"));
     fireEvent.changeText(getByTestId("auth.emailInput"), "new@example.com");
     fireEvent.changeText(getByTestId("auth.passwordInput"), "newpassword");
     fireEvent.press(getByTestId("auth.submitButton"));
 
     await waitFor(() => {
-      expect(getByText(/check your email/i)).toBeTruthy();
+      expect(getByText(/confirmation email/i)).toBeTruthy();
     });
+  });
+
+  it("rejects a short password before requesting sign up", async () => {
+    const { getByTestId, getByText, authValue } = renderWithAuth({}, { name: "CreateAccount" });
+
+    fireEvent.changeText(getByTestId("auth.emailInput"), "new@example.com");
+    fireEvent.changeText(getByTestId("auth.passwordInput"), "short");
+    fireEvent.press(getByTestId("auth.submitButton"));
+
+    await waitFor(() => {
+      expect(getByText("Use a password with at least 6 characters.")).toBeTruthy();
+    });
+    expect(authValue.signUp).not.toHaveBeenCalled();
   });
 
   it("shows error when auth is not configured", async () => {
@@ -169,26 +194,6 @@ describe("AuthScreen", () => {
     fireEvent.changeText(getByTestId("auth.emailInput"), "test@example.com");
     fireEvent.changeText(getByTestId("auth.passwordInput"), "pass");
     fireEvent.press(getByTestId("auth.submitButton"));
-
-    await waitFor(() => {
-      expect(getByText(/not configured/i)).toBeTruthy();
-    });
-  });
-
-  it("calls signInWithGoogle when Google button is pressed", async () => {
-    const { getByTestId, authValue } = renderWithAuth();
-
-    fireEvent.press(getByTestId("auth.googleButton"));
-
-    await waitFor(() => {
-      expect(authValue.signInWithGoogle).toHaveBeenCalled();
-    });
-  });
-
-  it("shows error when Google sign in is not configured", async () => {
-    const { getByTestId, getByText } = renderWithAuth({ configured: false });
-
-    fireEvent.press(getByTestId("auth.googleButton"));
 
     await waitFor(() => {
       expect(getByText(/not configured/i)).toBeTruthy();

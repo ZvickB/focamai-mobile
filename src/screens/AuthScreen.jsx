@@ -14,9 +14,9 @@ export default function AuthScreen({ navigation, route }) {
   const { width } = useWindowDimensions();
   const isCompact = width <= 415;
 
-  const { configured, loading: authLoading, signIn, signInWithGoogle, signUp } = useAuth();
-  const [mode, setMode] = useState("sign-in");
-  const [email, setEmail] = useState("");
+  const { configured, loading: authLoading, signIn, signUp } = useAuth();
+  const mode = route?.name === "CreateAccount" ? "sign-up" : "sign-in";
+  const [email, setEmail] = useState(route?.params?.draftEmail || "");
   const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -42,6 +42,11 @@ export default function AuthScreen({ navigation, route }) {
       return;
     }
 
+    if (mode === "sign-up" && password.length < 6) {
+      setErrorMessage("Use a password with at least 6 characters.");
+      return;
+    }
+
     setSubmitting(true);
     let data = null;
     let error = null;
@@ -61,36 +66,11 @@ export default function AuthScreen({ navigation, route }) {
     }
 
     if (mode === "sign-up" && !data?.session) {
-      setStatusMessage("Check your email to confirm your account, then come back to sign in.");
+      setStatusMessage("Account created. Open the confirmation email from Supabase, confirm your address, then return here and sign in.");
       return;
     }
 
     navigation.goBack();
-  }
-
-  async function handleGoogleSignIn() {
-    setErrorMessage("");
-    setStatusMessage("");
-
-    if (!configured) {
-      setErrorMessage("Supabase auth is not configured yet.");
-      return;
-    }
-
-    setSubmitting(true);
-    let error = null;
-
-    try {
-      ({ error } = await signInWithGoogle());
-    } catch (submitError) {
-      error = submitError;
-    } finally {
-      setSubmitting(false);
-    }
-
-    if (error) {
-      setErrorMessage(getAuthErrorMessage(error));
-    }
   }
 
   return (
@@ -150,9 +130,16 @@ export default function AuthScreen({ navigation, route }) {
                 mode === nextMode ? "bg-white shadow-sm" : "",
               )}
               onPress={() => {
-                setMode(nextMode);
+                if (nextMode === mode) {
+                  return;
+                }
+
                 setErrorMessage("");
                 setStatusMessage("");
+                navigation.replace(nextMode === "sign-up" ? "CreateAccount" : "Auth", {
+                  backLabel: route?.params?.backLabel,
+                  draftEmail: email.trim(),
+                });
               }}
             >
               <Text
@@ -212,6 +199,9 @@ export default function AuthScreen({ navigation, route }) {
                   : <Eye color="#78716c" size={18} strokeWidth={2} />}
               </Pressable>
             </View>
+            {mode === "sign-up" ? (
+              <Text className="text-xs leading-5 text-stone-500">At least 6 characters.</Text>
+            ) : null}
           </View>
 
           {errorMessage ? (
@@ -243,22 +233,6 @@ export default function AuthScreen({ navigation, route }) {
           </Button>
         </View>
 
-        {/* Divider */}
-        <View className="flex-row items-center gap-3">
-          <View className="h-px flex-1 bg-line" />
-          <Text className="text-xs font-semibold uppercase tracking-[1.2px] text-stone-400">Or</Text>
-          <View className="h-px flex-1 bg-line" />
-        </View>
-
-        {/* Google */}
-        <Button
-          disabled={isBusy}
-          onPress={handleGoogleSignIn}
-          testID="auth.googleButton"
-          variant="secondary"
-        >
-          Continue with Google
-        </Button>
       </View>
     </ScreenContainer>
   );
