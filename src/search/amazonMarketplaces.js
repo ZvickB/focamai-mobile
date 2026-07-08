@@ -5,8 +5,9 @@ export const AMAZON_MARKETPLACE_STORAGE_KEY = "focamai_marketplace";
 export const AMAZON_MARKETPLACE_PROMPT_SEEN_KEY = "focamai_marketplace_asked";
 
 export const AMAZON_MARKETPLACES = [
-  { countryCode: "US", domain: "amazon.com", label: "United States" },
-  { countryCode: "CA", domain: "amazon.ca", label: "Canada" },
+  { countryCode: "US", domain: "amazon.com", label: "United States", pricePrefix: "$" },
+  { countryCode: "CA", domain: "amazon.ca", label: "Canada", pricePrefix: "CA$" },
+  { countryCode: "IN", domain: "amazon.in", label: "India", pricePrefix: "₹" },
 ];
 
 const SUPPORTED_AMAZON_DOMAINS = new Set(AMAZON_MARKETPLACES.map(({ domain }) => domain));

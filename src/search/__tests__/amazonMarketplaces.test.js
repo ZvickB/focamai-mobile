@@ -33,6 +33,15 @@ describe("amazon marketplace persistence", () => {
     );
   });
 
+  it("accepts India as an active marketplace preference", async () => {
+    AsyncStorage.setItem.mockResolvedValue(undefined);
+
+    await expect(saveAmazonDomainPreference("amazon.in")).resolves.toEqual({
+      domain: "amazon.in",
+      saved: true,
+    });
+  });
+
   it("returns an unsaved result without throwing when preference storage fails", async () => {
     AsyncStorage.setItem.mockRejectedValue(new Error("storage unavailable"));
 

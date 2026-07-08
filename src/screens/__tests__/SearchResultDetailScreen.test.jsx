@@ -24,9 +24,14 @@ const linkedItem = {
   title: "Compact Travel Stroller",
 };
 
-function renderDetail(item = linkedItem, navigation = { goBack: jest.fn(), navigate: jest.fn() }) {
+function renderDetail(
+  item = linkedItem,
+  navigation = { goBack: jest.fn(), navigate: jest.fn() },
+  amazonDomain = "amazon.com",
+) {
   useSearchFlow.mockReturnValue({
     activeSearchSession: {
+      amazonDomain,
       phases: {
         enrich: "complete",
       },
@@ -87,6 +92,22 @@ describe("SearchResultDetailScreen", () => {
     expect(getAllByText("Amazon").length).toBeGreaterThan(0);
     expect(getByText("As an Amazon Associate I earn from qualifying purchases.")).toBeTruthy();
     expect(getAllByText("View on Amazon")).toHaveLength(1);
+  });
+
+  it("keeps the Amazon India link but omits the affiliate earnings disclosure", () => {
+    const indiaItem = {
+      ...linkedItem,
+      link: "https://www.amazon.in/dp/B012345678",
+      price: "₹4999",
+    };
+    const { getAllByText, queryByText } = renderDetail(
+      indiaItem,
+      { goBack: jest.fn(), navigate: jest.fn() },
+      "amazon.in",
+    );
+
+    expect(getAllByText("View on Amazon")).toHaveLength(1);
+    expect(queryByText("As an Amazon Associate I earn from qualifying purchases.")).toBeNull();
   });
 
   it("does not show the fixed retailer footer when the link is unavailable", () => {

@@ -26,4 +26,20 @@ describe("MarketplacePromptSection", () => {
 
     expect(confirmSelectedAmazonDomain).toHaveBeenCalledWith("amazon.ca");
   });
+
+  it("allows India to be selected for the pending search", () => {
+    const confirmSelectedAmazonDomain = jest.fn();
+
+    const { getByLabelText, getByText } = render(
+      <MarketplacePromptSection
+        confirmSelectedAmazonDomain={confirmSelectedAmazonDomain}
+        selectedAmazonDomain="amazon.com"
+      />,
+    );
+
+    fireEvent.press(getByLabelText("Select India"));
+    fireEvent.press(getByText("Continue with India"));
+
+    expect(confirmSelectedAmazonDomain).toHaveBeenCalledWith("amazon.in");
+  });
 });

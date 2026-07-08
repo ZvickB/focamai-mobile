@@ -23,12 +23,13 @@ describe("RegionScreen", () => {
     jest.clearAllMocks();
   });
 
-  it("shows only affiliate-tagged Amazon regions", () => {
+  it("shows all active Amazon regions", () => {
     const { getByText, getByTestId, queryByTestId } = renderRegionScreen();
 
     expect(getByText("Available regions")).toBeTruthy();
     expect(getByTestId("region.row.US")).toBeTruthy();
     expect(getByTestId("region.row.CA")).toBeTruthy();
+    expect(getByTestId("region.row.IN")).toBeTruthy();
     expect(queryByTestId("region.row.GB")).toBeNull();
     expect(queryByTestId("region.row.DE")).toBeNull();
   });

@@ -34,7 +34,7 @@ function openRetailerLink(link) {
   );
 }
 
-function DetailRetailerFooter({ item }) {
+function DetailRetailerFooter({ amazonDomain, item }) {
   const provider = detailValue(item.provider, "");
   const price = formatDisplayPrice(item.price) || "Price not shown";
   const displayTitle = getProductDisplayTitle(item.title) || detailValue(item.title, "this product");
@@ -62,7 +62,9 @@ function DetailRetailerFooter({ item }) {
           <Text className="text-sm text-stone-400">Link unavailable</Text>
         )}
       </View>
-      {item.link ? <AffiliateDisclosureNote className="mt-2" /> : null}
+      {item.link ? (
+        <AffiliateDisclosureNote amazonDomain={amazonDomain} className="mt-2" />
+      ) : null}
     </View>
   );
 }
@@ -292,7 +294,12 @@ export default function SearchResultDetailScreen({ navigation, route }) {
 
   return (
     <ScreenContainer
-      footer={<DetailRetailerFooter item={item} />}
+      footer={(
+        <DetailRetailerFooter
+          amazonDomain={activeSearchSession?.amazonDomain || "amazon.com"}
+          item={item}
+        />
+      )}
       safeAreaEdges={["top", "bottom"]}
       testID="detail.screen"
       contentContainerStyle={{
