@@ -201,7 +201,6 @@ export default function ResultsScreen({ navigation }) {
   const [focusedPicksY, setFocusedPicksY] = useState(0);
   const [rowLayouts, setRowLayouts] = useState({});
   const {
-    applyRetrySuggestion: applyRetrySuggestionToFlow,
     canRequestRetryAdvice,
     discoverySummary,
     errorMessage,
@@ -215,7 +214,6 @@ export default function ResultsScreen({ navigation }) {
     productQuery,
     refinementPrompt,
     requestRetryAdvice,
-    retryAdvice,
     retryAdviceError,
     retryFeedback,
     setRetryFeedback,
@@ -275,9 +273,9 @@ export default function ResultsScreen({ navigation }) {
     },
     [updateSelectedIndexForScroll],
   );
-  const handleApplyRetrySuggestion = useCallback(
-    (query) => {
-      const didStart = applyRetrySuggestionToFlow(query);
+  const handleUpdatePicks = useCallback(
+    async (feedback) => {
+      const didStart = await requestRetryAdvice({ rejectionFeedback: feedback });
 
       if (didStart) {
         navigation.navigate("FollowUp");
@@ -285,7 +283,7 @@ export default function ResultsScreen({ navigation }) {
 
       return didStart;
     },
-    [applyRetrySuggestionToFlow, navigation],
+    [navigation, requestRetryAdvice],
   );
   const fixedHeader = (
     <View className={isCompact ? "gap-3 px-4 pb-3 pt-3" : "gap-4 px-6 pb-3 pt-3"}>
@@ -350,14 +348,10 @@ export default function ResultsScreen({ navigation }) {
         />,
         <SearchRetrySection
           key="retry"
-          applyRetrySuggestion={handleApplyRetrySuggestion}
           canRequestRetryAdvice={canRequestRetryAdvice}
           finalResults={finalResults}
-          followUpNotes={followUpNotes}
           isGeneratingRetryAdvice={isGeneratingRetryAdvice}
-          productQuery={productQuery}
-          requestRetryAdvice={requestRetryAdvice}
-          retryAdvice={retryAdvice}
+          onUpdatePicks={handleUpdatePicks}
           retryAdviceError={retryAdviceError}
           retryFeedback={retryFeedback}
           setRetryFeedback={setRetryFeedback}

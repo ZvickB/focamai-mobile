@@ -1,4 +1,4 @@
-import { fireEvent, render } from "@testing-library/react-native";
+import { act, fireEvent, render, waitFor } from "@testing-library/react-native";
 import { ScrollView } from "react-native";
 import ResultsScreen from "../ResultsScreen";
 import { useSearchFlow } from "../../search/SearchFlowContext";
@@ -35,7 +35,6 @@ const secondPick = {
 
 function buildSearchFlow(overrides = {}) {
   return {
-    applyRetrySuggestion: jest.fn(),
     canRequestRetryAdvice: true,
     discoverySummary: null,
     errorMessage: "",
@@ -49,7 +48,6 @@ function buildSearchFlow(overrides = {}) {
     productQuery: "travel stroller",
     refinementPrompt: null,
     requestRetryAdvice: jest.fn(),
-    retryAdvice: null,
     retryAdviceError: "",
     retryFeedback: "",
     setRetryFeedback: jest.fn(),
@@ -116,22 +114,24 @@ describe("ResultsScreen", () => {
     const { getByTestId, getByText } = renderResults();
 
     expect(getByTestId("results.keyboardAvoidingView")).toBeTruthy();
-    expect(getByText("Want to correct the direction?")).toBeTruthy();
+    expect(getByText("Improve these picks")).toBeTruthy();
   });
 
-  it("starts a retry suggestion as a fresh refine flow", () => {
-    const applyRetrySuggestion = jest.fn().mockReturnValue(true);
-    const { getByText, navigation } = renderResults({
-      applyRetrySuggestion,
-      retryAdvice: {
-        rationale: "This keeps the travel constraint but narrows the product phrase.",
-        suggestedQuery: "compact travel stroller",
-      },
+  it("starts an updated search as a fresh refine flow", async () => {
+    const requestRetryAdvice = jest.fn().mockResolvedValue(true);
+    const { getByLabelText, getByText, navigation } = renderResults({
+      requestRetryAdvice,
+      retryFeedback: "avoid bulky options",
     });
 
-    fireEvent.press(getByText("Search this suggestion"));
+    fireEvent.press(getByLabelText("Show correction options"));
+    await act(async () => {
+      fireEvent.press(getByText("Update my picks"));
+    });
 
-    expect(applyRetrySuggestion).toHaveBeenCalledWith("compact travel stroller");
-    expect(navigation.navigate).toHaveBeenCalledWith("FollowUp");
+    expect(requestRetryAdvice).toHaveBeenCalledWith({
+      rejectionFeedback: "avoid bulky options",
+    });
+    await waitFor(() => expect(navigation.navigate).toHaveBeenCalledWith("FollowUp"));
   });
 });

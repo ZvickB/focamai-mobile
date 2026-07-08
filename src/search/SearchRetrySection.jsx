@@ -1,151 +1,32 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { ChevronDown } from "lucide-react-native";
 import { Pressable, Text, TextInput, View } from "react-native";
-import { Button, Pill, QuietStatusPanel, Surface } from "../components/MobileUI";
-
-const RETRY_SUGGESTION_MAX_LENGTH = 80;
-
-const CONSTRAINT_STOP_WORDS = new Set([
-  "a",
-  "an",
-  "and",
-  "asked",
-  "brand",
-  "for",
-  "from",
-  "i",
-  "keep",
-  "need",
-  "needs",
-  "of",
-  "or",
-  "show",
-  "the",
-  "to",
-  "want",
-  "with",
-]);
-
-function normalizeConstraintTag(value) {
-  return String(value || "")
-    .replace(/\b(i asked for|asked for|needs to be|need to be|needs|need|keep|don't show|do not show)\b/gi, "")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-function addConstraintTag(tags, value) {
-  const normalized = normalizeConstraintTag(value);
-
-  if (!normalized || normalized.length < 3) {
-    return;
-  }
-
-  if (tags.some((tag) => tag.toLowerCase() === normalized.toLowerCase())) {
-    return;
-  }
-
-  tags.push(normalized);
-}
-
-function deriveConstraintTags({ followUpNotes, retryFeedback, suggestedQuery, submittedQuery }) {
-  const tags = [];
-  const source = String(suggestedQuery || "").trim();
-
-  if (source) {
-    const lowerSource = source.toLowerCase();
-    const underMatch = source.match(/\bunder\s+\$?\d+[\w\s-]*/i);
-    const words = source
-      .split(/\s+/)
-      .map((word) => word.replace(/[^\w$-]/g, ""))
-      .filter(Boolean);
-
-    if (words[0] && !CONSTRAINT_STOP_WORDS.has(words[0].toLowerCase())) {
-      addConstraintTag(tags, words[0]);
-    }
-
-    if (lowerSource.includes("dairy-free") || lowerSource.includes("dairy free")) {
-      addConstraintTag(tags, "dairy-free");
-    }
-
-    if (underMatch) {
-      addConstraintTag(tags, underMatch[0]);
-    }
-
-    if (tags.length === 0 && words.length > 0) {
-      addConstraintTag(tags, words.slice(0, Math.min(words.length, 3)).join(" "));
-    }
-  }
-
-  if (tags.length < 3) {
-    [submittedQuery, followUpNotes, retryFeedback]
-      .flatMap((value) => String(value || "").split(/[.,;\n]+/))
-      .map(normalizeConstraintTag)
-      .filter(Boolean)
-      .forEach((part) => {
-        if (tags.length >= 4) {
-          return;
-        }
-
-        const meaningfulWords = part
-          .split(/\s+/)
-          .filter((word) => !CONSTRAINT_STOP_WORDS.has(word.toLowerCase()));
-
-        addConstraintTag(tags, meaningfulWords.length > 0 ? meaningfulWords.join(" ") : part);
-      });
-  }
-
-  return tags.slice(0, 4);
-}
+import { Button, Surface } from "../components/MobileUI";
 
 export function SearchRetrySection({
-  applyRetrySuggestion,
   canRequestRetryAdvice,
   finalResults,
-  followUpNotes,
   isGeneratingRetryAdvice,
-  productQuery,
-  requestRetryAdvice,
-  retryAdvice,
+  onUpdatePicks,
   retryAdviceError,
   retryFeedback,
   setRetryFeedback,
 }) {
-  const suggestedQuery = String(retryAdvice?.suggestedQuery || "").trim();
   const [isExpanded, setIsExpanded] = useState(false);
-  const [editableSuggestion, setEditableSuggestion] = useState(suggestedQuery);
 
   const feedbackPayload = retryFeedback.trim();
   const canAskForAdvice = Boolean(canRequestRetryAdvice && feedbackPayload);
-  const canSearchSuggestion = Boolean(editableSuggestion.trim());
-  const constraintTags = deriveConstraintTags({
-    followUpNotes,
-    retryFeedback: feedbackPayload,
-    suggestedQuery,
-    submittedQuery: productQuery,
-  });
-
-  useEffect(() => {
-    setEditableSuggestion(suggestedQuery);
-  }, [suggestedQuery]);
 
   if (!Array.isArray(finalResults) || finalResults.length === 0) {
     return null;
   }
 
   function handleRequestAdvice() {
-    requestRetryAdvice({ rejectionFeedback: feedbackPayload });
+    onUpdatePicks(feedbackPayload);
   }
 
   function toggleExpanded() {
     setIsExpanded((currentValue) => !currentValue);
-  }
-
-  function handleSearchSuggestion() {
-    const didStart = applyRetrySuggestion(editableSuggestion);
-
-    if (didStart) {
-      setEditableSuggestion("");
-    }
   }
 
   return (
@@ -161,11 +42,10 @@ export function SearchRetrySection({
       >
         <View className="flex-1">
           <Text className="text-xl font-semibold leading-7 text-ink">
-            Want to correct the direction?
+            Improve these picks
           </Text>
           <Text className="mt-2 text-sm leading-5 text-stone-600">
-            Say what felt off. Focamai can suggest a sharper next search and start fresh from
-            there.
+            Tell us what should change and Focamai will update the search direction.
           </Text>
         </View>
         <View
@@ -179,9 +59,10 @@ export function SearchRetrySection({
       {isExpanded ? (
         <>
           <TextInput
+            accessibilityLabel="What should we change?"
             value={retryFeedback}
             onChangeText={setRetryFeedback}
-            placeholder="Example: Keep the budget, but avoid bulky options."
+            placeholder="Example: Make it lighter and under $100, but keep one-hand folding."
             placeholderTextColor="#8B8175"
             multiline
             textAlignVertical="top"
@@ -193,64 +74,14 @@ export function SearchRetrySection({
             className="mt-4"
             variant="primary"
           >
-            {isGeneratingRetryAdvice ? "Writing a better search..." : "Get new search suggestion"}
+            {isGeneratingRetryAdvice ? "Updating your picks..." : "Update my picks"}
           </Button>
-        </>
-      ) : null}
-
-      {retryAdvice ? (
-        <QuietStatusPanel className="mt-4 bg-white">
-          <Text className="text-xs font-semibold uppercase tracking-[1.2px] text-stone-500">
-            Suggested next search
-          </Text>
-          {retryAdvice.rationale ? (
-            <Text className="mt-2 text-sm leading-5 text-stone-600">{retryAdvice.rationale}</Text>
-          ) : null}
-
-          {suggestedQuery ? (
-            <View className="mt-3 rounded-[18px] border border-line bg-cream px-4 py-4">
-              <Text className="text-xs font-semibold uppercase tracking-[1px] text-stone-500">
-                Edit before searching
-              </Text>
-              <TextInput
-                accessibilityLabel="Suggested search query"
-                value={editableSuggestion}
-                onChangeText={setEditableSuggestion}
-                placeholder="Edit the suggested search"
-                placeholderTextColor="#8B8175"
-                maxLength={RETRY_SUGGESTION_MAX_LENGTH}
-                multiline
-                textAlignVertical="top"
-                className="mt-2 min-h-[72px] rounded-[18px] border border-line bg-white px-4 py-3 text-base font-semibold leading-6 text-ink"
-              />
-
-              {constraintTags.length > 0 ? (
-                <View className="mt-3 flex-row flex-wrap items-center gap-2">
-                  <Text className="text-xs font-semibold uppercase tracking-[1px] text-stone-500">
-                    Keeping
-                  </Text>
-                  {constraintTags.map((tag) => (
-                    <Pill key={tag}>{tag}</Pill>
-                  ))}
-                </View>
-              ) : null}
-
-              <View className="mt-4 gap-2">
-                <Button
-                  disabled={!canSearchSuggestion}
-                  onPress={handleSearchSuggestion}
-                  variant="primary"
-                >
-                  Search this suggestion
-                </Button>
-              </View>
-            </View>
-          ) : (
-            <Text className="mt-3 text-sm leading-5 text-slate-600">
-              No suggested query came back yet. You can still retry these picks below.
+          {isGeneratingRetryAdvice ? (
+            <Text className="mt-3 text-sm leading-5 text-stone-600">
+              Understanding what should change, then we’ll start finding better matches automatically.
             </Text>
-          )}
-        </QuietStatusPanel>
+          ) : null}
+        </>
       ) : null}
 
       {retryAdviceError ? (

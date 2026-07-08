@@ -248,9 +248,45 @@ describe("useMobileSearchController", () => {
       await retryAdviceRequest.promise;
     });
 
-    expect(result.current.retryAdvice).toBeNull();
     expect(result.current.retryAdviceError).toBe("");
     expect(result.current.isGeneratingRetryAdvice).toBe(false);
+
+    unmount();
+  });
+
+  it("automatically starts refreshed discovery from safe retry advice", async () => {
+    getRetryAdvice.mockResolvedValue({
+      rationale: "Keep portability and lower the weight.",
+      suggestedQuery: "lightweight travel stroller",
+    });
+    const { result, unmount } = renderHook(() => useMobileSearchController());
+
+    act(() => {
+      result.current.startDiscoverySearch({ queryOverride: "travel stroller" });
+    });
+    await waitFor(() => expect(result.current.canFinalize).toBe(true));
+
+    await act(async () => {
+      await result.current.finalizeFocusedPicks();
+    });
+    act(() => {
+      result.current.setRetryFeedback("avoid heavy options");
+    });
+
+    let didStart;
+    await act(async () => {
+      didStart = await result.current.requestRetryAdvice({
+        rejectionFeedback: "avoid heavy options",
+      });
+    });
+
+    expect(didStart).toBe(true);
+    expect(discoverProducts).toHaveBeenLastCalledWith({
+      amazonDomain: "amazon.com",
+      cacheMode: "refresh",
+      query: "lightweight travel stroller",
+    });
+    expect(result.current.productQuery).toBe("lightweight travel stroller");
 
     unmount();
   });

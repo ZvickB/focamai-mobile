@@ -246,7 +246,6 @@ export function useMobileSearchController() {
   const [phaseEvents, setPhaseEvents] = useState([]);
   const [querySuggestion, setQuerySuggestion] = useState(null);
   const [refinementPrompt, setRefinementPrompt] = useState(null);
-  const [retryAdvice, setRetryAdvice] = useState(null);
   const [retryAdviceError, setRetryAdviceError] = useState("");
   const [retryFeedback, setRetryFeedback] = useState("");
   const [shouldAskMarketplaceBeforeSearch, setShouldAskMarketplaceBeforeSearch] = useState(false);
@@ -304,7 +303,6 @@ export function useMobileSearchController() {
 
   function clearRetryAdviceState() {
     retryAdviceRequestIdRef.current += 1;
-    setRetryAdvice(null);
     setRetryAdviceError("");
     setIsGeneratingRetryAdvice(false);
   }
@@ -1263,16 +1261,15 @@ export function useMobileSearchController() {
         hasFinalResults: finalResults.length > 0,
         isGeneratingRetryAdvice,
       });
-      return;
+      return false;
     }
 
     if (!session?.submittedQuery) {
       console.info("[Focamai API] retry-advice request not attempted", {
         reason: "missing-submitted-query",
       });
-      setRetryAdvice(null);
       setRetryAdviceError("Start a fresh search before asking for a better direction.");
-      return;
+      return false;
     }
 
     const requestId = retryAdviceRequestIdRef.current + 1;
@@ -1288,7 +1285,6 @@ export function useMobileSearchController() {
 
     retryAdviceRequestIdRef.current = requestId;
     setIsGeneratingRetryAdvice(true);
-    setRetryAdvice(null);
     setRetryAdviceError("");
     setErrorMessage("");
 
@@ -1314,18 +1310,20 @@ export function useMobileSearchController() {
       });
 
       if (isRetryAdviceRequestStale()) {
-        return;
+        return false;
       }
 
-      setRetryAdvice({
-        recommendation: payload.recommendation || "",
-        rationale: payload.rationale || "",
-        suggestedQuery: payload.suggestedQuery || "",
-        timingMs: payload.clientTimingMs,
-      });
+      const suggestedQuery = String(payload.suggestedQuery || "").trim();
+
+      if (!suggestedQuery) {
+        setRetryAdviceError("We couldn't prepare a safe updated search. Try changing your note.");
+        return false;
+      }
+
+      return startDiscoverySearch({ cacheMode: "refresh", queryOverride: suggestedQuery });
     } catch (error) {
       if (isRetryAdviceRequestStale()) {
-        return;
+        return false;
       }
 
       setRetryAdviceError(
@@ -1333,6 +1331,7 @@ export function useMobileSearchController() {
           ? error.message
           : "Unable to suggest a better search direction.",
       );
+      return false;
     } finally {
       if (retryAdviceRequestIdRef.current === snapshot.requestId) {
         setIsGeneratingRetryAdvice(false);
@@ -1346,22 +1345,9 @@ export function useMobileSearchController() {
 
   function updateRetryFeedback(nextValue) {
     retryAdviceRequestIdRef.current += 1;
-    setRetryAdvice(null);
     setRetryAdviceError("");
     setIsGeneratingRetryAdvice(false);
     setRetryFeedback(nextValue);
-  }
-
-  function applyRetrySuggestion(query) {
-    const nextQuery = String(query || retryAdvice?.suggestedQuery || "").trim();
-
-    if (!nextQuery) {
-      setRetryAdviceError("Add a suggested search before starting again.");
-      return false;
-    }
-
-    startDiscoverySearch({ cacheMode: "refresh", queryOverride: nextQuery });
-    return true;
   }
 
   function loadDevFixture(scene) {
@@ -1404,7 +1390,6 @@ export function useMobileSearchController() {
     setIsFinalizing(false);
     setPhaseEvents([]);
     setRetryFeedback("");
-    setRetryAdvice(null);
     setRetryAdviceError("");
 
     if (scene === "results" || scene === "detail") {
@@ -1555,7 +1540,6 @@ export function useMobileSearchController() {
     refinementPrompt,
     requestRetryAdvice,
     restoredFlowPhase,
-    retryAdvice,
     retryAdviceError,
     retryFeedback,
     selectedAmazonDomain,
@@ -1566,7 +1550,6 @@ export function useMobileSearchController() {
     setRetryFeedback: updateRetryFeedback,
     setSelectedAmazonDomain,
     startDiscoverySearch,
-    applyRetrySuggestion,
     ...(__DEV__ ? { loadDevFixture } : {}),
   };
 }

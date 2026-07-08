@@ -257,7 +257,7 @@ Done when:
 - The refine step feels like one helpful question, not a form.
 
 ### Slice 6 - Retry and recovery
-Status: complete in code, component smoke verified, and Android export verified. Retry now stays under results as a recovery surface, asks what felt wrong in plain language, keeps correction chips quiet, leads with suggested-query advice plus rationale and editable search, keeps `Keeping` tags as reassurance only, and leaves same-session replacement picks as the clearly labeled fallback.
+Status: complete in code with focused component tests; rerun Android export for the latest change. Retry stays under results, asks what should change, and uses one `Update my picks` action. Safe AI advice automatically starts refreshed discovery; the generated-query confirmation, `Keeping` tags, and same-session replacement fallback are not active.
 
 Goal: make bad results recoverable without turning the app into endless browsing.
 
