@@ -33,11 +33,11 @@ describe("amazon marketplace persistence", () => {
     );
   });
 
-  it("accepts India as an active marketplace preference", async () => {
+  it("accepts a major untagged marketplace preference", async () => {
     AsyncStorage.setItem.mockResolvedValue(undefined);
 
-    await expect(saveAmazonDomainPreference("amazon.in")).resolves.toEqual({
-      domain: "amazon.in",
+    await expect(saveAmazonDomainPreference("amazon.co.uk")).resolves.toEqual({
+      domain: "amazon.co.uk",
       saved: true,
     });
   });
@@ -86,8 +86,8 @@ describe("amazon marketplace persistence", () => {
     });
   });
 
-  it("treats stale untagged marketplace preferences as the default store", async () => {
-    AsyncStorage.getItem.mockResolvedValue("amazon.co.uk");
+  it("treats no-longer-supported marketplace preferences as the default store", async () => {
+    AsyncStorage.getItem.mockResolvedValue("amazon.nl");
 
     await expect(loadSavedAmazonDomain()).resolves.toBe(DEFAULT_AMAZON_DOMAIN);
     await expect(loadAmazonMarketplacePreference()).resolves.toEqual({

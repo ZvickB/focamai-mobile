@@ -131,8 +131,9 @@ export default function PrivacyScreen() {
 
         <PolicySection title="Affiliate links">
           <PolicyText>
-            Amazon product links contain an affiliate tag. Focamai may earn a commission from a
-            qualifying purchase at no extra cost to you. Affiliate relationships do not change the
+            Product links for stores where Focamai has an Amazon Associates tag may earn a
+            commission from a qualifying purchase at no extra cost to you. Other supported local
+            Amazon stores use ordinary, untagged links. Affiliate relationships do not change the
             current recommendation logic, which uses your search and refinement input rather than
             commission amount.
           </PolicyText>

@@ -7,8 +7,25 @@ export const AMAZON_MARKETPLACE_PROMPT_SEEN_KEY = "focamai_marketplace_asked";
 export const AMAZON_MARKETPLACES = [
   { countryCode: "US", domain: "amazon.com", label: "United States", pricePrefix: "$" },
   { countryCode: "CA", domain: "amazon.ca", label: "Canada", pricePrefix: "CA$" },
+  { countryCode: "GB", domain: "amazon.co.uk", label: "United Kingdom", pricePrefix: "GBP " },
+  { countryCode: "DE", domain: "amazon.de", label: "Germany", pricePrefix: "EUR " },
+  { countryCode: "FR", domain: "amazon.fr", label: "France", pricePrefix: "EUR " },
+  { countryCode: "IT", domain: "amazon.it", label: "Italy", pricePrefix: "EUR " },
+  { countryCode: "ES", domain: "amazon.es", label: "Spain", pricePrefix: "EUR " },
+  { countryCode: "AU", domain: "amazon.com.au", label: "Australia", pricePrefix: "A$" },
+  { countryCode: "JP", domain: "amazon.co.jp", label: "Japan", pricePrefix: "JPY " },
   { countryCode: "IN", domain: "amazon.in", label: "India", pricePrefix: "₹" },
+  { countryCode: "MX", domain: "amazon.com.mx", label: "Mexico", pricePrefix: "MX$" },
+  { countryCode: "BR", domain: "amazon.com.br", label: "Brazil", pricePrefix: "R$" },
 ];
+
+export const PRIMARY_AMAZON_MARKETPLACES = AMAZON_MARKETPLACES.filter(
+  ({ countryCode }) => countryCode === "US" || countryCode === "CA",
+);
+
+export const MORE_AMAZON_MARKETPLACES = AMAZON_MARKETPLACES.filter(
+  ({ countryCode }) => countryCode !== "US" && countryCode !== "CA",
+);
 
 const SUPPORTED_AMAZON_DOMAINS = new Set(AMAZON_MARKETPLACES.map(({ domain }) => domain));
 

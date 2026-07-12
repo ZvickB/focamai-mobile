@@ -23,21 +23,28 @@ describe("RegionScreen", () => {
     jest.clearAllMocks();
   });
 
-  it("shows all active Amazon regions", () => {
+  it("keeps US and Canada as quick chips and reveals other major stores on demand", () => {
     const { getByText, getByTestId, queryByTestId } = renderRegionScreen();
 
-    expect(getByText("Available regions")).toBeTruthy();
-    expect(getByTestId("region.row.US")).toBeTruthy();
-    expect(getByTestId("region.row.CA")).toBeTruthy();
-    expect(getByTestId("region.row.IN")).toBeTruthy();
+    expect(getByText("Quick choices")).toBeTruthy();
+    expect(getByTestId("region.chip.US")).toBeTruthy();
+    expect(getByTestId("region.chip.CA")).toBeTruthy();
+    expect(getByTestId("region.moreStoresButton")).toBeTruthy();
     expect(queryByTestId("region.row.GB")).toBeNull();
-    expect(queryByTestId("region.row.DE")).toBeNull();
+
+    fireEvent.press(getByTestId("region.moreStoresButton"));
+
+    expect(getByTestId("region.moreStoresList")).toBeTruthy();
+    expect(getByTestId("region.row.GB")).toBeTruthy();
+    expect(getByTestId("region.row.DE")).toBeTruthy();
+    expect(getByTestId("region.row.JP")).toBeTruthy();
+    expect(getByTestId("region.row.IN")).toBeTruthy();
   });
 
   it("saves the selected region and returns to Search", async () => {
     const { getByTestId, navigation } = renderRegionScreen();
 
-    fireEvent.press(getByTestId("region.row.CA"));
+    fireEvent.press(getByTestId("region.chip.CA"));
 
     await waitFor(() => {
       expect(navigation.navigate).toHaveBeenCalledWith("Search", {

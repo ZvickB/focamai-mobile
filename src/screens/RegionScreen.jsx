@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { Pressable, Text, useWindowDimensions, View } from "react-native";
-import { Check } from "lucide-react-native";
+import { Check, ChevronDown } from "lucide-react-native";
 import { ScreenContainer, cx } from "../components/MobileUI";
 import {
-  AMAZON_MARKETPLACES,
   DEFAULT_AMAZON_DOMAIN,
   loadAmazonMarketplacePreference,
+  MORE_AMAZON_MARKETPLACES,
+  PRIMARY_AMAZON_MARKETPLACES,
   saveAmazonMarketplaceSelection,
 } from "../search/amazonMarketplaces";
 
@@ -95,10 +96,31 @@ function RegionList({ marketplaces, selectedAmazonDomain, onChoose }) {
   );
 }
 
+function RegionChip({ children, isSelected, onPress, testID }) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityState={{ selected: isSelected }}
+      className={cx(
+        "min-h-[44px] flex-row items-center justify-center gap-1.5 rounded-full border px-4",
+        isSelected ? "border-accent bg-accent" : "border-line bg-white",
+      )}
+      onPress={onPress}
+      testID={testID}
+    >
+      {children}
+    </Pressable>
+  );
+}
+
 export default function RegionScreen({ navigation }) {
   const { width } = useWindowDimensions();
   const isCompact = width <= 415;
   const [selectedAmazonDomain, setSelectedAmazonDomain] = useState(DEFAULT_AMAZON_DOMAIN);
+  const [isMoreStoresOpen, setIsMoreStoresOpen] = useState(false);
+  const isMoreStoreSelected = MORE_AMAZON_MARKETPLACES.some(
+    ({ domain }) => domain === selectedAmazonDomain,
+  );
 
   useEffect(() => {
     let isMounted = true;
@@ -139,13 +161,51 @@ export default function RegionScreen({ navigation }) {
 
       <View className={cx("w-full max-w-[430px] self-center", isCompact ? "gap-5" : "gap-6")}>
         <View className="gap-2">
-          <RegionSectionHeader title="Available regions" />
-          <RegionList
-            marketplaces={AMAZON_MARKETPLACES}
-            selectedAmazonDomain={selectedAmazonDomain}
-            onChoose={chooseMarketplace}
-          />
+          <RegionSectionHeader title="Quick choices" />
+          <View className="flex-row flex-wrap gap-2">
+            {PRIMARY_AMAZON_MARKETPLACES.map((marketplace) => {
+              const isSelected = selectedAmazonDomain === marketplace.domain;
+
+              return (
+                <RegionChip
+                  isSelected={isSelected}
+                  key={marketplace.domain}
+                  onPress={() => chooseMarketplace(marketplace.domain)}
+                  testID={`region.chip.${marketplace.countryCode}`}
+                >
+                  <Text className={cx("text-sm font-semibold", isSelected ? "text-white" : "text-ink")}>
+                    {marketplace.label}
+                  </Text>
+                </RegionChip>
+              );
+            })}
+            <RegionChip
+              isSelected={isMoreStoreSelected}
+              onPress={() => setIsMoreStoresOpen((isOpen) => !isOpen)}
+              testID="region.moreStoresButton"
+            >
+              <Text className={cx("text-sm font-semibold", isMoreStoreSelected ? "text-white" : "text-ink")}>
+                More stores
+              </Text>
+              <ChevronDown
+                color={isMoreStoreSelected ? "#ffffff" : "#14222b"}
+                size={16}
+                strokeWidth={2.3}
+              />
+            </RegionChip>
+          </View>
         </View>
+
+        {isMoreStoresOpen ? (
+          <View className="gap-2" testID="region.moreStoresList">
+            <RegionSectionHeader title="More Amazon stores" />
+            <RegionList
+              marketplaces={MORE_AMAZON_MARKETPLACES}
+              selectedAmazonDomain={selectedAmazonDomain}
+              onChoose={chooseMarketplace}
+            />
+          </View>
+        ) : null}
       </View>
     </ScreenContainer>
   );

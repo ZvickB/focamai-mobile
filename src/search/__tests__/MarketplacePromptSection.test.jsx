@@ -10,7 +10,7 @@ describe("MarketplacePromptSection", () => {
   it("keeps marketplace pill taps as draft state until confirm", () => {
     const confirmSelectedAmazonDomain = jest.fn();
 
-    const { getByLabelText, getByText } = render(
+    const { getByLabelText, getByTestId, getByText } = render(
       <MarketplacePromptSection
         confirmSelectedAmazonDomain={confirmSelectedAmazonDomain}
         selectedAmazonDomain="amazon.com"
@@ -30,13 +30,14 @@ describe("MarketplacePromptSection", () => {
   it("allows India to be selected for the pending search", () => {
     const confirmSelectedAmazonDomain = jest.fn();
 
-    const { getByLabelText, getByText } = render(
+    const { getByLabelText, getByTestId, getByText } = render(
       <MarketplacePromptSection
         confirmSelectedAmazonDomain={confirmSelectedAmazonDomain}
         selectedAmazonDomain="amazon.com"
       />,
     );
 
+    fireEvent.press(getByTestId("marketplacePrompt.moreStoresButton"));
     fireEvent.press(getByLabelText("Select India"));
     fireEvent.press(getByText("Continue with India"));
 
