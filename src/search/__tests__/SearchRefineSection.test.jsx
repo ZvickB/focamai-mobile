@@ -44,6 +44,15 @@ describe("SearchRefineSection", () => {
     expect(setFollowUpNotes).toHaveBeenCalledWith("under $200");
   });
 
+  it("notifies the screen when the notes input is focused so it can stay above the keyboard", () => {
+    const onNotesFocus = jest.fn();
+    const { getByTestId } = renderRefineSection({ onNotesFocus });
+
+    fireEvent(getByTestId("followup.notesInput"), "focus");
+
+    expect(onNotesFocus).toHaveBeenCalledTimes(1);
+  });
+
   it("adds static refinement chips to the notes without replacing the user's answer", () => {
     const setFollowUpNotes = jest.fn();
     const { getByTestId } = renderRefineSection({

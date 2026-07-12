@@ -53,6 +53,7 @@ export function ScreenContainer({
   onScroll,
   safeAreaEdges = ["bottom"],
   scrollEventThrottle,
+  scrollViewRef,
   stickyHeaderIndices,
   testID,
 }) {
@@ -77,6 +78,7 @@ export function ScreenContainer({
         ]}
         keyboardShouldPersistTaps={keyboardShouldPersistTaps}
         onScroll={onScroll}
+        ref={scrollViewRef}
         scrollEventThrottle={scrollEventThrottle}
         stickyHeaderIndices={stickyHeaderIndices}
       >
