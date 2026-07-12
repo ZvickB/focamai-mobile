@@ -23,6 +23,9 @@ import { useSearchFlow } from "../search/SearchFlowContext";
 import { getProductDisplayTitle } from "../search/productTitle";
 
 const RESULT_ROW_HANDOFF_PX = 10;
+const RESULTS_BOTTOM_PADDING_FRACTION = 0.28;
+const RESULTS_BOTTOM_PADDING_MIN = 180;
+const RESULTS_BOTTOM_PADDING_MAX = 300;
 
 function ResultsTopBar({ onBack, onNewSearch }) {
   return (
@@ -196,6 +199,10 @@ function SelectedResultImagePanel({ isCompact, item, onPress }) {
 export default function ResultsScreen({ navigation }) {
   const { height, width } = useWindowDimensions();
   const isCompact = width <= 415;
+  const bottomScrollPadding = Math.min(
+    RESULTS_BOTTOM_PADDING_MAX,
+    Math.max(RESULTS_BOTTOM_PADDING_MIN, Math.round(height * RESULTS_BOTTOM_PADDING_FRACTION)),
+  );
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [resultsSectionY, setResultsSectionY] = useState(0);
   const [focusedPicksY, setFocusedPicksY] = useState(0);
@@ -278,7 +285,7 @@ export default function ResultsScreen({ navigation }) {
       const didStart = await requestRetryAdvice({ rejectionFeedback: feedback });
 
       if (didStart) {
-        navigation.navigate("FollowUp");
+        navigation.navigate("RetryUpdating");
       }
 
       return didStart;
@@ -372,7 +379,7 @@ export default function ResultsScreen({ navigation }) {
           gap: 12,
           paddingHorizontal: isCompact ? 16 : 24,
           paddingTop: 0,
-          paddingBottom: height,
+          paddingBottom: bottomScrollPadding,
         }}
         fixedHeader={fixedHeader}
         onScroll={handleScroll}

@@ -78,7 +78,7 @@ export function SearchRetrySection({
           </Button>
           {isGeneratingRetryAdvice ? (
             <Text className="mt-3 text-sm leading-5 text-stone-600">
-              Understanding what should change, then we’ll start finding better matches automatically.
+              Preparing a better search based on what should change.
             </Text>
           ) : null}
         </>

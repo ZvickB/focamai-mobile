@@ -248,6 +248,7 @@ export function useMobileSearchController() {
   const [refinementPrompt, setRefinementPrompt] = useState(null);
   const [retryAdviceError, setRetryAdviceError] = useState("");
   const [retryFeedback, setRetryFeedback] = useState("");
+  const [retrySearchQuery, setRetrySearchQuery] = useState("");
   const [shouldAskMarketplaceBeforeSearch, setShouldAskMarketplaceBeforeSearch] = useState(false);
   const [showMarketplacePrompt, setShowMarketplacePrompt] = useState(false);
   const [restoredFlowPhase, setRestoredFlowPhase] = useState(null);
@@ -693,6 +694,7 @@ export function useMobileSearchController() {
     cacheMode = "",
     initialFollowUpNotes = "",
     queryOverride,
+    retrySearchQueryOverride = "",
   } = {}) {
     const normalizedQuery = String(queryOverride ?? productQuery).trim();
     const requestedAmazonDomain =
@@ -721,6 +723,7 @@ export function useMobileSearchController() {
     stopEnrichmentPolling();
     stopQueryQualityPolling({ clearSuggestion: true });
     clearRetryAdviceState();
+    setRetrySearchQuery(String(retrySearchQueryOverride || "").trim());
 
     const nextSession = createSearchSession({
       amazonDomain: requestedAmazonDomain,
@@ -919,7 +922,12 @@ export function useMobileSearchController() {
     return true;
   }
 
-  function startDiscoverySearch({ cacheMode = "", initialFollowUpNotes = "", queryOverride } = {}) {
+  function startDiscoverySearch({
+    cacheMode = "",
+    initialFollowUpNotes = "",
+    queryOverride,
+    retrySearchQueryOverride = "",
+  } = {}) {
     const normalizedQuery = String(queryOverride ?? productQuery).trim();
 
     if (!normalizedQuery) {
@@ -945,13 +953,19 @@ export function useMobileSearchController() {
         cacheMode,
         initialFollowUpNotes,
         queryOverride: normalizedQuery,
+        retrySearchQueryOverride,
       };
       setErrorMessage("");
       setShowMarketplacePrompt(true);
       return false;
     }
 
-    return runDiscoverySearch({ cacheMode, initialFollowUpNotes, queryOverride: normalizedQuery });
+    return runDiscoverySearch({
+      cacheMode,
+      initialFollowUpNotes,
+      queryOverride: normalizedQuery,
+      retrySearchQueryOverride,
+    });
   }
 
   async function refreshDiscoveryForHardConstraints({
@@ -1320,7 +1334,11 @@ export function useMobileSearchController() {
         return false;
       }
 
-      return startDiscoverySearch({ cacheMode: "refresh", queryOverride: suggestedQuery });
+      return startDiscoverySearch({
+        cacheMode: "refresh",
+        queryOverride: suggestedQuery,
+        retrySearchQueryOverride: suggestedQuery,
+      });
     } catch (error) {
       if (isRetryAdviceRequestStale()) {
         return false;
@@ -1450,6 +1468,7 @@ export function useMobileSearchController() {
     stopEnrichmentPolling();
     stopQueryQualityPolling({ clearSuggestion: true });
     clearRetryAdviceState();
+    setRetrySearchQuery("");
     setSession(null);
     setIsDiscovering(false);
     setIsGeneratingPrompt(false);
@@ -1542,6 +1561,7 @@ export function useMobileSearchController() {
     restoredFlowPhase,
     retryAdviceError,
     retryFeedback,
+    retrySearchQuery,
     selectedAmazonDomain,
     showMarketplacePrompt,
     confirmSelectedAmazonDomain,

@@ -16,6 +16,7 @@ import PrivacyScreen from "../screens/PrivacyScreen";
 import PriceWatchesScreen from "../screens/PriceWatchesScreen";
 import RegionScreen from "../screens/RegionScreen";
 import ResultsScreen from "../screens/ResultsScreen";
+import RetryUpdatingScreen from "../screens/RetryUpdatingScreen";
 import SearchResultDetailScreen from "../screens/SearchResultDetailScreen";
 import SearchScreen from "../screens/SearchScreen";
 import SettingsScreen from "../screens/SettingsScreen";
@@ -87,6 +88,11 @@ export default function RootNavigator() {
             <Stack.Screen
               name="Results"
               component={ResultsScreen}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="RetryUpdating"
+              component={RetryUpdatingScreen}
               options={{ headerShown: false }}
             />
             <Stack.Screen

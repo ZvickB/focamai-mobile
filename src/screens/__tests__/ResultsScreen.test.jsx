@@ -132,6 +132,6 @@ describe("ResultsScreen", () => {
     expect(requestRetryAdvice).toHaveBeenCalledWith({
       rejectionFeedback: "avoid bulky options",
     });
-    await waitFor(() => expect(navigation.navigate).toHaveBeenCalledWith("FollowUp"));
+    await waitFor(() => expect(navigation.navigate).toHaveBeenCalledWith("RetryUpdating"));
   });
 });

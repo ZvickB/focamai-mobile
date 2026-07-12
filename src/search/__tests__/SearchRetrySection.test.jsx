@@ -49,7 +49,7 @@ describe("SearchRetrySection", () => {
 
     fireEvent.press(getByLabelText("Show correction options"));
     expect(getByText("Updating your picks...")).toBeTruthy();
-    expect(getByText(/finding better matches automatically/i)).toBeTruthy();
+    expect(getByText(/preparing a better search/i)).toBeTruthy();
     expect(queryByLabelText("Suggested search query")).toBeNull();
     expect(queryByText("Search this suggestion")).toBeNull();
   });

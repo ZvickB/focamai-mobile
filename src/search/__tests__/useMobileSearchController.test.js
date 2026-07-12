@@ -287,6 +287,13 @@ describe("useMobileSearchController", () => {
       query: "lightweight travel stroller",
     });
     expect(result.current.productQuery).toBe("lightweight travel stroller");
+    expect(result.current.retrySearchQuery).toBe("lightweight travel stroller");
+
+    act(() => {
+      result.current.startDiscoverySearch({ queryOverride: "car seat" });
+    });
+
+    expect(result.current.retrySearchQuery).toBe("");
 
     unmount();
   });
