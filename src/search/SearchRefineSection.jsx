@@ -109,8 +109,6 @@ function RefinementChip({ chip, isCompact, onPress, selected }) {
 export function SearchRefineSection({
   followUpNotes,
   isGeneratingPrompt,
-  notesInputRef,
-  onNotesBlur,
   onNotesFocus,
   refinementPrompt,
   setFollowUpNotes,
@@ -212,11 +210,9 @@ export function SearchRefineSection({
             </View>
             <TextInput
               testID="followup.notesInput"
-              ref={notesInputRef}
               value={followUpNotes}
               maxLength={MAX_FOLLOW_UP_NOTES_LENGTH}
               onChangeText={handleNotesChange}
-              onBlur={onNotesBlur}
               onFocus={onNotesFocus}
               placeholder="Tell Focamai anything that's important..."
               placeholderTextColor="#B4ADA4"

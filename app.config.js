@@ -31,7 +31,7 @@ export default {
   expo: {
     name: "Focamai",
     slug: "focama-mobile",
-    version: "1.0.0",
+    version: "1.5.0",
     orientation: "portrait",
     icon: "./assets/app-icon.png",
     userInterfaceStyle: "light",

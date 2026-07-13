@@ -21,6 +21,7 @@
     "@supabase/supabase-js": "^2.108.2",
     "@tanstack/react-query": "^5.100.10",
     "expo": "~54.0.35",
+    "expo-application": "~7.0.8",
     "expo-av": "~16.0.8",
     "expo-font": "~14.0.12",
     "expo-linear-gradient": "~15.0.8",
@@ -60,5 +61,8 @@
       "^@sentry/react-native$": "<rootDir>/src/test/mocks/sentry-react-native.js",
       "^expo-av$": "<rootDir>/src/test/mocks/expo-av.js"
     }
+  },
+  "allowScripts": {
+    "fsevents@2.3.3": true
   }
 }

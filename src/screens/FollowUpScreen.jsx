@@ -1,7 +1,5 @@
-import { useEffect, useRef } from "react";
 import { Settings } from "lucide-react-native";
 import {
-  Keyboard,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -17,12 +15,11 @@ import {
   RecoveryPanel,
   ScreenContainer,
 } from "../components/MobileUI";
+import { useKeyboardInputScroll } from "../components/useKeyboardInputScroll";
 import { FinalizeLoadingState } from "../search/FinalizeLoadingState";
 import { SearchFlowProgressCue } from "../search/SearchFlowProgressCue";
 import { SearchRefineSection } from "../search/SearchRefineSection";
 import { useSearchFlow } from "../search/SearchFlowContext";
-
-const FOCUSED_NOTES_TOP_GUTTER = 24;
 
 function RefineHeader({ onBack, onSettings }) {
   return (
@@ -44,10 +41,7 @@ function RefineHeader({ onBack, onSettings }) {
 export default function FollowUpScreen({ navigation }) {
   const { width } = useWindowDimensions();
   const isCompact = width <= 415;
-  const scrollViewRef = useRef(null);
-  const notesInputRef = useRef(null);
-  const isNotesInputFocusedRef = useRef(false);
-  const keyboardScrollTimeoutRef = useRef(null);
+  const { handleInputFocus, scrollViewRef } = useKeyboardInputScroll();
   const {
     canFinalize,
     errorMessage,
@@ -91,60 +85,6 @@ export default function FollowUpScreen({ navigation }) {
   const recoveryMessage = canFinalize
     ? "Your notes are still here. Try building the shortlist again, or go back and adjust the search phrase."
     : "Go back and check the product phrase, region, or backend connection before trying again.";
-
-  function scrollNotesIntoView() {
-    const scrollView = scrollViewRef.current;
-    const notesInput = notesInputRef.current;
-
-    if (!scrollView || !notesInput) {
-      return;
-    }
-
-    notesInput.measureLayout(
-      scrollView,
-      (_left, top) => {
-        scrollView.scrollTo({
-          animated: true,
-          y: Math.max(0, top - FOCUSED_NOTES_TOP_GUTTER),
-        });
-      },
-      () => {},
-    );
-  }
-
-  function scheduleNotesIntoView() {
-    if (keyboardScrollTimeoutRef.current) {
-      clearTimeout(keyboardScrollTimeoutRef.current);
-    }
-
-    // Native layout settles after the keyboard animation starts.
-    keyboardScrollTimeoutRef.current = setTimeout(scrollNotesIntoView, 80);
-  }
-
-  function handleNotesFocus() {
-    isNotesInputFocusedRef.current = true;
-    scheduleNotesIntoView();
-  }
-
-  function handleNotesBlur() {
-    isNotesInputFocusedRef.current = false;
-  }
-
-  useEffect(() => {
-    const keyboardEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
-    const keyboardSubscription = Keyboard.addListener(keyboardEvent, () => {
-      if (isNotesInputFocusedRef.current) {
-        scheduleNotesIntoView();
-      }
-    });
-
-    return () => {
-      keyboardSubscription.remove();
-      if (keyboardScrollTimeoutRef.current) {
-        clearTimeout(keyboardScrollTimeoutRef.current);
-      }
-    };
-  }, []);
 
   return (
     <KeyboardAvoidingView
@@ -215,9 +155,7 @@ export default function FollowUpScreen({ navigation }) {
             <SearchRefineSection
               followUpNotes={followUpNotes}
               isGeneratingPrompt={isGeneratingPrompt}
-              notesInputRef={notesInputRef}
-              onNotesFocus={handleNotesFocus}
-              onNotesBlur={handleNotesBlur}
+              onNotesFocus={handleInputFocus}
               refinementPrompt={refinementPrompt}
               setFollowUpNotes={setFollowUpNotes}
               productQuery={productQuery}

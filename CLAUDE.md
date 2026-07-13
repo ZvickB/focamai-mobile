@@ -61,6 +61,7 @@ Use the normal command for ordinary UI/code edits. Use `--clear` after `.env` ch
 - **AsyncStorage:** active for saved marketplace-domain preference only.
 - **TanStack Query:** installed and provided at the app root; search logic has not been migrated to queries yet.
 - **Expo Linking:** re-added for retailer CTA outbound links.
+- **expo-application:** active for the Settings version footer (installed version name + Android versionCode).
 - **Not yet re-added:** Expo Constants, Expo Crypto, Expo Dev Client.
 
 ## Key Directories

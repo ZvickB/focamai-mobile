@@ -7,6 +7,7 @@ export function SearchRetrySection({
   canRequestRetryAdvice,
   finalResults,
   isGeneratingRetryAdvice,
+  onInputFocus,
   onUpdatePicks,
   retryAdviceError,
   retryFeedback,
@@ -62,6 +63,7 @@ export function SearchRetrySection({
             accessibilityLabel="What should we change?"
             value={retryFeedback}
             onChangeText={setRetryFeedback}
+            onFocus={onInputFocus}
             placeholder="Example: Make it lighter and under $100, but keep one-hand folding."
             placeholderTextColor="#8B8175"
             multiline

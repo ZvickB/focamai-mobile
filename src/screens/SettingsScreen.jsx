@@ -1,4 +1,5 @@
 import { ChevronRight, LogOut, Trash2, UserCircle } from "lucide-react-native";
+import * as Application from "expo-application";
 import { Alert, Pressable, Text, useWindowDimensions, View } from "react-native";
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -25,6 +26,25 @@ function SettingsHeader({ onBack }) {
       </Text>
       <View className={sideSlotClassName} />
     </View>
+  );
+}
+
+function AppVersionFooter() {
+  const versionName = Application.nativeApplicationVersion;
+  const buildNumber = Application.nativeBuildVersion;
+
+  if (!versionName) {
+    return null;
+  }
+
+  return (
+    <Text
+      className="text-center text-xs text-stone-400"
+      testID="settings.appVersion"
+    >
+      Focamai {versionName}
+      {buildNumber ? ` (${buildNumber})` : ""}
+    </Text>
   );
 }
 
@@ -232,6 +252,8 @@ export default function SettingsScreen({ navigation }) {
             ))}
           </View>
         </View>
+
+        <AppVersionFooter />
       </View>
     </ScreenContainer>
   );

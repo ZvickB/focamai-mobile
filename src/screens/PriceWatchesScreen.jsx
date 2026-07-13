@@ -1,5 +1,15 @@
 import { useCallback, useEffect, useState } from "react";
-import { Alert, Linking, Pressable, Text, TextInput, useWindowDimensions, View } from "react-native";
+import {
+  Alert,
+  KeyboardAvoidingView,
+  Linking,
+  Platform,
+  Pressable,
+  Text,
+  TextInput,
+  useWindowDimensions,
+  View,
+} from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { Bell, ChevronDown, ExternalLink, Trash2 } from "lucide-react-native";
 
@@ -12,6 +22,7 @@ import {
   ScreenContainer,
   Surface,
 } from "../components/MobileUI";
+import { useKeyboardInputScroll } from "../components/useKeyboardInputScroll";
 import { useWatches } from "../components/watch/useWatches";
 import { useAuth } from "../contexts/useAuth";
 import { MAX_PRICE_WATCHES } from "../lib/watch/watchStore";
@@ -69,7 +80,7 @@ function PriceFact({ label, value, accent = false }) {
   );
 }
 
-function WatchCard({ onRemove, onUpdate, watch }) {
+function WatchCard({ onInputFocus, onRemove, onUpdate, watch }) {
   const [expanded, setExpanded] = useState(false);
   const [threshold, setThreshold] = useState(String(watch.thresholdPct || 5));
   const [target, setTarget] = useState(watch.targetPrice ? String(watch.targetPrice) : "");
@@ -178,6 +189,7 @@ function WatchCard({ onRemove, onUpdate, watch }) {
                 className="h-12 flex-1 rounded-[18px] border border-line bg-white px-4 text-base text-ink"
                 keyboardType="decimal-pad"
                 onChangeText={setThreshold}
+                onFocus={onInputFocus}
                 testID={`watches.threshold.${watch.id}`}
                 value={threshold}
               />
@@ -190,6 +202,7 @@ function WatchCard({ onRemove, onUpdate, watch }) {
               className="h-12 rounded-[18px] border border-line bg-white px-4 text-base text-ink"
               keyboardType="decimal-pad"
               onChangeText={setTarget}
+              onFocus={onInputFocus}
               placeholder="No target price"
               placeholderTextColor="#a8a29e"
               testID={`watches.target.${watch.id}`}
@@ -241,6 +254,7 @@ function WatchCard({ onRemove, onUpdate, watch }) {
 export default function PriceWatchesScreen({ navigation }) {
   const { width } = useWindowDimensions();
   const isCompact = width <= 415;
+  const { handleInputFocus, scrollViewRef } = useKeyboardInputScroll();
   const { configured, user } = useAuth();
   const { error, loading, refresh, remove, update, watches } = useWatches({ enabled: Boolean(user) });
 
@@ -249,8 +263,15 @@ export default function PriceWatchesScreen({ navigation }) {
   }, [refresh, user]));
 
   return (
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      className="flex-1"
+      testID="watches.keyboardAvoidingView"
+    >
     <ScreenContainer
+      keyboardShouldPersistTaps="handled"
       safeAreaEdges={["top", "bottom"]}
+      scrollViewRef={scrollViewRef}
       testID="watches.screen"
       contentContainerStyle={{
         gap: isCompact ? 16 : 20,
@@ -307,10 +328,17 @@ export default function PriceWatchesScreen({ navigation }) {
           </Surface>
         ) : (
           watches.map((watch) => (
-            <WatchCard key={watch.id} onRemove={remove} onUpdate={update} watch={watch} />
+            <WatchCard
+              key={watch.id}
+              onInputFocus={handleInputFocus}
+              onRemove={remove}
+              onUpdate={update}
+              watch={watch}
+            />
           ))
         )}
       </View>
     </ScreenContainer>
+    </KeyboardAvoidingView>
   );
 }

@@ -1,8 +1,18 @@
 import { useState } from "react";
-import { ActivityIndicator, Pressable, Text, TextInput, View, useWindowDimensions } from "react-native";
+import {
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  Text,
+  TextInput,
+  View,
+  useWindowDimensions,
+} from "react-native";
 import { Eye, EyeOff, LockKeyhole } from "lucide-react-native";
 
 import { Button, HeaderBackButton, ScreenContainer, cx } from "../components/MobileUI";
+import { useKeyboardInputScroll } from "../components/useKeyboardInputScroll";
 import { useAuth } from "../contexts/useAuth";
 
 function getAuthErrorMessage(error) {
@@ -13,6 +23,7 @@ function getAuthErrorMessage(error) {
 export default function AuthScreen({ navigation, route }) {
   const { width } = useWindowDimensions();
   const isCompact = width <= 415;
+  const { handleInputFocus, scrollViewRef } = useKeyboardInputScroll();
 
   const { configured, loading: authLoading, requestPasswordReset, signIn, signUp } = useAuth();
   const mode = route?.name === "CreateAccount" ? "sign-up" : "sign-in";
@@ -102,8 +113,15 @@ export default function AuthScreen({ navigation, route }) {
   }
 
   return (
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      className="flex-1"
+      testID="auth.keyboardAvoidingView"
+    >
     <ScreenContainer
       testID="auth.screen"
+      keyboardShouldPersistTaps="handled"
+      scrollViewRef={scrollViewRef}
       safeAreaEdges={["top", "bottom"]}
       contentContainerStyle={{
         gap: isCompact ? 18 : 22,
@@ -193,6 +211,7 @@ export default function AuthScreen({ navigation, route }) {
               editable={!isBusy}
               keyboardType="email-address"
               onChangeText={setEmail}
+              onFocus={handleInputFocus}
               placeholder="you@example.com"
               placeholderTextColor="#a8a29e"
               testID="auth.emailInput"
@@ -209,6 +228,7 @@ export default function AuthScreen({ navigation, route }) {
                 className="h-12 rounded-[18px] border border-line bg-white pl-4 pr-12 text-base text-ink"
                 editable={!isBusy}
                 onChangeText={setPassword}
+                onFocus={handleInputFocus}
                 onSubmitEditing={handleSubmit}
                 placeholder="••••••••"
                 placeholderTextColor="#a8a29e"
@@ -272,5 +292,6 @@ export default function AuthScreen({ navigation, route }) {
 
       </View>
     </ScreenContainer>
+    </KeyboardAvoidingView>
   );
 }

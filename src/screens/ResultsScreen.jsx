@@ -15,6 +15,7 @@ import {
   ScreenContainer,
   SoftHeroGradient,
 } from "../components/MobileUI";
+import { useKeyboardInputScroll } from "../components/useKeyboardInputScroll";
 import { FinalizeLoadingState } from "../search/FinalizeLoadingState";
 import { SearchProgressStatus } from "../search/SearchProgressStatus";
 import { SearchRetrySection } from "../search/SearchRetrySection";
@@ -197,6 +198,7 @@ function SelectedResultImagePanel({ isCompact, item, onPress }) {
 }
 
 export default function ResultsScreen({ navigation }) {
+  const { handleInputFocus, scrollViewRef } = useKeyboardInputScroll();
   const { height, width } = useWindowDimensions();
   const isCompact = width <= 415;
   const bottomScrollPadding = Math.min(
@@ -358,6 +360,7 @@ export default function ResultsScreen({ navigation }) {
           canRequestRetryAdvice={canRequestRetryAdvice}
           finalResults={finalResults}
           isGeneratingRetryAdvice={isGeneratingRetryAdvice}
+          onInputFocus={handleInputFocus}
           onUpdatePicks={handleUpdatePicks}
           retryAdviceError={retryAdviceError}
           retryFeedback={retryFeedback}
@@ -384,6 +387,7 @@ export default function ResultsScreen({ navigation }) {
         fixedHeader={fixedHeader}
         onScroll={handleScroll}
         scrollEventThrottle={16}
+        scrollViewRef={scrollViewRef}
       >
         {scrollContent}
       </ScreenContainer>
