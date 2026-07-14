@@ -1,10 +1,16 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import * as AuthSession from "expo-auth-session";
+import * as WebBrowser from "expo-web-browser";
 
 import { getSupabaseClient, isSupabaseAuthConfigured } from "../lib/supabase";
 import { AuthContext } from "./useAuth";
 import { createRemoteHistoryStore } from "../lib/history/remoteHistoryStore";
 import { setHistoryStore } from "../lib/history/historyStore";
 import { localHistoryStore } from "../lib/history/localHistoryStore";
+
+WebBrowser.maybeCompleteAuthSession();
+
+const OAUTH_CALLBACK_PATH = "auth/callback";
 
 export async function migrateLocalHistoryToAccount(remoteStore, shouldContinue = () => true) {
   const localEntries = await localHistoryStore.list();
@@ -28,6 +34,45 @@ export async function migrateLocalHistoryToAccount(remoteStore, shouldContinue =
   for (const entry of localEntries) {
     await localHistoryStore.remove(entry.id);
   }
+}
+
+function readOAuthCallbackParams(callbackUrl) {
+  const query = callbackUrl.includes("?")
+    ? callbackUrl.slice(callbackUrl.indexOf("?") + 1).split("#")[0]
+    : "";
+  const hash = callbackUrl.includes("#") ? callbackUrl.slice(callbackUrl.indexOf("#") + 1) : "";
+  const queryParams = new URLSearchParams(query);
+  const hashParams = new URLSearchParams(hash);
+  const getParam = (key) => queryParams.get(key) || hashParams.get(key);
+
+  return {
+    accessToken: getParam("access_token"),
+    code: getParam("code"),
+    error: getParam("error"),
+    errorDescription: getParam("error_description"),
+    refreshToken: getParam("refresh_token"),
+  };
+}
+
+export async function finishOAuthCallback(client, callbackUrl) {
+  const params = readOAuthCallbackParams(callbackUrl);
+
+  if (params.error) {
+    return { error: new Error(params.errorDescription || params.error) };
+  }
+
+  if (params.code) {
+    return client.auth.exchangeCodeForSession(params.code);
+  }
+
+  if (params.accessToken && params.refreshToken) {
+    return client.auth.setSession({
+      access_token: params.accessToken,
+      refresh_token: params.refreshToken,
+    });
+  }
+
+  return { error: new Error("Google sign-in did not return a usable session.") };
 }
 
 export function AuthProvider({ children }) {
@@ -132,10 +177,44 @@ export function AuthProvider({ children }) {
     });
   }, []);
 
-  const signInWithGoogle = useCallback(async () => {
-    // Stubbed until Slice 5 wires up expo-auth-session.
-    return { error: new Error("Google sign-in is not yet available on mobile.") };
+  const signInWithOAuthProvider = useCallback(async (provider) => {
+    const client = getSupabaseClient();
+    if (!client) {
+      return { error: new Error("Supabase auth is not configured.") };
+    }
+
+    const redirectTo = AuthSession.makeRedirectUri({ path: OAUTH_CALLBACK_PATH });
+    const { data, error } = await client.auth.signInWithOAuth({
+      provider,
+      options: {
+        redirectTo,
+        skipBrowserRedirect: true,
+        queryParams: provider === "google"
+          ? {
+            access_type: "offline",
+            prompt: "select_account",
+          }
+          : undefined,
+      },
+    });
+
+    if (error) {
+      return { error };
+    }
+
+    if (!data?.url) {
+      return { error: new Error("Google sign-in could not start.") };
+    }
+
+    const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
+    if (result.type !== "success") {
+      return { data: { cancelled: true }, error: null };
+    }
+
+    return finishOAuthCallback(client, result.url);
   }, []);
+
+  const signInWithGoogle = useCallback(() => signInWithOAuthProvider("google"), [signInWithOAuthProvider]);
 
   const signOut = useCallback(async (options) => {
     const client = getSupabaseClient();

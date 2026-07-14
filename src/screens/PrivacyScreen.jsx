@@ -43,7 +43,7 @@ export default function PrivacyScreen() {
       <ScreenIntro
         eyebrow="Privacy Policy"
         title="How Focamai handles your information."
-        description="This policy applies to the Focamai website and mobile app and reflects the features implemented as of July 6, 2026."
+        description="This policy applies to the Focamai website and mobile app and reflects the features implemented as of July 13, 2026."
       />
 
       <View className="mt-8 gap-7">
@@ -54,7 +54,7 @@ export default function PrivacyScreen() {
           </PolicyBullet>
           <PolicyBullet>
             Account email, Supabase user ID, and authentication/session information. Mobile supports
-            email and password accounts; Google sign-in is currently available only on the website.
+            email and password accounts plus optional Google sign-in when account UI is enabled.
           </PolicyBullet>
           <PolicyBullet>
             Signed-out search history stored on the device, or account-backed saved searches when
@@ -66,8 +66,9 @@ export default function PrivacyScreen() {
             IDs, app version, platform, timestamps, errors, and performance information.
           </PolicyBullet>
           <PolicyBullet>
-            Production mobile crash reports and serious app errors, including stack traces, app
-            version, and device and operating-system context, when Sentry reporting is configured.
+            Production mobile crash reports and serious app errors, plus sampled app-start and
+            screen-performance measurements such as timing and frame health, when Sentry reporting
+            is configured.
           </PolicyBullet>
           <PolicyBullet>
             Ordinary request data received by hosting providers, such as IP address and user-agent
@@ -102,10 +103,11 @@ export default function PrivacyScreen() {
             Anthropic for AI processing; Rainforest API for Amazon product data and price checks;
             SerpApi when an eligible signed-in user explicitly runs Deep Dive; Render for backend
             hosting; Vercel for website hosting and web performance analytics; Sentry for backend
-            errors and configured production mobile crash reporting; Resend for enabled price-watch emails; Google for
-            optional website sign-in and web fonts; and Amazon and product-image hosts for product
-            images, product pages, and affiliate attribution. Focamai's current code does not sell
-            personal information or use it for targeted ads.
+            errors plus configured mobile crash and sampled performance reporting; Resend for
+            enabled price-watch emails; Google for optional sign-in and website web fonts; and
+            Amazon and product-image hosts for product images, product pages, and affiliate
+            attribution. Focamai's current code does not sell personal information or use it for
+            targeted ads.
           </PolicyText>
         </PolicySection>
 
@@ -118,9 +120,11 @@ export default function PrivacyScreen() {
             uses browser local storage plus Vercel Analytics and Speed Insights.
           </PolicyText>
           <PolicyText>
-            Mobile Sentry reporting is limited to crashes and serious errors. Performance tracing,
-            profiling, session replay, automatic session tracking, breadcrumbs, app-hang tracking,
-            and default personally identifying information are disabled.
+            Mobile Sentry reporting includes crashes, serious errors, and a 10% sample of app-start
+            and screen-performance transactions. Performance events are scrubbed of user, request,
+            extra, and breadcrumb data; default personally identifying information is disabled.
+            Profiling, Session Replay, automatic session tracking, breadcrumbs, app-hang tracking,
+            screen recording, and user-input recording are disabled.
           </PolicyText>
           <PolicyText>
             Focamai does not currently add advertising cookies. After you open an Amazon link,

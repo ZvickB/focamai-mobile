@@ -31,17 +31,19 @@ export default {
   expo: {
     name: "Focamai",
     slug: "focama-mobile",
+    scheme: "focamai",
     version: "1.5.0",
     orientation: "portrait",
     icon: "./assets/app-icon.png",
     userInterfaceStyle: "light",
     newArchEnabled: true,
     splash: {
-      image: "./assets/splash-brand.png",
+      image: "./assets/splash-wordmark.png",
       resizeMode: "contain",
       backgroundColor: "#fbf7ef",
     },
     ios: {
+      bundleIdentifier: "com.focamai.app",
       supportsTablet: true,
       infoPlist: {
         NSMicrophoneUsageDescription: "Focamai uses your microphone to let you search by voice.",
@@ -69,9 +71,19 @@ export default {
       },
     },
     plugins: [
+      [
+        "expo-splash-screen",
+        {
+          backgroundColor: "#fbf7ef",
+          enableFullScreenImage_legacy: true,
+          image: "./assets/splash-wordmark.png",
+          resizeMode: "contain",
+        },
+      ],
       "expo-font",
       "expo-av",
       "expo-secure-store",
+      "expo-web-browser",
       [
         "@sentry/react-native/expo",
         {

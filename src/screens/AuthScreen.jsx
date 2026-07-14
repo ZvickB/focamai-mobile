@@ -25,7 +25,7 @@ export default function AuthScreen({ navigation, route }) {
   const isCompact = width <= 415;
   const { handleInputFocus, scrollViewRef } = useKeyboardInputScroll();
 
-  const { configured, loading: authLoading, requestPasswordReset, signIn, signUp } = useAuth();
+  const { configured, loading: authLoading, requestPasswordReset, signIn, signInWithGoogle, signUp } = useAuth();
   const mode = route?.name === "CreateAccount" ? "sign-up" : "sign-in";
   const [email, setEmail] = useState(route?.params?.draftEmail || "");
   const [password, setPassword] = useState("");
@@ -110,6 +110,38 @@ export default function AuthScreen({ navigation, route }) {
     }
 
     setStatusMessage("If an account exists for that email, we sent a password-reset link. Open it to choose a new password.");
+  }
+
+  async function handleGoogleSignIn() {
+    setErrorMessage("");
+    setStatusMessage("");
+
+    if (!configured) {
+      setErrorMessage("Supabase auth is not configured yet.");
+      return;
+    }
+
+    setSubmitting(true);
+    let data = null;
+    let error = null;
+    try {
+      ({ data, error } = await signInWithGoogle());
+    } catch (googleError) {
+      error = googleError;
+    } finally {
+      setSubmitting(false);
+    }
+
+    if (error) {
+      setErrorMessage(getAuthErrorMessage(error));
+      return;
+    }
+
+    if (data?.cancelled) {
+      return;
+    }
+
+    navigation.goBack();
   }
 
   return (
@@ -288,6 +320,23 @@ export default function AuthScreen({ navigation, route }) {
               submitLabel
             )}
           </Button>
+        </View>
+
+        <View className="gap-4">
+          <View className="flex-row items-center gap-3">
+            <View className="h-px flex-1 bg-line" />
+            <Text className="text-xs font-semibold uppercase tracking-[1.6px] text-stone-400">Or</Text>
+            <View className="h-px flex-1 bg-line" />
+          </View>
+          <Pressable
+            accessibilityRole="button"
+            className="h-12 items-center justify-center rounded-[18px] border border-line bg-white px-4"
+            disabled={isBusy}
+            onPress={handleGoogleSignIn}
+            testID="auth.googleButton"
+          >
+            <Text className="text-sm font-semibold text-ink">Continue with Google</Text>
+          </Pressable>
         </View>
 
       </View>

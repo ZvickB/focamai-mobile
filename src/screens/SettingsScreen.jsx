@@ -8,6 +8,7 @@ import { useAuth } from "../contexts/useAuth";
 import {
   isMobileAccountUiEnabled,
   isMobilePriceWatchUiEnabled,
+  isSentryVerificationUiEnabled,
 } from "../config/features";
 import { deleteAccount } from "../lib/account/deleteAccount";
 import { localHistoryStore } from "../lib/history/localHistoryStore";
@@ -210,6 +211,7 @@ export default function SettingsScreen({ navigation }) {
   const { width } = useWindowDimensions();
   const isCompact = width <= 415;
   const accountUiEnabled = isMobileAccountUiEnabled();
+  const sentryVerificationUiEnabled = isSentryVerificationUiEnabled();
   const menuItems = [
     { label: "Shopping region", routeName: "Region" },
     { label: "Search history", routeName: "History" },
@@ -217,6 +219,9 @@ export default function SettingsScreen({ navigation }) {
     { label: "Contact", routeName: "Contact" },
     { label: "Privacy", routeName: "Privacy" },
     { label: "Affiliate Disclosure", routeName: "AffiliateDisclosure" },
+    ...(sentryVerificationUiEnabled
+      ? [{ label: "Sentry verification (temporary)", routeName: "SentryVerification" }]
+      : []),
   ];
 
   return (

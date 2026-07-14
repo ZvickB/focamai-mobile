@@ -1,7 +1,12 @@
-import { scrubSentryEvent } from "../sentry";
+import * as Sentry from "@sentry/react-native";
+import {
+  scrubSentryEvent,
+  sendSentryVerificationError,
+  sendSentryVerificationTransaction,
+} from "../sentry";
 
 describe("Sentry event scrubbing", () => {
-  it("removes user and request context while preserving crash details", () => {
+  it("removes private event context and error messages while preserving crash type", () => {
     const event = scrubSentryEvent({
       breadcrumbs: [{ message: "search text" }],
       contexts: { device: { model: "test-device" } },
@@ -14,12 +19,20 @@ describe("Sentry event scrubbing", () => {
     expect(event).toEqual(
       expect.objectContaining({
         contexts: { device: { model: "test-device" } },
-        exception: { values: [{ type: "Error", value: "render failed" }] },
+        exception: { values: [{ type: "Error", value: "Error message redacted" }] },
       }),
     );
     expect(event.breadcrumbs).toBeUndefined();
     expect(event.extra).toBeUndefined();
     expect(event.request).toBeUndefined();
     expect(event.user).toBeUndefined();
+    expect(event.message).toBeUndefined();
+  });
+
+  it("keeps verification signals explicit and transaction-only", () => {
+    expect(sendSentryVerificationError()).toBe(false);
+    expect(sendSentryVerificationTransaction()).toBe(false);
+    expect(Sentry.captureException).not.toHaveBeenCalled();
+    expect(Sentry.startSpan).not.toHaveBeenCalled();
   });
 });

@@ -224,6 +224,29 @@ describe("AuthScreen", () => {
     expect(authValue.requestPasswordReset).not.toHaveBeenCalled();
   });
 
+  it("starts Google sign in and navigates back after a session is created", async () => {
+    const { getByTestId, authValue, navigation } = renderWithAuth();
+
+    fireEvent.press(getByTestId("auth.googleButton"));
+
+    await waitFor(() => {
+      expect(authValue.signInWithGoogle).toHaveBeenCalledTimes(1);
+    });
+    expect(navigation.goBack).toHaveBeenCalled();
+  });
+
+  it("keeps the auth screen open when Google sign in is cancelled", async () => {
+    const signInWithGoogle = jest.fn().mockResolvedValue({ data: { cancelled: true }, error: null });
+    const { getByTestId, navigation } = renderWithAuth({ signInWithGoogle });
+
+    fireEvent.press(getByTestId("auth.googleButton"));
+
+    await waitFor(() => {
+      expect(signInWithGoogle).toHaveBeenCalledTimes(1);
+    });
+    expect(navigation.goBack).not.toHaveBeenCalled();
+  });
+
   it("navigates back when back button is pressed", () => {
     const { getByTestId, navigation } = renderWithAuth();
 

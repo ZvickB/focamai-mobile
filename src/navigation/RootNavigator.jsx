@@ -1,4 +1,5 @@
-import { NavigationContainer, DefaultTheme } from "@react-navigation/native";
+import * as Sentry from "@sentry/react-native";
+import { DefaultTheme } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { Platform } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -20,13 +21,16 @@ import RetryUpdatingScreen from "../screens/RetryUpdatingScreen";
 import SearchResultDetailScreen from "../screens/SearchResultDetailScreen";
 import SearchScreen from "../screens/SearchScreen";
 import SettingsScreen from "../screens/SettingsScreen";
+import SentryVerificationScreen from "../screens/SentryVerificationScreen";
 import { SearchFlowProvider } from "../search/SearchFlowContext";
 import { appThemeTokens } from "../theme/themeTokens";
 import { AppErrorBoundary } from "../components/AppErrorBoundary";
+import { isSentryVerificationUiEnabled } from "../config/features";
 
 const Stack = createNativeStackNavigator();
 
-export default function RootNavigator() {
+export default function RootNavigator({ onReady }) {
+  const sentryVerificationUiEnabled = isSentryVerificationUiEnabled();
   const navigationTheme = {
     ...DefaultTheme,
     colors: {
@@ -42,7 +46,7 @@ export default function RootNavigator() {
   return (
     <AppErrorBoundary>
     <SafeAreaProvider>
-      <NavigationContainer theme={navigationTheme}>
+      <Sentry.NavigationContainer onReady={onReady} theme={navigationTheme}>
         <SearchFlowProvider>
           <Stack.Navigator
             initialRouteName={__DEV__ ? "DevLauncher" : "Search"}
@@ -118,6 +122,13 @@ export default function RootNavigator() {
               component={SettingsScreen}
               options={{ headerShown: false }}
             />
+            {sentryVerificationUiEnabled ? (
+              <Stack.Screen
+                name="SentryVerification"
+                component={SentryVerificationScreen}
+                options={{ headerShown: false }}
+              />
+            ) : null}
             <Stack.Screen
               name="History"
               component={HistoryScreen}
@@ -146,7 +157,7 @@ export default function RootNavigator() {
             />
           </Stack.Navigator>
         </SearchFlowProvider>
-      </NavigationContainer>
+      </Sentry.NavigationContainer>
     </SafeAreaProvider>
     </AppErrorBoundary>
   );

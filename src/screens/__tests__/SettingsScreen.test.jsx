@@ -23,6 +23,7 @@ jest.mock("@tanstack/react-query", () => ({ useQueryClient: () => ({ clear: mock
 describe("SettingsScreen", () => {
   beforeEach(() => {
     delete process.env.EXPO_PUBLIC_ACCOUNT_UI_ENABLED;
+    delete process.env.EXPO_PUBLIC_SENTRY_DEBUG_ENABLED;
     mockAuth.session = null;
     mockAuth.user = null;
     mockAuth.signOut.mockReset().mockResolvedValue({ error: null });
@@ -108,5 +109,15 @@ describe("SettingsScreen", () => {
     expect(queryByText("Account")).toBeNull();
     expect(queryByText("Sign out")).toBeNull();
     expect(queryByText("Delete account")).toBeNull();
+  });
+
+  it("shows the temporary Sentry verifier only for internal verification builds", () => {
+    process.env.EXPO_PUBLIC_SENTRY_DEBUG_ENABLED = "true";
+    const navigation = { navigate: jest.fn() };
+    const { getByText } = render(<SettingsScreen navigation={navigation} />);
+
+    fireEvent.press(getByText("Sentry verification (temporary)"));
+
+    expect(navigation.navigate).toHaveBeenCalledWith("SentryVerification");
   });
 });

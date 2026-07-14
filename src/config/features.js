@@ -13,3 +13,7 @@ export function isMobileAccountUiEnabled() {
 export function isMobilePriceWatchUiEnabled() {
   return isEnabled(process.env.EXPO_PUBLIC_PRICE_WATCH_UI_ENABLED);
 }
+
+export function isSentryVerificationUiEnabled() {
+  return isEnabled(process.env.EXPO_PUBLIC_SENTRY_DEBUG_ENABLED);
+}
