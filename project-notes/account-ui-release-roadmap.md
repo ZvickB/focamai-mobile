@@ -4,13 +4,13 @@
 
 Enable optional mobile sign-in for a later Play release without making search account-gated or reopening Price Watch and Deep Dive. The user-facing promise is deliberately narrow:
 
-> Sign in to keep saved searches across devices.
+> Sign in to keep saved searches across devices and choose how future shortlists are ranked.
 
 Accounts remain optional. Signed-out users keep device-local history and can complete the full search flow.
 
 ## Current starting point
 
-- Account UI, email/password auth, Google OAuth, SecureStore session persistence, local-to-account saved-search migration, and account deletion are implemented behind `EXPO_PUBLIC_ACCOUNT_UI_ENABLED=true`.
+- Account UI, email/password auth, Google OAuth, SecureStore session persistence, local-to-account saved-search migration, ranking preferences, and account deletion are implemented behind `EXPO_PUBLIC_ACCOUNT_UI_ENABLED=true`.
 - The production build has this flag off and does not contain the Supabase public configuration.
 - The existing Play Data Safety declaration intentionally omits Email address and User IDs for that account-free build. See `project-notes/play-store/review.md`.
 - Price Watch and Deep Dive must remain disabled for this release (`EXPO_PUBLIC_PRICE_WATCH_UI_ENABLED` and `EXPO_PUBLIC_DEEP_DIVE_UI_ENABLED` stay false/unset).
@@ -27,11 +27,15 @@ Accounts remain optional. Signed-out users keep device-local history and can com
 
 Complete the gates in order. A failed gate is a reason to keep the current account-free production build, not to weaken the deletion/privacy requirements.
 
+**Progress (2026-07-14):** Gates 1–3 are reported complete. The next required gate is Gate 4: update the authenticated-build privacy disclosures and Play Console Data Safety form before uploading it to a Play testing track.
+
 ### Gate 1 — Confirm the product promise
+
+**Status: complete (reported 2026-07-14).**
 
 **Owner decision:** explicitly choose the next release as the "saved-search sync" release.
 
-- Keep entry points quiet and contextual: Search header `Sign in` and History `Sign in to sync`; no account prompts in Refine, Results, or Detail.
+- Keep entry points quiet and contextual: Search header `Sign in` changes to a signed-in avatar menu containing Preferences and Search history; History itself can still offer `Sign in to sync`; no account prompts in Refine, Results, or Detail.
 - Confirm that synced saved searches work across at least two devices/accounts in the live environment.
 - Write one support-ready explanation of what signing in changes, what remains available without an account, and how deletion works.
 - Decide whether email verification is required before a user can use sync. Keep this consistent between the Supabase provider settings, app copy, and support explanation.
@@ -39,6 +43,8 @@ Complete the gates in order. A failed gate is a reason to keep the current accou
 **Exit criterion:** there is a clear, truthful one-sentence benefit for sign-in, and no enabled account feature depends on a future Price Watch/Deep Dive rollout.
 
 ### Gate 2 — Configure a safe authenticated preview build
+
+**Status: complete (reported 2026-07-14).**
 
 Prepare a new EAS preview/internal-test environment without changing the public production release.
 
@@ -57,11 +63,13 @@ Prepare a new EAS preview/internal-test environment without changing the public 
 
 ### Gate 3 — Live device acceptance testing
 
+**Status: complete (reported 2026-07-14).**
+
 Run this on a physical Android device against deployed Supabase and Render, not only Expo Go or Jest.
 
 1. **Email/password:** create account, sign in, sign out, sign back in, and use password reset if that path is offered.
 2. **Google:** finish consent in the browser, return to the app, and confirm the Supabase session survives an app restart.
-3. **History sync:** complete a search while signed out; sign in and verify only migrated local entries are removed locally; then verify saved searches are visible from a second signed-in device.
+3. **History sync and preferences:** complete a search while signed out; sign in and verify only migrated local entries are removed locally; then verify saved searches and a changed ranking preference are visible from a second signed-in device. Confirm the saved priority is sent with the next finalize request and changes the shortlist as expected.
 4. **Anonymous continuity:** sign out and confirm new searches/history still work locally and search remains completely ungated.
 5. **Failure handling:** test cancelled Google consent, bad credentials, offline/auth-network failure, and an expired/revoked session. The app must explain the failure and remain usable for search.
 6. **Deletion:** delete the account from Settings, verify the confirmation and signed-out reset, then verify the account's saved searches/auth identity are actually deleted or inaccessible as designed. Also verify the public `https://focamai.com/delete-account` pathway works without the app installed.
@@ -72,6 +80,8 @@ Run `npm test -- --runInBand` and `npm run check:android-export` before and afte
 **Exit criterion:** all seven scenarios pass in the live preview build, with no unresolved auth redirect, account migration, or deletion defect.
 
 ### Gate 4 — Update the public disclosures before Play submission
+
+**Status: next.**
 
 Update the privacy policy and Play Console to describe the build that will actually be uploaded.
 
@@ -101,7 +111,7 @@ Promote only after Gates 1–5 are complete.
 - Rebuild production with account UI and the required Supabase public configuration enabled.
 - Reconfirm `EXPO_PUBLIC_PRICE_WATCH_UI_ENABLED` and `EXPO_PUBLIC_DEEP_DIVE_UI_ENABLED` are false/unset.
 - Submit the matching, updated Data Safety form with the app update.
-- Announce sign-in only as saved-search sync; do not imply search requires an account.
+- Announce sign-in as saved-search sync plus optional shortlist priorities; do not imply search requires an account.
 
 ## Rollback plan
 
@@ -116,4 +126,4 @@ If a severe auth, redirect, privacy, or deletion problem appears:
 
 ## Definition of done
 
-The authenticated production build is live, its Play disclosures match its behavior, users can search without an account, signed-in users can sync saved searches across devices, and both in-app and web account-deletion paths have been live-tested.
+The authenticated production build is live, its Play disclosures match its behavior, users can search without an account, signed-in users can sync saved searches and choose shortlist priorities, and both in-app and web account-deletion paths have been live-tested.
