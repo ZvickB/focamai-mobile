@@ -15,6 +15,7 @@ import HistoryScreen from "../screens/HistoryScreen";
 import HomeScreen from "../screens/HomeScreen";
 import PrivacyScreen from "../screens/PrivacyScreen";
 import PriceWatchesScreen from "../screens/PriceWatchesScreen";
+import PreferencesScreen from "../screens/PreferencesScreen";
 import RegionScreen from "../screens/RegionScreen";
 import ResultsScreen from "../screens/ResultsScreen";
 import RetryUpdatingScreen from "../screens/RetryUpdatingScreen";
@@ -120,6 +121,11 @@ export default function RootNavigator({ onReady }) {
             <Stack.Screen
               name="Settings"
               component={SettingsScreen}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="Preferences"
+              component={PreferencesScreen}
               options={{ headerShown: false }}
             />
             {sentryVerificationUiEnabled ? (

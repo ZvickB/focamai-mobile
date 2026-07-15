@@ -178,6 +178,7 @@ export async function finalizeSearch({
   discoveryToken,
   followUpNotes = "",
   query,
+  rankingPreference = "balanced",
 }) {
   assertApiBaseUrl();
 
@@ -197,6 +198,7 @@ export async function finalizeSearch({
         followUpNotes: normalizedNotes,
         platform: MOBILE_PLATFORM,
         query,
+        rankingPreference,
         requestMode,
       }),
     },

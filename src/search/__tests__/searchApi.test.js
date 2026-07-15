@@ -106,6 +106,41 @@ describe("request timeouts", () => {
       }),
     );
   });
+
+  it("sends the selected ranking preference when finalizing picks", async () => {
+    jest.resetModules();
+    const { finalizeSearch } = require("../searchApi");
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      headers: { get: jest.fn(() => "application/json") },
+      text: jest.fn().mockResolvedValue(JSON.stringify({ results: [] })),
+    });
+
+    await finalizeSearch({
+      amazonDomain: "amazon.com",
+      discoveryToken: "token-1",
+      followUpNotes: "Compact and quiet",
+      query: "travel stroller",
+      rankingPreference: "price",
+    });
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      "https://api.example.test/api/search/finalize",
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({
+          amazonDomain: "amazon.com",
+          discoveryToken: "token-1",
+          followUpNotes: "Compact and quiet",
+          platform: "mobile-ios",
+          query: "travel stroller",
+          rankingPreference: "price",
+          requestMode: "guided_refined",
+        }),
+      }),
+    );
+  });
 });
 
 describe("coerceDisplayText", () => {

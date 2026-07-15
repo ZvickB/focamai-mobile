@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { Settings } from "lucide-react-native";
-import { Pressable, Text, useWindowDimensions, View } from "react-native";
+import { ChevronRight, LogOut, Settings, Trash2 } from "lucide-react-native";
+import { Alert, Modal, Pressable, Text, useWindowDimensions, View } from "react-native";
+import { useQueryClient } from "@tanstack/react-query";
 import Svg, { Defs, LinearGradient, Rect, Stop } from "react-native-svg";
 import {
   AppHeader,
@@ -11,7 +12,9 @@ import {
   cx,
 } from "../components/MobileUI";
 import { useAuth } from "../contexts/useAuth";
-import { isMobileAccountUiEnabled } from "../config/features";
+import { isMobileAccountUiEnabled, isMobilePriceWatchUiEnabled } from "../config/features";
+import { deleteAccount } from "../lib/account/deleteAccount";
+import { localHistoryStore } from "../lib/history/localHistoryStore";
 import { MarketplacePromptSection } from "../search/MarketplacePromptSection";
 import { SearchEntrySection } from "../search/SearchEntrySection";
 import { SearchFlowProgressCue } from "../search/SearchFlowProgressCue";
@@ -73,10 +76,22 @@ function SettingsIconButton({ onPress }) {
   );
 }
 
-function SearchHeader({ onOpenSettings, onSignIn, showSignIn }) {
+function AccountAvatarButton({ email, onPress }) {
+  const initial = String(email || "F").trim().charAt(0).toUpperCase() || "F";
+
+  return (
+    <IconButton accessibilityLabel="Open account menu" className="bg-accent" onPress={onPress} testID="search.accountButton">
+      <Text className="text-sm font-semibold text-white">{initial}</Text>
+    </IconButton>
+  );
+}
+
+function SearchHeader({ onOpenAccountMenu, onOpenSettings, onSignIn, showAccount, showSignIn, userEmail }) {
   return (
     <AppHeader
-      left={showSignIn ? (
+      left={showAccount ? (
+        <AccountAvatarButton email={userEmail} onPress={onOpenAccountMenu} />
+      ) : showSignIn ? (
         <Pressable
           accessibilityRole="button"
           className="min-h-[44px] justify-center pr-2"
@@ -88,6 +103,57 @@ function SearchHeader({ onOpenSettings, onSignIn, showSignIn }) {
       ) : <View className="h-11 w-11" />}
       right={<SettingsIconButton onPress={onOpenSettings} />}
     />
+  );
+}
+
+function AccountSheetAction({ destructive = false, label, onPress }) {
+  return (
+    <Pressable
+      accessibilityLabel={label}
+      accessibilityRole="button"
+      className="min-h-[52px] flex-row items-center justify-between border-b border-line px-1"
+      onPress={onPress}
+    >
+      <Text className={cx("text-base font-medium", destructive ? "text-red-700" : "text-ink")}>{label}</Text>
+      {destructive ? <Trash2 color="#b91c1c" size={19} strokeWidth={2.1} /> : <ChevronRight color="#78716c" size={19} strokeWidth={2.2} />}
+    </Pressable>
+  );
+}
+
+function AccountSheet({ deleteError, email, onClose, onDeleteAccount, onOpenHistory, onOpenPreferences, onOpenPriceWatches, onSignOut, priceWatchUiEnabled, visible }) {
+  return (
+    <Modal animationType="fade" onRequestClose={onClose} transparent visible={visible}>
+      <View className="flex-1 justify-end">
+        <Pressable
+          accessibilityLabel="Close account menu"
+          accessibilityRole="button"
+          className="absolute inset-0 bg-black/20"
+          onPress={onClose}
+        />
+        <View className="rounded-t-[20px] border border-line bg-white px-5 pb-8 pt-5">
+          <View className="mb-4 gap-1">
+            <Text className="text-base font-semibold text-ink" numberOfLines={1}>{email}</Text>
+            <Text className="text-sm text-stone-500">Account</Text>
+          </View>
+          <View className="border-t border-line">
+            <AccountSheetAction label="Preferences" onPress={onOpenPreferences} />
+            <AccountSheetAction label="Search history" onPress={onOpenHistory} />
+            {priceWatchUiEnabled ? <AccountSheetAction label="Price watches" onPress={onOpenPriceWatches} /> : null}
+            <Pressable
+              accessibilityLabel="Sign out"
+              accessibilityRole="button"
+              className="min-h-[52px] flex-row items-center gap-2 border-b border-line px-1"
+              onPress={onSignOut}
+            >
+              <LogOut color="#78716c" size={18} strokeWidth={2.1} />
+              <Text className="text-base font-medium text-ink">Sign out</Text>
+            </Pressable>
+            <AccountSheetAction destructive label="Delete account" onPress={onDeleteAccount} />
+          </View>
+          {deleteError ? <Text accessibilityRole="alert" className="mt-3 text-sm leading-5 text-red-700">{deleteError}</Text> : null}
+        </View>
+      </View>
+    </Modal>
   );
 }
 
@@ -122,8 +188,13 @@ export default function SearchScreen({ navigation, route }) {
   const isCompact = width <= 415;
   const pendingNavigationToFollowUpRef = useRef(null);
   const [historyPrefill, setHistoryPrefill] = useState(null);
-  const { configured: authConfigured, user } = useAuth();
+  const [accountMenuVisible, setAccountMenuVisible] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+  const { configured: authConfigured, session, signOut, user } = useAuth();
+  const queryClient = useQueryClient();
   const accountUiEnabled = isMobileAccountUiEnabled();
+  const priceWatchUiEnabled = isMobilePriceWatchUiEnabled();
   const {
     activeSearchSession,
     clearRestoredFlowPhase,
@@ -237,6 +308,51 @@ export default function SearchScreen({ navigation, route }) {
     );
   }
 
+  function closeAccountMenu() {
+    setAccountMenuVisible(false);
+  }
+
+  function openAccountDestination(routeName) {
+    closeAccountMenu();
+    navigation.navigate(routeName);
+  }
+
+  async function handleSignOut() {
+    closeAccountMenu();
+    await signOut();
+  }
+
+  async function handleConfirmedAccountDeletion() {
+    setIsDeletingAccount(true);
+    setDeleteError("");
+
+    try {
+      await deleteAccount(session?.access_token);
+      await localHistoryStore.clear();
+      queryClient.clear();
+      await signOut({ scope: "local" });
+      closeAccountMenu();
+      navigation.reset({ index: 0, routes: [{ name: "Search" }] });
+    } catch (error) {
+      setDeleteError(error instanceof Error ? error.message : "We could not delete your account. Please try again.");
+    } finally {
+      setIsDeletingAccount(false);
+    }
+  }
+
+  function confirmAccountDeletion() {
+    if (isDeletingAccount) return;
+
+    Alert.alert(
+      "Delete your Focamai account?",
+      "This permanently deletes your account, saved searches, price watches, and Deep Dive usage record. This cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        { text: "Delete account", style: "destructive", onPress: handleConfirmedAccountDeletion },
+      ],
+    );
+  }
+
   return (
     <ScreenContainer
       backgroundElement={<SearchBackgroundWash />}
@@ -254,9 +370,12 @@ export default function SearchScreen({ navigation, route }) {
       <View className="w-full max-w-[430px] flex-grow self-center">
         <View className={isCompact ? "gap-3" : "gap-4"}>
           <SearchHeader
+            onOpenAccountMenu={() => setAccountMenuVisible(true)}
             onOpenSettings={() => navigation.navigate("Settings")}
             onSignIn={() => navigation.navigate("Auth", { backLabel: "Search" })}
+            showAccount={accountUiEnabled && authConfigured && Boolean(user)}
             showSignIn={accountUiEnabled && authConfigured && !user}
+            userEmail={user?.email}
           />
 
           <View className="w-full self-center">
@@ -301,6 +420,18 @@ export default function SearchScreen({ navigation, route }) {
           selectedAmazonDomain={selectedAmazonDomain}
         />
       ) : null}
+      <AccountSheet
+        deleteError={deleteError}
+        email={user?.email || ""}
+        onClose={closeAccountMenu}
+        onDeleteAccount={confirmAccountDeletion}
+        onOpenHistory={() => openAccountDestination("History")}
+        onOpenPreferences={() => openAccountDestination("Preferences")}
+        onOpenPriceWatches={() => openAccountDestination("PriceWatches")}
+        onSignOut={handleSignOut}
+        priceWatchUiEnabled={priceWatchUiEnabled}
+        visible={accountMenuVisible}
+      />
     </ScreenContainer>
   );
 }

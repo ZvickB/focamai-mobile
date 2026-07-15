@@ -22,6 +22,8 @@ import {
   saveAmazonMarketplaceSelection,
 } from "./amazonMarketplaces";
 import { historyStore } from "../lib/history/historyStore";
+import { useAuth } from "../contexts/useAuth";
+import { normalizeRankingPreference } from "../lib/preferences/rankingPreference";
 import { buildPhaseEvent, replacePhaseEvent } from "./searchPhaseEvents";
 import { clearFlowSnapshot, readFlowSnapshot, saveFlowSnapshot } from "./searchFlowSnapshot";
 
@@ -221,6 +223,7 @@ export function normalizeEnrichmentBullets(value) {
 }
 
 export function useMobileSearchController() {
+  const { rankingPreference } = useAuth();
   const activeSearchSessionRef = useRef(null);
   const enrichmentPollTimerRef = useRef(null);
   const finalResultsRef = useRef([]);
@@ -1189,6 +1192,7 @@ export function useMobileSearchController() {
         discoveryToken: finalizeDiscoveryToken,
         followUpNotes: notesForRequest,
         query: finalizeQuery,
+        rankingPreference: normalizeRankingPreference(rankingPreference),
       });
 
       if (!isActiveRequest(requestId) || finalizingRequestIdRef.current !== requestId) {

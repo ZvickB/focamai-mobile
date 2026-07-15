@@ -54,12 +54,12 @@ export default function PrivacyScreen() {
           </PolicyBullet>
           <PolicyBullet>
             Account email, Supabase user ID, and authentication/session information. Mobile supports
-            email and password accounts plus optional Google sign-in when account UI is enabled.
+            sign-in using email and password or Google Sign-In.
           </PolicyBullet>
           <PolicyBullet>
-            Signed-out search history stored on the device, or account-backed saved searches when
-            signed in. Price watches store product, marketplace, price, and alert settings and use
-            the account email for alerts when enabled.
+            Signed-out search history stored on the device, or account-backed saved searches and
+            ranking preferences when signed in. Price watches store product, marketplace, price, and
+            alert settings and use the account email for alerts when enabled.
           </PolicyBullet>
           <PolicyBullet>
             Optional feedback, support details, and search diagnostics such as random session/search
@@ -145,20 +145,25 @@ export default function PrivacyScreen() {
 
         <PolicySection title="Retention and deletion">
           <PolicyText>
-            Search caches normally expire after 24 hours, although underlying database or hosting
-            records may remain until cleanup. The code does not currently define one automatic
-            deletion period for account records, internal search logs, analytics, diagnostics,
-            crash reports, or feedback. Third-party providers may retain data under their own
-            policies.
+            Search-cache entries are marked to expire from active use after 24 hours, although the
+            current code does not automatically purge the underlying database row. The code also
+            does not set one automatic retention period for internal search logs, analytics,
+            diagnostics, crash reports, hosting logs, or feedback. These records may remain only as
+            necessary for security, fraud prevention, legal compliance, service integrity, or
+            provider operations. Focamai removes or anonymizes them through maintenance or a valid
+            privacy request when the relevant record can be identified. Third-party providers retain
+            information under their applicable policies and account configurations, including any
+            longer retention required for legal or misuse-prevention reasons.
           </PolicyText>
           <PolicyText>
             Signed-in users can permanently delete their Focamai account under Settings → Account
             or at focamai.com/delete-account. This deletes the Supabase authentication user and the
-            account-owned saved searches, price watches, and Deep Dive usage record linked to that
-            user ID. The app also clears local saved-search history after successful deletion.
-            Anonymous operational search logs, analytics, diagnostics, caches, rate-limit records,
-            hosting logs, feedback, and third-party provider records are not deleted by this control
-            when they cannot be reliably linked to the account.
+            account-owned ranking preferences, saved searches, price watches, and Deep Dive usage
+            record linked to that user ID. The app also clears local saved-search history after
+            successful deletion. Anonymous operational search logs, analytics, diagnostics, caches,
+            hashed rate-limit records, hosting logs, feedback, and third-party provider records are
+            not deleted by this control when they cannot be reliably linked to the account. They are
+            not used to recreate the account after deletion.
           </PolicyText>
         </PolicySection>
 

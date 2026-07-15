@@ -7,6 +7,11 @@ import { AuthContext } from "./useAuth";
 import { createRemoteHistoryStore } from "../lib/history/remoteHistoryStore";
 import { setHistoryStore } from "../lib/history/historyStore";
 import { localHistoryStore } from "../lib/history/localHistoryStore";
+import {
+  loadRemoteRankingPreference,
+  saveRemoteRankingPreference,
+} from "../lib/preferences/rankingPreferenceStore";
+import { normalizeRankingPreference, RANKING_PREFERENCES } from "../lib/preferences/rankingPreference";
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -78,6 +83,9 @@ export async function finishOAuthCallback(client, callbackUrl) {
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(isSupabaseAuthConfigured);
+  const [rankingPreference, setRankingPreferenceState] = useState(RANKING_PREFERENCES.BALANCED);
+  const [rankingPreferenceError, setRankingPreferenceError] = useState("");
+  const [rankingPreferenceLoading, setRankingPreferenceLoading] = useState(false);
 
   useEffect(() => {
     if (!isSupabaseAuthConfigured) {
@@ -146,6 +154,75 @@ export function AuthProvider({ children }) {
     return () => {
       isCancelled = true;
     };
+  }, [session?.user?.id]);
+
+  useEffect(() => {
+    if (!session?.user?.id) {
+      setRankingPreferenceState(RANKING_PREFERENCES.BALANCED);
+      setRankingPreferenceError("");
+      setRankingPreferenceLoading(false);
+      return undefined;
+    }
+
+    let isCancelled = false;
+    const client = getSupabaseClient();
+
+    if (!client) return undefined;
+
+    setRankingPreferenceLoading(true);
+    setRankingPreferenceError("");
+    loadRemoteRankingPreference({ client, userId: session.user.id })
+      .then((preference) => {
+        if (!isCancelled) {
+          setRankingPreferenceState(preference);
+        }
+      })
+      .catch(() => {
+        if (!isCancelled) {
+          setRankingPreferenceState(RANKING_PREFERENCES.BALANCED);
+          setRankingPreferenceError("Preference sync is temporarily unavailable.");
+        }
+      })
+      .finally(() => {
+        if (!isCancelled) {
+          setRankingPreferenceLoading(false);
+        }
+      });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [session?.user?.id]);
+
+  const setRankingPreference = useCallback(async (nextValue) => {
+    if (!session?.user?.id) {
+      return { error: new Error("Sign in to save preferences.") };
+    }
+
+    const client = getSupabaseClient();
+    if (!client) {
+      return { error: new Error("Supabase auth is not configured.") };
+    }
+
+    const nextPreference = normalizeRankingPreference(nextValue);
+    setRankingPreferenceState(nextPreference);
+    setRankingPreferenceError("");
+    setRankingPreferenceLoading(true);
+
+    try {
+      const savedPreference = await saveRemoteRankingPreference({
+        client,
+        rankingPreference: nextPreference,
+        userId: session.user.id,
+      });
+      setRankingPreferenceState(savedPreference);
+      return { error: null };
+    } catch (error) {
+      setRankingPreferenceError("Preference sync is temporarily unavailable.");
+      return { error };
+    } finally {
+      setRankingPreferenceLoading(false);
+    }
   }, [session?.user?.id]);
 
   const signIn = useCallback(async ({ email, password }) => {
@@ -229,15 +306,31 @@ export function AuthProvider({ children }) {
     () => ({
       configured: isSupabaseAuthConfigured,
       loading,
+      rankingPreference,
+      rankingPreferenceError,
+      rankingPreferenceLoading,
       requestPasswordReset,
       session,
       signIn,
       signInWithGoogle,
       signOut,
       signUp,
+      setRankingPreference,
       user: session?.user || null,
     }),
-    [loading, requestPasswordReset, session, signIn, signInWithGoogle, signOut, signUp],
+    [
+      loading,
+      rankingPreference,
+      rankingPreferenceError,
+      rankingPreferenceLoading,
+      requestPasswordReset,
+      session,
+      setRankingPreference,
+      signIn,
+      signInWithGoogle,
+      signOut,
+      signUp,
+    ],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

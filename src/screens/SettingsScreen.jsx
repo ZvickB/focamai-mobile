@@ -1,17 +1,9 @@
-import { ChevronRight, LogOut, Trash2, UserCircle } from "lucide-react-native";
+import { ChevronRight } from "lucide-react-native";
 import * as Application from "expo-application";
-import { Alert, Pressable, Text, useWindowDimensions, View } from "react-native";
-import { useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { Pressable, Text, useWindowDimensions, View } from "react-native";
 import { HeaderBackButton, ScreenContainer, cx } from "../components/MobileUI";
 import { useAuth } from "../contexts/useAuth";
-import {
-  isMobileAccountUiEnabled,
-  isMobilePriceWatchUiEnabled,
-  isSentryVerificationUiEnabled,
-} from "../config/features";
-import { deleteAccount } from "../lib/account/deleteAccount";
-import { localHistoryStore } from "../lib/history/localHistoryStore";
+import { isMobileAccountUiEnabled, isSentryVerificationUiEnabled } from "../config/features";
 
 function SettingsHeader({ onBack }) {
   const { width } = useWindowDimensions();
@@ -53,7 +45,7 @@ function SettingsIntro() {
   return (
     <View className="gap-2">
       <Text className="text-[28px] font-semibold leading-[35px] text-ink">
-        Preferences
+        Settings
       </Text>
       <Text className="text-[15px] leading-6 text-stone-600">
         Manage your shopping region and app information.
@@ -86,135 +78,15 @@ function SettingsRow({ isLast = false, label, onPress }) {
   );
 }
 
-function AccountSection({ navigation }) {
-  const { configured, session, user, signOut } = useAuth();
-  const queryClient = useQueryClient();
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [deleteError, setDeleteError] = useState("");
-  const priceWatchUiEnabled = isMobilePriceWatchUiEnabled();
-
-  async function handleConfirmedDelete() {
-    setIsDeleting(true);
-    setDeleteError("");
-
-    try {
-      await deleteAccount(session?.access_token);
-      await localHistoryStore.clear();
-      queryClient.clear();
-      await signOut({ scope: "local" });
-      navigation.reset({ index: 0, routes: [{ name: "Search" }] });
-    } catch (error) {
-      setDeleteError(error instanceof Error ? error.message : "We could not delete your account. Please try again.");
-    } finally {
-      setIsDeleting(false);
-    }
-  }
-
-  function confirmDelete() {
-    Alert.alert(
-      "Delete your Focamai account?",
-      "This permanently deletes your account, saved searches, price watches, and Deep Dive usage record. This cannot be undone.",
-      [
-        { text: "Cancel", style: "cancel" },
-        { text: "Delete account", style: "destructive", onPress: handleConfirmedDelete },
-      ],
-    );
-  }
-
-  if (!configured) return null;
-
-  if (!user) {
-    return (
-      <View className="gap-2">
-        <SettingsSectionHeader title="Account" />
-        <View className="border-b border-t border-line">
-          <SettingsRow
-            isLast={!priceWatchUiEnabled}
-            label="Sign in"
-            onPress={() => navigation.navigate("Auth")}
-          />
-          {priceWatchUiEnabled ? (
-            <SettingsRow
-              isLast
-              label="Price watches"
-              onPress={() => navigation.navigate("PriceWatches")}
-            />
-          ) : null}
-        </View>
-      </View>
-    );
-  }
-
-  return (
-    <View className="gap-2">
-      <SettingsSectionHeader title="Account" />
-      <View className="rounded-[18px] border border-line bg-white px-4 py-4 gap-3">
-        <View className="flex-row items-center gap-3">
-          <View className="h-10 w-10 items-center justify-center rounded-full bg-cream">
-            <UserCircle color="#0F6175" size={22} strokeWidth={1.8} />
-          </View>
-          <View className="flex-1">
-            <Text className="text-sm font-semibold text-ink" numberOfLines={1}>
-              {user.email}
-            </Text>
-            <Text className="text-xs text-stone-500">Signed in</Text>
-          </View>
-        </View>
-        <Pressable
-          accessibilityLabel="Sign out"
-          accessibilityRole="button"
-          className="min-h-[44px] flex-row items-center justify-center gap-2 rounded-[18px] border border-line bg-white"
-          onPress={async () => {
-            await signOut();
-          }}
-        >
-          <LogOut color="#78716c" size={16} strokeWidth={2} />
-          <Text className="text-sm font-semibold text-stone-600">Sign out</Text>
-        </Pressable>
-        <View className="border-t border-line pt-3">
-          <Text className="text-sm leading-5 text-stone-600">
-            Permanently delete your account and account-associated data.
-          </Text>
-          <Pressable
-            accessibilityLabel="Delete account"
-            accessibilityRole="button"
-            className="mt-3 min-h-[44px] flex-row items-center justify-center gap-2 rounded-[18px] border border-red-200 bg-red-50"
-            disabled={isDeleting}
-            onPress={confirmDelete}
-          >
-            <Trash2 color="#b91c1c" size={16} strokeWidth={2} />
-            <Text className="text-sm font-semibold text-red-700">
-              {isDeleting ? "Deleting account…" : deleteError ? "Try deleting again" : "Delete account"}
-            </Text>
-          </Pressable>
-          {deleteError ? (
-            <Text accessibilityRole="alert" className="mt-2 text-sm leading-5 text-red-700">
-              {deleteError}
-            </Text>
-          ) : null}
-        </View>
-      </View>
-      {priceWatchUiEnabled ? (
-        <View className="border-b border-t border-line">
-          <SettingsRow
-            isLast
-            label="Price watches"
-            onPress={() => navigation.navigate("PriceWatches")}
-          />
-        </View>
-      ) : null}
-    </View>
-  );
-}
-
 export default function SettingsScreen({ navigation }) {
   const { width } = useWindowDimensions();
   const isCompact = width <= 415;
-  const accountUiEnabled = isMobileAccountUiEnabled();
+  const { user } = useAuth();
+  const shouldShowHistoryFallback = !isMobileAccountUiEnabled() || !user;
   const sentryVerificationUiEnabled = isSentryVerificationUiEnabled();
   const menuItems = [
     { label: "Shopping region", routeName: "Region" },
-    { label: "Search history", routeName: "History" },
+    ...(shouldShowHistoryFallback ? [{ label: "Search history", routeName: "History" }] : []),
     { label: "About Focama", routeName: "About" },
     { label: "Contact", routeName: "Contact" },
     { label: "Privacy", routeName: "Privacy" },
@@ -241,8 +113,6 @@ export default function SettingsScreen({ navigation }) {
 
       <View className={cx("w-full max-w-[430px] self-center", isCompact ? "gap-5" : "gap-6")}>
         <SettingsIntro />
-
-        {accountUiEnabled ? <AccountSection navigation={navigation} /> : null}
 
         <View className="gap-2">
           <SettingsSectionHeader title="App" />

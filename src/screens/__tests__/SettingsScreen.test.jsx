@@ -1,114 +1,49 @@
-import { Alert } from "react-native";
-import { act, fireEvent, render, waitFor } from "@testing-library/react-native";
+import { fireEvent, render } from "@testing-library/react-native";
 
 import SettingsScreen from "../SettingsScreen";
 
-const mockAuth = {
-  configured: true,
-  session: null,
-  signOut: jest.fn(),
-  user: null,
-};
-const mockDeleteAccount = jest.fn();
-const mockClearHistory = jest.fn();
-const mockClearQueries = jest.fn();
+const mockAuth = { user: null };
 
 jest.mock("../../contexts/useAuth", () => ({ useAuth: () => mockAuth }));
-jest.mock("../../lib/account/deleteAccount", () => ({ deleteAccount: (...args) => mockDeleteAccount(...args) }));
-jest.mock("../../lib/history/localHistoryStore", () => ({
-  localHistoryStore: { clear: (...args) => mockClearHistory(...args) },
-}));
-jest.mock("@tanstack/react-query", () => ({ useQueryClient: () => ({ clear: mockClearQueries }) }));
 
 describe("SettingsScreen", () => {
   beforeEach(() => {
     delete process.env.EXPO_PUBLIC_ACCOUNT_UI_ENABLED;
     delete process.env.EXPO_PUBLIC_SENTRY_DEBUG_ENABLED;
-    mockAuth.session = null;
     mockAuth.user = null;
-    mockAuth.signOut.mockReset().mockResolvedValue({ error: null });
-    mockDeleteAccount.mockReset();
-    mockClearHistory.mockReset().mockResolvedValue(undefined);
-    mockClearQueries.mockReset();
-    jest.spyOn(Alert, "alert").mockImplementation(() => {});
-    Alert.alert.mockClear();
   });
 
-  it("opens search history from the settings list", () => {
+  it("opens Shopping region from the settings list", () => {
     const navigation = {
       navigate: jest.fn(),
     };
     const { getByText } = render(<SettingsScreen navigation={navigation} />);
 
-    fireEvent.press(getByText("Search history"));
+    fireEvent.press(getByText("Shopping region"));
 
-    expect(navigation.navigate).toHaveBeenCalledWith("History");
+    expect(navigation.navigate).toHaveBeenCalledWith("Region");
   });
 
-  it("hides the Price watches entry by default for the Play release", () => {
+  it("keeps signed-in personal actions out of Settings", () => {
+    process.env.EXPO_PUBLIC_ACCOUNT_UI_ENABLED = "true";
+    mockAuth.user = { email: "person@example.com" };
     const navigation = { navigate: jest.fn() };
     const { queryByText } = render(<SettingsScreen navigation={navigation} />);
 
+    expect(queryByText("Search history")).toBeNull();
+    expect(queryByText("Preferences")).toBeNull();
     expect(queryByText("Price watches")).toBeNull();
-  });
-
-  it("shows account deletion only for signed-in users", () => {
-    process.env.EXPO_PUBLIC_ACCOUNT_UI_ENABLED = "true";
-    const navigation = { navigate: jest.fn(), reset: jest.fn() };
-    const signedOut = render(<SettingsScreen navigation={navigation} />);
-    expect(signedOut.queryByText("Delete account")).toBeNull();
-    signedOut.unmount();
-
-    mockAuth.user = { email: "person@example.com" };
-    mockAuth.session = { access_token: "access-token" };
-    const signedIn = render(<SettingsScreen navigation={navigation} />);
-    expect(signedIn.getByText("Delete account")).toBeTruthy();
-  });
-
-  it("requires destructive confirmation then clears session, account state, and local history", async () => {
-    process.env.EXPO_PUBLIC_ACCOUNT_UI_ENABLED = "true";
-    mockAuth.user = { email: "person@example.com" };
-    mockAuth.session = { access_token: "access-token" };
-    mockDeleteAccount.mockResolvedValue({ ok: true });
-    const navigation = { navigate: jest.fn(), reset: jest.fn() };
-    const { getByText } = render(<SettingsScreen navigation={navigation} />);
-
-    fireEvent.press(getByText("Delete account"));
-    const buttons = Alert.alert.mock.calls[0][2];
-    expect(buttons[1].style).toBe("destructive");
-    await act(async () => buttons[1].onPress());
-
-    expect(mockDeleteAccount).toHaveBeenCalledWith("access-token");
-    expect(mockClearHistory).toHaveBeenCalled();
-    expect(mockClearQueries).toHaveBeenCalled();
-    expect(mockAuth.signOut).toHaveBeenCalledWith({ scope: "local" });
-    expect(navigation.reset).toHaveBeenCalledWith({ index: 0, routes: [{ name: "Search" }] });
-  });
-
-  it("shows a retry action after deletion fails", async () => {
-    process.env.EXPO_PUBLIC_ACCOUNT_UI_ENABLED = "true";
-    mockAuth.user = { email: "person@example.com" };
-    mockAuth.session = { access_token: "access-token" };
-    mockDeleteAccount.mockRejectedValue(new Error("Temporary deletion failure."));
-    const navigation = { navigate: jest.fn(), reset: jest.fn() };
-    const { getByText } = render(<SettingsScreen navigation={navigation} />);
-
-    fireEvent.press(getByText("Delete account"));
-    await act(async () => Alert.alert.mock.calls[0][2][1].onPress());
-
-    await waitFor(() => expect(getByText("Temporary deletion failure.")).toBeTruthy());
-    expect(getByText("Try deleting again")).toBeTruthy();
-    expect(mockAuth.signOut).not.toHaveBeenCalled();
-  });
-
-  it("hides the Account section by default for the account-free Play release", () => {
-    mockAuth.user = { email: "person@example.com" };
-    const navigation = { navigate: jest.fn(), reset: jest.fn() };
-    const { queryByText } = render(<SettingsScreen navigation={navigation} />);
-
-    expect(queryByText("Account")).toBeNull();
     expect(queryByText("Sign out")).toBeNull();
     expect(queryByText("Delete account")).toBeNull();
+  });
+
+  it("keeps device-local history reachable from Settings while signed out", () => {
+    const navigation = { navigate: jest.fn() };
+    const { getByText } = render(<SettingsScreen navigation={navigation} />);
+
+    fireEvent.press(getByText("Search history"));
+
+    expect(navigation.navigate).toHaveBeenCalledWith("History");
   });
 
   it("shows the temporary Sentry verifier only for internal verification builds", () => {
