@@ -14,20 +14,29 @@ const SPLASH_BACKGROUND = "#fbf7ef";
 const STATIC_LOGO_DELAY_MS = 200;
 const SHIMMER_DURATION_MS = 900;
 const FINISHING_WINDOW_MS = 170;
-const SPLASH_FADE_DURATION_MS = 220;
+const SPLASH_WORDMARK_ASPECT_RATIO = 695 / 125;
+const MAX_SPLASH_WORDMARK_WIDTH = 280;
 const shimmerColors = [
   "rgba(251,247,239,0)",
-  "rgba(232,247,239,0.2)",
-  "rgba(255,244,220,0.16)",
+  "rgba(232,247,239,0.26)",
+  "rgba(255,244,220,0.21)",
   "rgba(251,247,239,0)",
 ];
 
-const splashWordmark = require("../../assets/splash-wordmark.png");
-const splashWordmarkMask = require("../../assets/splash-wordmark-mask.png");
+const splashWordmark = require("../../assets/splash-wordmark-tight.png");
+const splashWordmarkMask = require("../../assets/splash-wordmark-tight-mask.png");
 
 export default function StartupSplash({ appReady, nativeSplashHidden, onDismissed, onReady }) {
   const { height: windowHeight, width: windowWidth } = useWindowDimensions();
   const frameStyle = { height: windowHeight, width: windowWidth };
+  const splashWordmarkWidth = Math.min(windowWidth * 0.85, MAX_SPLASH_WORDMARK_WIDTH);
+  const splashWordmarkHeight = splashWordmarkWidth / SPLASH_WORDMARK_ASPECT_RATIO;
+  const splashWordmarkStyle = {
+    height: splashWordmarkHeight,
+    left: (windowWidth - splashWordmarkWidth) / 2,
+    top: (windowHeight - splashWordmarkHeight) / 2,
+    width: splashWordmarkWidth,
+  };
   const [layoutReady, setLayoutReady] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
   const dismissStartedRef = useRef(false);
@@ -36,11 +45,10 @@ export default function StartupSplash({ appReady, nativeSplashHidden, onDismisse
   const shimmerStartedRef = useRef(false);
   const shimmerDelayRef = useRef(null);
   const finishTimerRef = useRef(null);
-  const dismissTimerRef = useRef(null);
-  const backgroundOpacity = useSharedValue(1);
+  const splashOpacity = useSharedValue(1);
   const shimmerProgress = useSharedValue(0);
 
-  const animatedBackgroundStyle = useAnimatedStyle(() => ({ opacity: backgroundOpacity.value }));
+  const animatedSplashStyle = useAnimatedStyle(() => ({ opacity: splashOpacity.value }));
   const animatedShimmerStyle = useAnimatedStyle(() => ({
     transform: [
       { translateX: -310 + shimmerProgress.value * 620 },
@@ -59,16 +67,12 @@ export default function StartupSplash({ appReady, nativeSplashHidden, onDismisse
     if (finishTimerRef.current) clearTimeout(finishTimerRef.current);
     cancelAnimation(shimmerProgress);
 
-    backgroundOpacity.value = withTiming(0, {
-      duration: SPLASH_FADE_DURATION_MS,
-      easing: Easing.out(Easing.quad),
-    });
-
-    // Reanimated's completion callback is not a safe startup gate on every
-    // dev-client/runtime combination. The visual fade is best-effort; this JS
-    // timer guarantees that it can never leave the user behind the overlay.
-    dismissTimerRef.current = setTimeout(onDismissed, SPLASH_FADE_DURATION_MS);
-  }, [backgroundOpacity, onDismissed, shimmerProgress]);
+    // The navigator is already mounted underneath this matching layer. Fading
+    // the wordmark over it leaves a brief doubled-logo frame on fast launches,
+    // so remove the overlay as one atomic handoff instead.
+    splashOpacity.value = 0;
+    onDismissed();
+  }, [onDismissed, shimmerProgress, splashOpacity]);
 
   useEffect(() => {
     let mounted = true;
@@ -163,18 +167,20 @@ export default function StartupSplash({ appReady, nativeSplashHidden, onDismisse
       pointerEvents="none"
       style={[styles.container, styles.frame, frameStyle]}
     >
-      <Animated.View pointerEvents="none" style={[styles.frame, styles.background, frameStyle, animatedBackgroundStyle]} />
-      <View pointerEvents="none" style={[styles.frame, frameStyle]}>
+      <Animated.View pointerEvents="none" style={[styles.frame, styles.background, frameStyle, animatedSplashStyle]} />
+      <Animated.View pointerEvents="none" style={[styles.frame, frameStyle, animatedSplashStyle]}>
         <Image
           resizeMode="contain"
           source={splashWordmark}
-          style={[styles.frame, frameStyle]}
+          style={[styles.frame, splashWordmarkStyle]}
         />
         {!reducedMotion ? (
           <MaskedView
-            maskElement={<Image resizeMode="contain" source={splashWordmarkMask} style={[styles.frame, frameStyle]} />}
+            maskElement={
+              <Image resizeMode="contain" source={splashWordmarkMask} style={styles.maskImage} />
+            }
             pointerEvents="none"
-            style={[styles.frame, frameStyle]}
+            style={[styles.frame, splashWordmarkStyle]}
           >
             <Animated.View pointerEvents="none" style={[styles.shimmerBand, animatedShimmerStyle]}>
               <LinearGradient
@@ -186,7 +192,7 @@ export default function StartupSplash({ appReady, nativeSplashHidden, onDismisse
             </Animated.View>
           </MaskedView>
         ) : null}
-      </View>
+      </Animated.View>
     </View>
   );
 }
@@ -203,11 +209,15 @@ const styles = StyleSheet.create({
   background: {
     backgroundColor: SPLASH_BACKGROUND,
   },
+  maskImage: {
+    height: "100%",
+    width: "100%",
+  },
   shimmerBand: {
-    height: "38%",
+    height: "45%",
     left: "-45%",
     position: "absolute",
-    top: "31%",
+    top: "27.5%",
     width: "190%",
   },
 });
