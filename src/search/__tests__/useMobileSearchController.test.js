@@ -153,6 +153,43 @@ describe("useMobileSearchController", () => {
     unmount();
   });
 
+  it("preserves follow-up notes when accepting a suggested recovery search", async () => {
+    finalizeSearch.mockResolvedValue({
+      clientTimingMs: 21,
+      results: [finalPick],
+      selection: {
+        candidateRecovery: {
+          goodCandidateCount: 1,
+          suggestedQuery: "compact travel stroller under $250",
+        },
+      },
+    });
+    const { result, unmount } = renderHook(() => useMobileSearchController());
+
+    act(() => result.current.startDiscoverySearch({ queryOverride: "travel stroller" }));
+    await waitFor(() => expect(result.current.canFinalize).toBe(true));
+    act(() => result.current.setFollowUpNotes("fits overhead bins"));
+    await act(async () => { await result.current.finalizeFocusedPicks(); });
+
+    expect(result.current.candidateRecovery).toEqual({
+      goodCandidateCount: 1,
+      suggestedQuery: "compact travel stroller under $250",
+    });
+
+    act(() => result.current.findBetterMatches());
+
+    await waitFor(() => {
+      expect(discoverProducts).toHaveBeenLastCalledWith({
+        amazonDomain: "amazon.com",
+        cacheMode: "refresh",
+        query: "compact travel stroller under $250",
+      });
+    });
+    expect(result.current.followUpNotes).toBe("fits overhead bins");
+
+    unmount();
+  });
+
   it("keeps polling after explanations until Deep Dive eligibility arrives", async () => {
     pollEnrichment
       .mockResolvedValueOnce({ ready: true, entries: [finalPick] })

@@ -7,7 +7,7 @@
 ## Startup read order
 1. `../AGENTS.md`
 2. `current-status.md`
-3. `mobile-ui-ux-plan.md` when doing mobile UI/UX work
+3. `project-notes/plans/mobile-ui-ux-plan.md` when doing mobile UI/UX work
 4. `../migration-roadmap.md`
 5. `../CLAUDE.md`
 6. `../../web/project-notes/app_flow.md`
@@ -15,6 +15,8 @@
 8. `../../web/project-notes/doc_briefs.md`
 
 ## Current direction
+
+**Partial-shortlist recovery (2026-07-16):** A tester-only first-finalize recovery is implemented. When the shared backend returns `selection.candidateRecovery` (fewer than four credible picks plus a valid distinct suggested query), `ResultsScreen` puts a native, read-only card immediately after the shortlist. `Find better matches` preserves follow-up notes, starts a fresh `cacheMode=refresh` discovery, and navigates through `RetryUpdating`; `Keep these picks` dismisses it. The recovery is stored in the one-hour flow snapshot. `RetryUpdating` now finalizes with existing notes instead of clearing them and does not promise six picks. Mobile analytics records only aggregate shown/accepted/kept data (including count/query length, never query text); the sibling web dev dashboard reports those totals. Focused Jest passed; verify on Expo Go before Play promotion.
 
 **Mobile activity analytics (2026-07-16):** The first mobile funnel slice is implemented. `src/lib/mobileAnalytics.js` is the sole client module; both EAS `preview` and `production` enable it, it uses one random search/session ID pair per search (not a device or account identifier), and silently drops failed tracking requests. `useMobileSearchController` emits search/refinement/results/retry/failure events, while `SearchResultDetailScreen` emits product-open and Amazon-click events. The sibling web backend accepts only the narrow `/api/analytics/mobile` contract and the dev-only web dashboard has a `Mobile` tab. It deliberately does not send typed refinement/retry feedback, raw errors, persistent install IDs, account IDs, or Sentry data. Before uploading a Play build, reconcile the public privacy and Play Data Safety wording with this behavior.
 

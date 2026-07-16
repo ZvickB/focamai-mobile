@@ -152,7 +152,7 @@ export default function RetryUpdatingScreen({ navigation }) {
   useEffect(() => {
     async function finalizeRetrySearch() {
       setHasRequestedFinalize(true);
-      const didFinalize = await finalizeFocusedPicks({ followUpNotesOverride: "" });
+      const didFinalize = await finalizeFocusedPicks();
 
       if (isMountedRef.current && didFinalize) {
         replaceOrNavigate(navigation, "Results");
@@ -204,7 +204,7 @@ export default function RetryUpdatingScreen({ navigation }) {
               {retrySearchQuery || "Preparing a sharper search..."}
             </Text>
             <Text className="mt-3 text-sm leading-5 text-stone-600">
-              Based on your Improve picks feedback.
+              Using a sharper search to find better matches.
             </Text>
           </QuietStatusPanel>
 
@@ -225,7 +225,7 @@ export default function RetryUpdatingScreen({ navigation }) {
               <Check color="#0F6175" size={20} strokeWidth={2.3} />
             </View>
             <Text className="flex-1 text-sm leading-5 text-stone-700">
-              You'll see 6 updated picks on the next screen.
+              You'll see the strongest matches on the next screen.
             </Text>
           </QuietStatusPanel>
 

@@ -17,6 +17,7 @@ import {
 } from "../components/MobileUI";
 import { useKeyboardInputScroll } from "../components/useKeyboardInputScroll";
 import { FinalizeLoadingState } from "../search/FinalizeLoadingState";
+import { CandidateRecoverySection } from "../search/CandidateRecoverySection";
 import { SearchProgressStatus } from "../search/SearchProgressStatus";
 import { SearchRetrySection } from "../search/SearchRetrySection";
 import { SearchResultsSection } from "../search/SearchResultsSection";
@@ -51,7 +52,12 @@ function ResultsTopBar({ onBack, onNewSearch }) {
   );
 }
 
-function ResultsHero({ isCompact }) {
+function ResultsHero({ focusedPickCount, hasCandidateRecovery, isCompact }) {
+  const title = hasCandidateRecovery
+    ? "Here are the strongest matches we found"
+    : focusedPickCount === 6
+      ? <>Here are your <Text className="text-ember">6</Text> best picks</>
+      : "Here are your strongest picks";
   return (
     <View className={isCompact ? "gap-2" : "gap-3"}>
       <Text
@@ -61,7 +67,7 @@ function ResultsHero({ isCompact }) {
             : "text-[32px] font-semibold leading-[39px] text-ink"
         }
       >
-        Here are your <Text className="text-ember">6</Text> best picks
+        {title}
       </Text>
       <Text className="text-[15px] leading-6 text-stone-600">
         Carefully selected based on your needs and preferences.
@@ -211,13 +217,16 @@ export default function ResultsScreen({ navigation }) {
   const [rowLayouts, setRowLayouts] = useState({});
   const {
     canRequestRetryAdvice,
+    candidateRecovery,
     discoverySummary,
     errorMessage,
     finalResults,
+    findBetterMatches,
     followUpNotes,
     isFinalizing,
     isGeneratingRetryAdvice,
     isGeneratingPrompt,
+    keepCandidateRecovery,
     phaseEvents,
     previewItems,
     productQuery,
@@ -294,6 +303,13 @@ export default function ResultsScreen({ navigation }) {
     },
     [navigation, requestRetryAdvice],
   );
+  const handleFindBetterMatches = useCallback(() => {
+    const didStart = findBetterMatches();
+
+    if (didStart) {
+      navigation.navigate("RetryUpdating");
+    }
+  }, [findBetterMatches, navigation]);
   const fixedHeader = (
     <View className={isCompact ? "gap-3 px-4 pb-3 pt-3" : "gap-4 px-6 pb-3 pt-3"}>
       <ResultsTopBar
@@ -301,7 +317,13 @@ export default function ResultsScreen({ navigation }) {
         onNewSearch={() => navigation.navigate("Search")}
       />
 
-      {shouldShowFinalizeLoading ? null : <ResultsHero isCompact={isCompact} />}
+      {shouldShowFinalizeLoading ? null : (
+        <ResultsHero
+          focusedPickCount={focusedPickCount}
+          hasCandidateRecovery={Boolean(candidateRecovery)}
+          isCompact={isCompact}
+        />
+      )}
 
       {shouldShowStatus ? (
         <SearchProgressStatus
@@ -354,6 +376,12 @@ export default function ResultsScreen({ navigation }) {
           onRowLayout={handleRowLayout}
           selectedIndex={safeSelectedIndex}
           showEmptyState
+        />,
+        <CandidateRecoverySection
+          candidateRecovery={candidateRecovery}
+          key="candidate-recovery"
+          onFindBetterMatches={handleFindBetterMatches}
+          onKeepThesePicks={keepCandidateRecovery}
         />,
         <SearchRetrySection
           key="retry"

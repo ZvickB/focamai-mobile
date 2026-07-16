@@ -4,6 +4,7 @@ import { FocusedPickRow } from "./SearchResultRows";
 
 export function SearchResultsSection({
   finalResults = [],
+  hasCandidateRecovery = false,
   isFinalizing = false,
   onFocusedPicksLayout,
   onOpenResult,
@@ -38,7 +39,7 @@ export function SearchResultsSection({
   return (
     <View className="gap-4" onLayout={onResultsLayout} testID="results.section">
       <View className="gap-3">
-        {safeFinalResults.length < 6 ? (
+        {safeFinalResults.length < 6 && !hasCandidateRecovery ? (
           <Text className="px-1 text-sm leading-5 text-stone-600">
             {safeFinalResults.length} credible option
             {safeFinalResults.length === 1 ? "" : "s"} came back for this search. That can happen

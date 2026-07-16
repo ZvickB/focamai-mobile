@@ -103,4 +103,16 @@ describe("SearchResultsSection", () => {
       ),
     ).toBeTruthy();
   });
+
+  it("leaves partial-shortlist explanation to the recovery card when one is shown", () => {
+    const { queryByText } = render(
+      <SearchResultsSection
+        finalResults={[focusedPick]}
+        hasCandidateRecovery
+        onOpenResult={jest.fn()}
+      />,
+    );
+
+    expect(queryByText(/credible option came back/)).toBeNull();
+  });
 });
