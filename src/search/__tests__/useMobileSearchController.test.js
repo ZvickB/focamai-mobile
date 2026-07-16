@@ -30,6 +30,7 @@ jest.mock("../searchApi", () => ({
   getRetryAdvice: jest.fn(),
   getRefinementPrompt: jest.fn(),
   normalizeFinalResults: jest.fn((results) => (Array.isArray(results) ? results : [])),
+  normalizeImprovePicksSuggestions: jest.fn((payload) => payload?.improvePicksSuggestions || []),
   normalizePreviewResults: jest.fn((results) => (Array.isArray(results) ? results : [])),
   normalizeQueryQualitySuggestion: jest.fn(),
   normalizeRefinementSuggestions: jest.fn(() => []),

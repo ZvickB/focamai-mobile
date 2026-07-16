@@ -5,6 +5,7 @@ import {
   getRetryAdvice,
   getRefinementPrompt,
   normalizeFinalResults,
+  normalizeImprovePicksSuggestions,
   normalizeQueryQualitySuggestion,
   normalizePreviewResults,
   normalizeRefinementSuggestions,
@@ -262,6 +263,7 @@ export function useMobileSearchController() {
   const [isFinalizing, setIsFinalizing] = useState(false);
   const [isGeneratingPrompt, setIsGeneratingPrompt] = useState(false);
   const [isGeneratingRetryAdvice, setIsGeneratingRetryAdvice] = useState(false);
+  const [improvePicksSuggestions, setImprovePicksSuggestions] = useState([]);
   const [isCheckingQueryQuality, setIsCheckingQueryQuality] = useState(false);
   const [phaseEvents, setPhaseEvents] = useState([]);
   const [querySuggestion, setQuerySuggestion] = useState(null);
@@ -528,6 +530,10 @@ export function useMobileSearchController() {
         const entries = Array.isArray(payload.entries) ? payload.entries : [];
         const eligibilitySettled = Array.isArray(payload.deepDiveEligibility?.decisions);
 
+        if (payload.ready) {
+          setImprovePicksSuggestions(normalizeImprovePicksSuggestions(payload));
+        }
+
         if (payload.ready && entries.length > 0) {
           hasReceivedEnrichment = true;
           setFinalResults((currentResults) => mergeEnrichmentIntoResults(currentResults, entries));
@@ -603,6 +609,7 @@ export function useMobileSearchController() {
       candidateRecovery,
       discoveryToken,
       followUpNotes: followUpNotesRef.current,
+      improvePicksSuggestions,
       previewItems: Array.isArray(discoverySummary?.previewItems) ? discoverySummary.previewItems : [],
       productQuery,
       refinementPrompt,
@@ -617,7 +624,7 @@ export function useMobileSearchController() {
     if (refinementPrompt) {
       void saveFlowSnapshot({ ...baseSnapshot, phase: "refine" });
     }
-  }, [activeSearchSession, candidateRecovery, discoverySummary, finalResults, productQuery, refinementPrompt]);
+  }, [activeSearchSession, candidateRecovery, discoverySummary, finalResults, improvePicksSuggestions, productQuery, refinementPrompt]);
 
   useEffect(() => {
     let isMounted = true;
@@ -697,6 +704,7 @@ export function useMobileSearchController() {
       if (snapshot.phase === "results" && Array.isArray(snapshot.finalResults)) {
         setFinalResults(snapshot.finalResults);
         setCandidateRecovery(normalizeCandidateRecovery(snapshot.candidateRecovery));
+        setImprovePicksSuggestions(normalizeImprovePicksSuggestions(snapshot));
       }
 
       setRestoredFlowPhase(snapshot.phase);
@@ -768,6 +776,7 @@ export function useMobileSearchController() {
     setDiscoverySummary(null);
     setCandidateRecovery(null);
     setFinalResults([]);
+    setImprovePicksSuggestions([]);
     setFollowUpNotes(String(initialFollowUpNotes ?? "").trim());
     void clearFlowSnapshot();
     setRetryFeedback("");
@@ -1178,6 +1187,7 @@ export function useMobileSearchController() {
     setErrorMessage("");
     setCandidateRecovery(null);
     setFinalResults([]);
+    setImprovePicksSuggestions([]);
     updateSessionForRequest(requestId, (currentSession) => ({
       ...currentSession,
       phases: {
@@ -1241,6 +1251,7 @@ export function useMobileSearchController() {
 
       setFinalResults(nextFinalResults);
       setCandidateRecovery(nextCandidateRecovery);
+      setImprovePicksSuggestions(normalizeImprovePicksSuggestions(payload));
       trackMobileAnalytics(mobileAnalyticsRun, "results_shown", {
         items: nextFinalResults.map((result, index) => ({
           badgeType: result.badgeType || result.badge_type || "",
@@ -1499,6 +1510,7 @@ export function useMobileSearchController() {
     setPhaseEvents([]);
     setRetryFeedback("");
     setRetryAdviceError("");
+    setImprovePicksSuggestions([]);
 
     if (scene === "results" || scene === "detail") {
       setFinalResults(MOCK_FINAL_RESULTS);
@@ -1566,6 +1578,7 @@ export function useMobileSearchController() {
     setDiscoverySummary(null);
     setCandidateRecovery(null);
     setFinalResults([]);
+    setImprovePicksSuggestions([]);
     setFollowUpNotes("");
     setRefinementPrompt(null);
     setRetryFeedback("");
@@ -1635,6 +1648,7 @@ export function useMobileSearchController() {
     discoverySummary,
     errorMessage,
     finalResults,
+    improvePicksSuggestions,
     findBetterMatches,
     finalizeFocusedPicks,
     followUpNotes,

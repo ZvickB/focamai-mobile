@@ -8,6 +8,9 @@ const PREVIEW_RESULT_LIMIT = 3;
 const RETRY_ADVICE_SUGGESTED_QUERY_MAX_LENGTH = 80;
 const REFINEMENT_SUGGESTION_LIMIT = 3;
 const REFINEMENT_SUGGESTION_MAX_LENGTH = 30;
+const IMPROVE_PICKS_SUGGESTION_LIMIT = 3;
+const IMPROVE_PICKS_SUGGESTION_LABEL_MAX_LENGTH = 30;
+const IMPROVE_PICKS_SUGGESTION_FEEDBACK_MAX_LENGTH = 180;
 const REQUEST_TIMEOUT_MESSAGE =
   "This is taking longer than expected. Try again, or adjust the search.";
 const REQUEST_TIMEOUTS_MS = {
@@ -355,6 +358,37 @@ export function normalizeRefinementSuggestions(payload) {
     })
     .filter((item) => item?.label && item.label.length <= REFINEMENT_SUGGESTION_MAX_LENGTH)
     .slice(0, REFINEMENT_SUGGESTION_LIMIT);
+}
+
+export function normalizeImprovePicksSuggestions(payload) {
+  const rawSuggestions = Array.isArray(payload?.improvePicksSuggestions)
+    ? payload.improvePicksSuggestions
+    : Array.isArray(payload?.improve_picks_suggestions)
+      ? payload.improve_picks_suggestions
+      : [];
+  const seenLabels = new Set();
+
+  return rawSuggestions
+    .map((item) => {
+      const label = String(item?.label || "")
+        .replace(/\s+/g, " ")
+        .trim()
+        .slice(0, IMPROVE_PICKS_SUGGESTION_LABEL_MAX_LENGTH);
+      const feedback = String(item?.feedback || "")
+        .replace(/\s+/g, " ")
+        .trim()
+        .slice(0, IMPROVE_PICKS_SUGGESTION_FEEDBACK_MAX_LENGTH);
+      const normalizedLabel = label.toLowerCase();
+
+      if (!label || !feedback || seenLabels.has(normalizedLabel)) {
+        return null;
+      }
+
+      seenLabels.add(normalizedLabel);
+      return { feedback, label };
+    })
+    .filter(Boolean)
+    .slice(0, IMPROVE_PICKS_SUGGESTION_LIMIT);
 }
 
 export function normalizeRetryAdvice(payload) {

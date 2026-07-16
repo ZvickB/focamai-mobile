@@ -221,6 +221,7 @@ export default function ResultsScreen({ navigation }) {
     discoverySummary,
     errorMessage,
     finalResults,
+    improvePicksSuggestions,
     findBetterMatches,
     followUpNotes,
     isFinalizing,
@@ -330,6 +331,7 @@ export default function ResultsScreen({ navigation }) {
           discoverySummary={discoverySummary}
           errorMessage={errorMessage}
           finalResults={finalResults}
+          improvePicksSuggestions={improvePicksSuggestions}
           hasStartedSearch={focusedPickCount > 0 || isFinalizing}
           isFinalizing={isFinalizing}
           isGeneratingPrompt={isGeneratingPrompt}
