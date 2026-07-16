@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Alert, Linking, Text, useWindowDimensions, View } from "react-native";
 import {
   AppHeader,
@@ -23,6 +23,7 @@ import {
   isMobileDeepDiveUiEnabled,
   isMobilePriceWatchUiEnabled,
 } from "../config/features";
+import { trackMobileAnalytics } from "../lib/mobileAnalytics";
 
 function openRetailerLink(link) {
   if (!link) {
@@ -34,7 +35,7 @@ function openRetailerLink(link) {
   );
 }
 
-function DetailRetailerFooter({ amazonDomain, item }) {
+function DetailRetailerFooter({ amazonDomain, analyticsRun, item, rank }) {
   const provider = detailValue(item.provider, "");
   const price = formatDisplayPrice(item.price) || "Price not shown";
   const displayTitle = getProductDisplayTitle(item.title) || detailValue(item.title, "this product");
@@ -53,7 +54,14 @@ function DetailRetailerFooter({ amazonDomain, item }) {
             accessibilityRole="link"
             accessibilityLabel={`View ${displayTitle} on ${provider || "the retailer"}`}
             className="flex-1"
-            onPress={() => openRetailerLink(item.link)}
+            onPress={() => {
+              trackMobileAnalytics(analyticsRun, "retailer_clicked", {
+                position: rank || 0,
+                provider: provider || "",
+                resultKey: item.id || item.title || "",
+              });
+              openRetailerLink(item.link);
+            }}
             style={{ backgroundColor: "#E59B26" }}
           >
             {`View on ${provider || "retailer"}`}
@@ -288,6 +296,16 @@ export default function SearchResultDetailScreen({ navigation, route }) {
   const isStaleSnapshot = Boolean(routeItem && !matchedItem);
   const goBack = () => navigation?.goBack?.();
 
+  useEffect(() => {
+    if (!item) return;
+
+    trackMobileAnalytics(activeSearchSession?.mobileAnalyticsRun, "product_opened", {
+      position: rank || 0,
+      provider: item.provider || "",
+      resultKey: item.id || item.title || "",
+    });
+  }, [activeSearchSession?.mobileAnalyticsRun, item?.id, item?.provider, item?.title, rank]);
+
   if (!item) {
     return <UnavailableDetailState onBack={goBack} />;
   }
@@ -297,7 +315,9 @@ export default function SearchResultDetailScreen({ navigation, route }) {
       footer={(
         <DetailRetailerFooter
           amazonDomain={activeSearchSession?.amazonDomain || "amazon.com"}
+          analyticsRun={activeSearchSession?.mobileAnalyticsRun}
           item={item}
+          rank={rank}
         />
       )}
       safeAreaEdges={["top", "bottom"]}
