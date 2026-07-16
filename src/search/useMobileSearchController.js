@@ -26,6 +26,11 @@ import { useAuth } from "../contexts/useAuth";
 import { normalizeRankingPreference } from "../lib/preferences/rankingPreference";
 import { buildPhaseEvent, replacePhaseEvent } from "./searchPhaseEvents";
 import { clearFlowSnapshot, readFlowSnapshot, saveFlowSnapshot } from "./searchFlowSnapshot";
+import {
+  createMobileAnalyticsRun,
+  trackMobileAnalytics,
+  trackMobileSearchStarted,
+} from "../lib/mobileAnalytics";
 
 const ENRICHMENT_POLL_INTERVAL_MS = 1500;
 const ENRICHMENT_POLL_TIMEOUT_MS = 30000;
@@ -232,6 +237,7 @@ export function useMobileSearchController() {
   const queryQualityPollTimerRef = useRef(null);
   const retryFeedbackRef = useRef("");
   const retryAdviceRequestIdRef = useRef(0);
+  const mobileAnalyticsRunRef = useRef(null);
   const searchRequestIdRef = useRef(0);
   const selectedAmazonDomainTouchedRef = useRef(false);
   const [activeSearchSession, setActiveSearchSession] = useState(null);
@@ -733,6 +739,13 @@ export function useMobileSearchController() {
       requestId,
       submittedQuery: normalizedQuery,
     });
+    const mobileAnalyticsRun = createMobileAnalyticsRun({
+      amazonDomain: requestedAmazonDomain,
+      query: normalizedQuery,
+    });
+    nextSession.mobileAnalyticsRun = mobileAnalyticsRun;
+    mobileAnalyticsRunRef.current = mobileAnalyticsRun;
+    trackMobileSearchStarted(mobileAnalyticsRun);
 
     setSession(nextSession);
     setIsDiscovering(true);
@@ -861,6 +874,7 @@ export function useMobileSearchController() {
             status: "failed",
           }),
         );
+        trackMobileAnalytics(mobileAnalyticsRun, "search_failed", { stage: "discovery" });
       })
       .finally(() => {
         if (isActiveRequest(requestId)) {
@@ -893,6 +907,7 @@ export function useMobileSearchController() {
             timingMs: nextPrompt.timingMs,
           }),
         );
+        trackMobileAnalytics(mobileAnalyticsRun, "refinement_presented");
       })
       .catch(() => {
         if (!isActiveRequest(requestId)) {
@@ -915,6 +930,7 @@ export function useMobileSearchController() {
             status: "failed",
           }),
         );
+        trackMobileAnalytics(mobileAnalyticsRun, "search_failed", { stage: "refinement" });
       })
       .finally(() => {
         if (isActiveRequest(requestId)) {
@@ -1140,6 +1156,8 @@ export function useMobileSearchController() {
     }
 
     const requestId = session.requestId;
+    const mobileAnalyticsRun = mobileAnalyticsRunRef.current;
+    trackMobileAnalytics(mobileAnalyticsRun, "refinement_completed");
     finalizingRequestIdRef.current = requestId;
 
     setIsFinalizing(true);
@@ -1206,6 +1224,17 @@ export function useMobileSearchController() {
       );
 
       setFinalResults(nextFinalResults);
+      trackMobileAnalytics(mobileAnalyticsRun, "results_shown", {
+        items: nextFinalResults.map((result, index) => ({
+          badgeType: result.badgeType || result.badge_type || "",
+          isBestPick: index === 0,
+          position: index + 1,
+          provider: result.provider || result.source || "",
+          resultKey: result.id || result.title || "",
+        })),
+        query: session.submittedQuery,
+        resultCount: nextFinalResults.length,
+      });
       if (nextFinalResults.length > 0) {
         void historyStore.save({
           amazonDomain: finalizeAmazonDomain,
@@ -1259,6 +1288,7 @@ export function useMobileSearchController() {
           status: "failed",
         }),
       );
+      trackMobileAnalytics(mobileAnalyticsRun, "search_failed", { stage: "finalize" });
       return false;
     } finally {
       if (isActiveRequest(requestId) && finalizingRequestIdRef.current === requestId) {
@@ -1302,6 +1332,7 @@ export function useMobileSearchController() {
     };
 
     retryAdviceRequestIdRef.current = requestId;
+    trackMobileAnalytics(mobileAnalyticsRunRef.current, "retry_started");
     setIsGeneratingRetryAdvice(true);
     setRetryAdviceError("");
     setErrorMessage("");

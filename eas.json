@@ -10,6 +10,7 @@
       },
       "env": {
         "EXPO_PUBLIC_API_BASE_URL": "https://focama-web.onrender.com",
+        "EXPO_PUBLIC_MOBILE_ANALYTICS_ENABLED": "true",
         "EXPO_PUBLIC_SENTRY_DEBUG_ENABLED": "true"
       }
     },
@@ -20,6 +21,7 @@
       "autoIncrement": true,
       "env": {
         "EXPO_PUBLIC_API_BASE_URL": "https://focama-web.onrender.com",
+        "EXPO_PUBLIC_MOBILE_ANALYTICS_ENABLED": "false",
         "EXPO_PUBLIC_SENTRY_DEBUG_ENABLED": "false"
       }
     }
