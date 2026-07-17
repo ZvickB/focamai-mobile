@@ -46,11 +46,11 @@ describe("RetryUpdatingScreen", () => {
 
     expect(getByTestId("retryUpdating.screen")).toBeTruthy();
     expect(getByText("lightweight travel stroller")).toBeTruthy();
-    expect(getByText("Based on your Improve picks feedback.")).toBeTruthy();
+    expect(getByText("Using a sharper search to find better matches.")).toBeTruthy();
     expect(getByText("Narrowing to 6 updated picks...")).toBeTruthy();
 
     await waitFor(() => {
-      expect(finalizeFocusedPicks).toHaveBeenCalledWith({ followUpNotesOverride: "" });
+      expect(finalizeFocusedPicks).toHaveBeenCalledWith();
     });
     await waitFor(() => {
       expect(navigation.replace).toHaveBeenCalledWith("Results");
