@@ -30,6 +30,7 @@ jest.mock("../searchApi", () => ({
   getRetryAdvice: jest.fn(),
   getRefinementPrompt: jest.fn(),
   normalizeFinalResults: jest.fn((results) => (Array.isArray(results) ? results : [])),
+  normalizeImprovePicksSuggestions: jest.fn((payload) => payload?.improvePicksSuggestions || []),
   normalizePreviewResults: jest.fn((results) => (Array.isArray(results) ? results : [])),
   normalizeQueryQualitySuggestion: jest.fn(),
   normalizeRefinementSuggestions: jest.fn(() => []),
@@ -149,6 +150,43 @@ describe("useMobileSearchController", () => {
     });
 
     expect(historyStore.save).not.toHaveBeenCalled();
+
+    unmount();
+  });
+
+  it("preserves follow-up notes when accepting a suggested recovery search", async () => {
+    finalizeSearch.mockResolvedValue({
+      clientTimingMs: 21,
+      results: [finalPick],
+      selection: {
+        candidateRecovery: {
+          goodCandidateCount: 1,
+          suggestedQuery: "compact travel stroller under $250",
+        },
+      },
+    });
+    const { result, unmount } = renderHook(() => useMobileSearchController());
+
+    act(() => result.current.startDiscoverySearch({ queryOverride: "travel stroller" }));
+    await waitFor(() => expect(result.current.canFinalize).toBe(true));
+    act(() => result.current.setFollowUpNotes("fits overhead bins"));
+    await act(async () => { await result.current.finalizeFocusedPicks(); });
+
+    expect(result.current.candidateRecovery).toEqual({
+      goodCandidateCount: 1,
+      suggestedQuery: "compact travel stroller under $250",
+    });
+
+    act(() => result.current.findBetterMatches());
+
+    await waitFor(() => {
+      expect(discoverProducts).toHaveBeenLastCalledWith({
+        amazonDomain: "amazon.com",
+        cacheMode: "refresh",
+        query: "compact travel stroller under $250",
+      });
+    });
+    expect(result.current.followUpNotes).toBe("fits overhead bins");
 
     unmount();
   });

@@ -6,6 +6,7 @@ import { Button, Surface } from "../components/MobileUI";
 export function SearchRetrySection({
   canRequestRetryAdvice,
   finalResults,
+  improvePicksSuggestions = [],
   isGeneratingRetryAdvice,
   onInputFocus,
   onUpdatePicks,
@@ -59,6 +60,44 @@ export function SearchRetrySection({
 
       {isExpanded ? (
         <>
+          {improvePicksSuggestions.length > 0 ? (
+            <View className="mt-4 gap-2">
+              <Text className="text-sm font-semibold text-stone-600">
+                A few ways to adjust the direction
+              </Text>
+              <View className="flex-row flex-wrap gap-2">
+                {improvePicksSuggestions.map((suggestion) => {
+                  const label = String(suggestion?.label || "").trim();
+                  const feedback = String(suggestion?.feedback || "").trim();
+                  const isSelected = Boolean(feedback && feedback === feedbackPayload);
+
+                  if (!label || !feedback) {
+                    return null;
+                  }
+
+                  return (
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: isSelected }}
+                      key={`${label}:${feedback}`}
+                      onPress={() => setRetryFeedback(feedback)}
+                      className={`rounded-full border px-3 py-2 ${
+                        isSelected ? "border-accent bg-accent" : "border-line bg-white"
+                      }`}
+                    >
+                      <Text
+                        className={`text-sm font-medium ${
+                          isSelected ? "text-white" : "text-stone-700"
+                        }`}
+                      >
+                        {label}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </View>
+          ) : null}
           <TextInput
             accessibilityLabel="What should we change?"
             value={retryFeedback}

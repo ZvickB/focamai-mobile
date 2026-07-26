@@ -53,4 +53,21 @@ describe("SearchRetrySection", () => {
     expect(queryByLabelText("Suggested search query")).toBeNull();
     expect(queryByText("Search this suggestion")).toBeNull();
   });
+
+  it("reveals generated suggestions only after expanding and uses one to fill the feedback", () => {
+    const setRetryFeedback = jest.fn();
+    const { getByLabelText, getByText, queryByText } = renderRetrySection({
+      improvePicksSuggestions: [
+        { label: "Lower price", feedback: "I want lower-priced options." },
+      ],
+      setRetryFeedback,
+    });
+
+    expect(queryByText("Lower price")).toBeNull();
+
+    fireEvent.press(getByLabelText("Show correction options"));
+    fireEvent.press(getByText("Lower price"));
+
+    expect(setRetryFeedback).toHaveBeenCalledWith("I want lower-priced options.");
+  });
 });

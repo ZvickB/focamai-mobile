@@ -5,6 +5,7 @@ import {
   getRetryAdvice,
   getRefinementPrompt,
   normalizeFinalResults,
+  normalizeImprovePicksSuggestions,
   normalizeQueryQualitySuggestion,
   normalizePreviewResults,
   normalizeRefinementSuggestions,
@@ -36,6 +37,7 @@ const ENRICHMENT_POLL_INTERVAL_MS = 1500;
 const ENRICHMENT_POLL_TIMEOUT_MS = 30000;
 const QUERY_QUALITY_POLL_INTERVAL_MS = 1500;
 const QUERY_QUALITY_POLL_TIMEOUT_MS = 20000;
+const CANDIDATE_RECOVERY_QUERY_MAX_LENGTH = 200;
 
 function createSearchSession({ amazonDomain, requestId, submittedQuery }) {
   return {
@@ -70,6 +72,15 @@ function hasRunningPhase(session) {
 
 function getFinalResultsKey(results) {
   return Array.isArray(results) ? results.map((item) => String(item?.id || "")).join("|") : "";
+}
+
+function normalizeCandidateRecovery(value) {
+  const suggestedQuery = String(value?.suggestedQuery || "")
+    .trim()
+    .slice(0, CANDIDATE_RECOVERY_QUERY_MAX_LENGTH);
+  const goodCandidateCount = Math.max(0, Math.min(3, Number(value?.goodCandidateCount) || 0));
+
+  return suggestedQuery ? { goodCandidateCount, suggestedQuery } : null;
 }
 
 function buildDiscoverySummary(discoveryPayload, query) {
@@ -241,6 +252,7 @@ export function useMobileSearchController() {
   const searchRequestIdRef = useRef(0);
   const selectedAmazonDomainTouchedRef = useRef(false);
   const [activeSearchSession, setActiveSearchSession] = useState(null);
+  const [candidateRecovery, setCandidateRecovery] = useState(null);
   const [productQuery, setProductQuery] = useState("");
   const [selectedAmazonDomain, setSelectedAmazonDomainState] = useState(DEFAULT_AMAZON_DOMAIN);
   const [discoverySummary, setDiscoverySummary] = useState(null);
@@ -251,6 +263,7 @@ export function useMobileSearchController() {
   const [isFinalizing, setIsFinalizing] = useState(false);
   const [isGeneratingPrompt, setIsGeneratingPrompt] = useState(false);
   const [isGeneratingRetryAdvice, setIsGeneratingRetryAdvice] = useState(false);
+  const [improvePicksSuggestions, setImprovePicksSuggestions] = useState([]);
   const [isCheckingQueryQuality, setIsCheckingQueryQuality] = useState(false);
   const [phaseEvents, setPhaseEvents] = useState([]);
   const [querySuggestion, setQuerySuggestion] = useState(null);
@@ -517,6 +530,10 @@ export function useMobileSearchController() {
         const entries = Array.isArray(payload.entries) ? payload.entries : [];
         const eligibilitySettled = Array.isArray(payload.deepDiveEligibility?.decisions);
 
+        if (payload.ready) {
+          setImprovePicksSuggestions(normalizeImprovePicksSuggestions(payload));
+        }
+
         if (payload.ready && entries.length > 0) {
           hasReceivedEnrichment = true;
           setFinalResults((currentResults) => mergeEnrichmentIntoResults(currentResults, entries));
@@ -589,8 +606,10 @@ export function useMobileSearchController() {
     const baseSnapshot = {
       amazonDomain: activeSearchSession?.amazonDomain || discoverySummary?.amazonDomain || "",
       candidatePool: activeSearchSession?.candidatePool || discoverySummary?.candidatePool || null,
+      candidateRecovery,
       discoveryToken,
       followUpNotes: followUpNotesRef.current,
+      improvePicksSuggestions,
       previewItems: Array.isArray(discoverySummary?.previewItems) ? discoverySummary.previewItems : [],
       productQuery,
       refinementPrompt,
@@ -605,7 +624,7 @@ export function useMobileSearchController() {
     if (refinementPrompt) {
       void saveFlowSnapshot({ ...baseSnapshot, phase: "refine" });
     }
-  }, [activeSearchSession, discoverySummary, finalResults, productQuery, refinementPrompt]);
+  }, [activeSearchSession, candidateRecovery, discoverySummary, finalResults, improvePicksSuggestions, productQuery, refinementPrompt]);
 
   useEffect(() => {
     let isMounted = true;
@@ -684,6 +703,8 @@ export function useMobileSearchController() {
 
       if (snapshot.phase === "results" && Array.isArray(snapshot.finalResults)) {
         setFinalResults(snapshot.finalResults);
+        setCandidateRecovery(normalizeCandidateRecovery(snapshot.candidateRecovery));
+        setImprovePicksSuggestions(normalizeImprovePicksSuggestions(snapshot));
       }
 
       setRestoredFlowPhase(snapshot.phase);
@@ -753,7 +774,9 @@ export function useMobileSearchController() {
     setIsFinalizing(false);
     setErrorMessage("");
     setDiscoverySummary(null);
+    setCandidateRecovery(null);
     setFinalResults([]);
+    setImprovePicksSuggestions([]);
     setFollowUpNotes(String(initialFollowUpNotes ?? "").trim());
     void clearFlowSnapshot();
     setRetryFeedback("");
@@ -1162,7 +1185,9 @@ export function useMobileSearchController() {
 
     setIsFinalizing(true);
     setErrorMessage("");
+    setCandidateRecovery(null);
     setFinalResults([]);
+    setImprovePicksSuggestions([]);
     updateSessionForRequest(requestId, (currentSession) => ({
       ...currentSession,
       phases: {
@@ -1222,8 +1247,11 @@ export function useMobileSearchController() {
         finalizeCandidatePool,
         `${requestId}-${session.discoveryToken}`,
       );
+      const nextCandidateRecovery = normalizeCandidateRecovery(payload.selection?.candidateRecovery);
 
       setFinalResults(nextFinalResults);
+      setCandidateRecovery(nextCandidateRecovery);
+      setImprovePicksSuggestions(normalizeImprovePicksSuggestions(payload));
       trackMobileAnalytics(mobileAnalyticsRun, "results_shown", {
         items: nextFinalResults.map((result, index) => ({
           badgeType: result.badgeType || result.badge_type || "",
@@ -1235,6 +1263,12 @@ export function useMobileSearchController() {
         query: session.submittedQuery,
         resultCount: nextFinalResults.length,
       });
+      if (nextCandidateRecovery) {
+        trackMobileAnalytics(mobileAnalyticsRun, "candidate_recovery_shown", {
+          goodCandidateCount: nextCandidateRecovery.goodCandidateCount,
+          suggestedQueryLength: nextCandidateRecovery.suggestedQuery.length,
+        });
+      }
       if (nextFinalResults.length > 0) {
         void historyStore.save({
           amazonDomain: finalizeAmazonDomain,
@@ -1396,6 +1430,37 @@ export function useMobileSearchController() {
     setQuerySuggestion(null);
   }
 
+  function findBetterMatches() {
+    const recovery = candidateRecovery;
+
+    if (!recovery?.suggestedQuery) {
+      return false;
+    }
+
+    trackMobileAnalytics(mobileAnalyticsRunRef.current, "candidate_recovery_accepted", {
+      goodCandidateCount: recovery.goodCandidateCount,
+      suggestedQueryLength: recovery.suggestedQuery.length,
+    });
+
+    return startDiscoverySearch({
+      cacheMode: "refresh",
+      initialFollowUpNotes: followUpNotesRef.current,
+      queryOverride: recovery.suggestedQuery,
+      retrySearchQueryOverride: recovery.suggestedQuery,
+    });
+  }
+
+  function keepCandidateRecovery() {
+    if (!candidateRecovery) {
+      return;
+    }
+
+    trackMobileAnalytics(mobileAnalyticsRunRef.current, "candidate_recovery_kept_partial_picks", {
+      goodCandidateCount: candidateRecovery.goodCandidateCount,
+    });
+    setCandidateRecovery(null);
+  }
+
   function updateRetryFeedback(nextValue) {
     retryAdviceRequestIdRef.current += 1;
     setRetryAdviceError("");
@@ -1435,6 +1500,7 @@ export function useMobileSearchController() {
 
     setProductQuery(MOCK_PRODUCT_QUERY);
     setDiscoverySummary(MOCK_DISCOVERY_SUMMARY);
+    setCandidateRecovery(null);
     setRefinementPrompt(MOCK_REFINEMENT_PROMPT);
     setFollowUpNotes("");
     setErrorMessage("");
@@ -1444,6 +1510,7 @@ export function useMobileSearchController() {
     setPhaseEvents([]);
     setRetryFeedback("");
     setRetryAdviceError("");
+    setImprovePicksSuggestions([]);
 
     if (scene === "results" || scene === "detail") {
       setFinalResults(MOCK_FINAL_RESULTS);
@@ -1509,7 +1576,9 @@ export function useMobileSearchController() {
     setIsGeneratingPrompt(false);
     setIsFinalizing(false);
     setDiscoverySummary(null);
+    setCandidateRecovery(null);
     setFinalResults([]);
+    setImprovePicksSuggestions([]);
     setFollowUpNotes("");
     setRefinementPrompt(null);
     setRetryFeedback("");
@@ -1571,6 +1640,7 @@ export function useMobileSearchController() {
 
   return {
     activeSearchSession,
+    candidateRecovery,
     canFinalize,
     canRequestRetryAdvice,
     clearRestoredFlowPhase,
@@ -1578,6 +1648,8 @@ export function useMobileSearchController() {
     discoverySummary,
     errorMessage,
     finalResults,
+    improvePicksSuggestions,
+    findBetterMatches,
     finalizeFocusedPicks,
     followUpNotes,
     applyQuerySuggestion,
@@ -1586,6 +1658,7 @@ export function useMobileSearchController() {
     isFinalizing,
     isGeneratingRetryAdvice,
     isGeneratingPrompt,
+    keepCandidateRecovery,
     hasStartedSearch,
     phaseEvents,
     previewItems,

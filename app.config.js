@@ -38,7 +38,7 @@ export default {
     userInterfaceStyle: "light",
     newArchEnabled: true,
     splash: {
-      image: "./assets/splash-wordmark-tight.png",
+      image: "./assets/adaptive-icon-foreground.png",
       resizeMode: "contain",
       backgroundColor: "#fbf7ef",
     },
@@ -75,8 +75,10 @@ export default {
         "expo-splash-screen",
         {
           backgroundColor: "#fbf7ef",
-          image: "./assets/splash-wordmark-tight.png",
-          imageWidth: 280,
+          // This asset keeps the F mark inside the same safe zone used by the
+          // Android adaptive icon, yielding an approximately 140pt-wide mark.
+          image: "./assets/adaptive-icon-foreground.png",
+          imageWidth: 224,
           resizeMode: "contain",
         },
       ],

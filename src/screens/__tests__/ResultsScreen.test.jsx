@@ -35,14 +35,17 @@ const secondPick = {
 
 function buildSearchFlow(overrides = {}) {
   return {
+    candidateRecovery: null,
     canRequestRetryAdvice: true,
     discoverySummary: null,
     errorMessage: "",
     finalResults: [firstPick, secondPick],
+    findBetterMatches: jest.fn(),
     followUpNotes: "",
     isFinalizing: false,
     isGeneratingPrompt: false,
     isGeneratingRetryAdvice: false,
+    keepCandidateRecovery: jest.fn(),
     phaseEvents: [],
     previewItems: [],
     productQuery: "travel stroller",
@@ -133,5 +136,25 @@ describe("ResultsScreen", () => {
       rejectionFeedback: "avoid bulky options",
     });
     await waitFor(() => expect(navigation.navigate).toHaveBeenCalledWith("RetryUpdating"));
+  });
+
+  it("offers the suggested recovery search directly below a partial shortlist", () => {
+    const findBetterMatches = jest.fn(() => true);
+    const { getByTestId, getByText, navigation } = renderResults({
+      candidateRecovery: {
+        goodCandidateCount: 2,
+        suggestedQuery: "lightweight travel stroller under $250",
+      },
+      findBetterMatches,
+    });
+
+    expect(getByTestId("candidateRecovery.section")).toBeTruthy();
+    expect(getByText("These are the strongest matches we found.")).toBeTruthy();
+    expect(getByText("lightweight travel stroller under $250")).toBeTruthy();
+
+    fireEvent.press(getByTestId("candidateRecovery.findBetterMatches"));
+
+    expect(findBetterMatches).toHaveBeenCalled();
+    expect(navigation.navigate).toHaveBeenCalledWith("RetryUpdating");
   });
 });

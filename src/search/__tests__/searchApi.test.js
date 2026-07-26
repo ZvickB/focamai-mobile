@@ -2,6 +2,7 @@ import {
   coerceDisplayText,
   isSafeQuerySuggestionText,
   normalizeFinalResults,
+  normalizeImprovePicksSuggestions,
   normalizeQueryQualitySuggestion,
   normalizeRefinementSuggestions,
   normalizeRetryAdvice,
@@ -247,6 +248,26 @@ describe("normalizeRefinementSuggestions", () => {
 
   it("returns an empty array when suggestions are missing", () => {
     expect(normalizeRefinementSuggestions({ prompt: "What matters most?" })).toEqual([]);
+  });
+});
+
+describe("normalizeImprovePicksSuggestions", () => {
+  it("keeps three distinct, usable suggestions and drops malformed duplicates", () => {
+    expect(
+      normalizeImprovePicksSuggestions({
+        improvePicksSuggestions: [
+          { label: " Lower   price ", feedback: " I want lower-priced options. " },
+          { label: "Lower price", feedback: "Duplicate label should not be shown." },
+          { label: "Lighter carry", feedback: "I want something easier to carry." },
+          { label: "One-hand fold", feedback: "I need reliable one-hand folding." },
+          { label: "Extra", feedback: "Would be capped." },
+        ],
+      }),
+    ).toEqual([
+      { label: "Lower price", feedback: "I want lower-priced options." },
+      { label: "Lighter carry", feedback: "I want something easier to carry." },
+      { label: "One-hand fold", feedback: "I need reliable one-hand folding." },
+    ]);
   });
 });
 
