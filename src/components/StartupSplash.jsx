@@ -14,28 +14,26 @@ const SPLASH_BACKGROUND = "#fbf7ef";
 const STATIC_LOGO_DELAY_MS = 200;
 const SHIMMER_DURATION_MS = 900;
 const FINISHING_WINDOW_MS = 170;
-const SPLASH_WORDMARK_ASPECT_RATIO = 695 / 125;
-const MAX_SPLASH_WORDMARK_WIDTH = 280;
+const MAX_SPLASH_LOGO_SIZE = 224;
 const shimmerColors = [
   "rgba(251,247,239,0)",
-  "rgba(232,247,239,0.26)",
-  "rgba(255,244,220,0.21)",
+  "rgba(232,247,239,0.18)",
+  "rgba(255,244,220,0.38)",
+  "rgba(232,247,239,0.18)",
   "rgba(251,247,239,0)",
 ];
 
-const splashWordmark = require("../../assets/splash-wordmark-tight.png");
-const splashWordmarkMask = require("../../assets/splash-wordmark-tight-mask.png");
+const splashLogo = require("../../assets/adaptive-icon-foreground.png");
 
 export default function StartupSplash({ appReady, nativeSplashHidden, onDismissed, onReady }) {
   const { height: windowHeight, width: windowWidth } = useWindowDimensions();
   const frameStyle = { height: windowHeight, width: windowWidth };
-  const splashWordmarkWidth = Math.min(windowWidth * 0.85, MAX_SPLASH_WORDMARK_WIDTH);
-  const splashWordmarkHeight = splashWordmarkWidth / SPLASH_WORDMARK_ASPECT_RATIO;
-  const splashWordmarkStyle = {
-    height: splashWordmarkHeight,
-    left: (windowWidth - splashWordmarkWidth) / 2,
-    top: (windowHeight - splashWordmarkHeight) / 2,
-    width: splashWordmarkWidth,
+  const splashLogoSize = Math.min(windowWidth * 0.62, MAX_SPLASH_LOGO_SIZE);
+  const splashLogoStyle = {
+    height: splashLogoSize,
+    left: (windowWidth - splashLogoSize) / 2,
+    top: (windowHeight - splashLogoSize) / 2,
+    width: splashLogoSize,
   };
   const [layoutReady, setLayoutReady] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
@@ -51,9 +49,9 @@ export default function StartupSplash({ appReady, nativeSplashHidden, onDismisse
   const animatedSplashStyle = useAnimatedStyle(() => ({ opacity: splashOpacity.value }));
   const animatedShimmerStyle = useAnimatedStyle(() => ({
     transform: [
-      { translateX: -310 + shimmerProgress.value * 620 },
-      { translateY: -125 + shimmerProgress.value * 250 },
-      { rotate: "24deg" },
+      { translateX: -splashLogoSize * 1.1 + shimmerProgress.value * splashLogoSize * 2.2 },
+      { translateY: -splashLogoSize * 0.15 + shimmerProgress.value * splashLogoSize * 0.3 },
+      { rotate: "20deg" },
     ],
   }));
 
@@ -68,7 +66,7 @@ export default function StartupSplash({ appReady, nativeSplashHidden, onDismisse
     cancelAnimation(shimmerProgress);
 
     // The navigator is already mounted underneath this matching layer. Fading
-    // the wordmark over it leaves a brief doubled-logo frame on fast launches,
+    // the logo over it leaves a brief doubled-logo frame on fast launches,
     // so remove the overlay as one atomic handoff instead.
     splashOpacity.value = 0;
     onDismissed();
@@ -171,16 +169,16 @@ export default function StartupSplash({ appReady, nativeSplashHidden, onDismisse
       <Animated.View pointerEvents="none" style={[styles.frame, frameStyle, animatedSplashStyle]}>
         <Image
           resizeMode="contain"
-          source={splashWordmark}
-          style={[styles.frame, splashWordmarkStyle]}
+          source={splashLogo}
+          style={[styles.frame, splashLogoStyle]}
         />
         {!reducedMotion ? (
           <MaskedView
             maskElement={
-              <Image resizeMode="contain" source={splashWordmarkMask} style={styles.maskImage} />
+              <Image resizeMode="contain" source={splashLogo} style={styles.maskImage} />
             }
             pointerEvents="none"
-            style={[styles.frame, splashWordmarkStyle]}
+            style={[styles.frame, splashLogoStyle]}
           >
             <Animated.View pointerEvents="none" style={[styles.shimmerBand, animatedShimmerStyle]}>
               <LinearGradient
@@ -214,10 +212,10 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   shimmerBand: {
-    height: "45%",
-    left: "-45%",
+    height: "145%",
+    left: "-70%",
     position: "absolute",
-    top: "27.5%",
-    width: "190%",
+    top: "-22.5%",
+    width: "65%",
   },
 });
