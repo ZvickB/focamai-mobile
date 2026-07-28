@@ -32,7 +32,9 @@ export default {
     name: "Focamai",
     slug: "focama-mobile",
     scheme: "focamai",
-    version: "1.6.0",
+    // Match the first App Store Connect version already created for iOS.
+    // Android's published versioning remains independent.
+    version: "1.0",
     orientation: "portrait",
     icon: "./assets/app-icon.png",
     userInterfaceStyle: "light",
@@ -46,6 +48,7 @@ export default {
       bundleIdentifier: "com.focamai.app",
       supportsTablet: true,
       infoPlist: {
+        ITSAppUsesNonExemptEncryption: false,
         NSMicrophoneUsageDescription: "Focamai uses your microphone to let you search by voice.",
       },
     },

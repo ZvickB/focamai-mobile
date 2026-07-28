@@ -36,6 +36,14 @@ describe("useAuth", () => {
     expect(error.message).toMatch(/not configured/);
   });
 
+  it("fallback signInWithApple returns an error", async () => {
+    const { result } = renderHook(() => useAuth());
+
+    const { error } = await result.current.signInWithApple();
+    expect(error).toBeInstanceOf(Error);
+    expect(error.message).toMatch(/not configured/);
+  });
+
   it("fallback signOut succeeds with no error", async () => {
     const { result } = renderHook(() => useAuth());
 
@@ -49,6 +57,7 @@ describe("useAuth", () => {
       loading: false,
       session: { access_token: "abc" },
       signIn: jest.fn(),
+      signInWithApple: jest.fn(),
       signInWithGoogle: jest.fn(),
       signOut: jest.fn(),
       signUp: jest.fn(),

@@ -74,6 +74,17 @@ describe("SearchScreen", () => {
     expect(queryByTestId("search.signInButton")).toBeNull();
   });
 
+  it("does not render the full recovery panel for an empty search", () => {
+    const navigation = { navigate: jest.fn(), setParams: jest.fn() };
+    useSearchFlow.mockReturnValue(buildSearchFlow({ errorMessage: "Enter a product query first." }));
+
+    const { queryByTestId } = render(
+      <SearchScreen navigation={navigation} route={{ params: {} }} />,
+    );
+
+    expect(queryByTestId("search.recoveryPanel")).toBeNull();
+  });
+
   it("opens signed-in personal actions from the avatar menu", () => {
     process.env.EXPO_PUBLIC_ACCOUNT_UI_ENABLED = "true";
     const navigation = { navigate: jest.fn(), setParams: jest.fn() };

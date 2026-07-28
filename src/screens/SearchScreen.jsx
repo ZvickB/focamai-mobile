@@ -7,7 +7,6 @@ import {
   AppHeader,
   IconButton,
   QuietStatusPanel,
-  RecoveryPanel,
   ScreenContainer,
   cx,
 } from "../components/MobileUI";
@@ -393,15 +392,6 @@ export default function SearchScreen({ navigation, route }) {
             setProductQuery={setProductQuery}
             startDiscoverySearch={submitSearch}
           />
-
-          {errorMessage === "Enter a product query first." ? (
-            <RecoveryPanel
-              detail={errorMessage}
-              message="Add the product you want help with, then start the search again."
-              testID="search.recoveryPanel"
-              title="Add a product first"
-            />
-          ) : null}
 
           {historyPrefill ? (
             <HistoryPrefillPanel

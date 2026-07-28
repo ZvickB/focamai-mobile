@@ -14,6 +14,7 @@ export function SearchEntrySection({
   const { width } = useWindowDimensions();
   const isCompact = width <= 415;
   const [draftQuery, setDraftQuery] = useState(productQuery);
+  const [showEmptyQueryMessage, setShowEmptyQueryMessage] = useState(false);
 
   const { status: voiceStatus, handleMicPress } = useVoiceRecorder({
     onTranscribed: (text) => {
@@ -29,9 +30,19 @@ export function SearchEntrySection({
   function updateQuery(nextQuery) {
     setDraftQuery(nextQuery);
     setProductQuery(nextQuery);
+
+    if (String(nextQuery).trim()) {
+      setShowEmptyQueryMessage(false);
+    }
   }
 
   function submitDraftQuery() {
+    if (!String(draftQuery).trim()) {
+      setShowEmptyQueryMessage(true);
+      return;
+    }
+
+    setShowEmptyQueryMessage(false);
     startDiscoverySearch(draftQuery);
   }
 
@@ -91,9 +102,11 @@ export function SearchEntrySection({
         </View>
       </View>
 
-      <Text className="px-1 text-center text-sm leading-5 text-stone-600">
-        Start with what you need. Focamai will refine it into 6 useful picks.
-      </Text>
+      {showEmptyQueryMessage ? (
+        <Text className="-mt-1 px-1 text-center text-sm leading-5 text-stone-600" testID="search.emptyQueryMessage">
+          Add something you’re looking for to get started.
+        </Text>
+      ) : null}
 
       <Button
         testID="search.submitButton"

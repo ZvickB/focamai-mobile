@@ -25,7 +25,15 @@ export default function AuthScreen({ navigation, route }) {
   const isCompact = width <= 415;
   const { handleInputFocus, scrollViewRef } = useKeyboardInputScroll();
 
-  const { configured, loading: authLoading, requestPasswordReset, signIn, signInWithGoogle, signUp } = useAuth();
+  const {
+    configured,
+    loading: authLoading,
+    requestPasswordReset,
+    signIn,
+    signInWithApple,
+    signInWithGoogle,
+    signUp,
+  } = useAuth();
   const mode = route?.name === "CreateAccount" ? "sign-up" : "sign-in";
   const [email, setEmail] = useState(route?.params?.draftEmail || "");
   const [password, setPassword] = useState("");
@@ -112,7 +120,7 @@ export default function AuthScreen({ navigation, route }) {
     setStatusMessage("If an account exists for that email, we sent a password-reset link. Open it to choose a new password.");
   }
 
-  async function handleGoogleSignIn() {
+  async function handleSocialSignIn(signInWithProvider) {
     setErrorMessage("");
     setStatusMessage("");
 
@@ -125,9 +133,9 @@ export default function AuthScreen({ navigation, route }) {
     let data = null;
     let error = null;
     try {
-      ({ data, error } = await signInWithGoogle());
-    } catch (googleError) {
-      error = googleError;
+      ({ data, error } = await signInWithProvider());
+    } catch (socialError) {
+      error = socialError;
     } finally {
       setSubmitting(false);
     }
@@ -332,10 +340,19 @@ export default function AuthScreen({ navigation, route }) {
             accessibilityRole="button"
             className="h-12 items-center justify-center rounded-[18px] border border-line bg-white px-4"
             disabled={isBusy}
-            onPress={handleGoogleSignIn}
+            onPress={() => handleSocialSignIn(signInWithGoogle)}
             testID="auth.googleButton"
           >
             <Text className="text-sm font-semibold text-ink">Continue with Google</Text>
+          </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            className="h-12 items-center justify-center rounded-[18px] bg-ink px-4"
+            disabled={isBusy}
+            onPress={() => handleSocialSignIn(signInWithApple)}
+            testID="auth.appleButton"
+          >
+            <Text className="text-sm font-semibold text-white">Continue with Apple</Text>
           </Pressable>
         </View>
 

@@ -54,7 +54,7 @@ export default function PrivacyScreen() {
           </PolicyBullet>
           <PolicyBullet>
             Account email, Supabase user ID, and authentication/session information. Mobile supports
-            sign-in using email and password or Google Sign-In.
+            sign-in using email and password, Google Sign-In, or Sign in with Apple.
           </PolicyBullet>
           <PolicyBullet>
             Signed-out search history stored on the device, or account-backed saved searches and
@@ -104,7 +104,7 @@ export default function PrivacyScreen() {
             SerpApi when an eligible signed-in user explicitly runs Deep Dive; Render for backend
             hosting; Vercel for website hosting and web performance analytics; Sentry for backend
             errors plus configured mobile crash and sampled performance reporting; Resend for
-            enabled price-watch emails; Google for optional sign-in and website web fonts; and
+            enabled price-watch emails; Google and Apple for optional sign-in, plus Google for website web fonts; and
             Amazon and product-image hosts for product images, product pages, and affiliate
             attribution. Focamai's current code does not sell personal information or use it for
             targeted ads.

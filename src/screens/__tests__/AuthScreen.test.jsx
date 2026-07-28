@@ -37,6 +37,7 @@ function renderWithAuth(authOverrides = {}, routeOverrides = {}) {
     requestPasswordReset: jest.fn().mockResolvedValue({ error: null }),
     session: null,
     signIn: jest.fn().mockResolvedValue({ data: { session: {} }, error: null }),
+    signInWithApple: jest.fn().mockResolvedValue({ error: null }),
     signInWithGoogle: jest.fn().mockResolvedValue({ error: null }),
     signOut: jest.fn().mockResolvedValue({ error: null }),
     signUp: jest.fn().mockResolvedValue({ data: {}, error: null }),
@@ -243,6 +244,29 @@ describe("AuthScreen", () => {
 
     await waitFor(() => {
       expect(signInWithGoogle).toHaveBeenCalledTimes(1);
+    });
+    expect(navigation.goBack).not.toHaveBeenCalled();
+  });
+
+  it("starts Apple sign in and navigates back after a session is created", async () => {
+    const { getByTestId, authValue, navigation } = renderWithAuth();
+
+    fireEvent.press(getByTestId("auth.appleButton"));
+
+    await waitFor(() => {
+      expect(authValue.signInWithApple).toHaveBeenCalledTimes(1);
+    });
+    expect(navigation.goBack).toHaveBeenCalled();
+  });
+
+  it("keeps the auth screen open when Apple sign in is cancelled", async () => {
+    const signInWithApple = jest.fn().mockResolvedValue({ data: { cancelled: true }, error: null });
+    const { getByTestId, navigation } = renderWithAuth({ signInWithApple });
+
+    fireEvent.press(getByTestId("auth.appleButton"));
+
+    await waitFor(() => {
+      expect(signInWithApple).toHaveBeenCalledTimes(1);
     });
     expect(navigation.goBack).not.toHaveBeenCalled();
   });

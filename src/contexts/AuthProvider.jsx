@@ -77,7 +77,7 @@ export async function finishOAuthCallback(client, callbackUrl) {
     });
   }
 
-  return { error: new Error("Google sign-in did not return a usable session.") };
+  return { error: new Error("Social sign-in did not return a usable session.") };
 }
 
 export function AuthProvider({ children }) {
@@ -280,7 +280,7 @@ export function AuthProvider({ children }) {
     }
 
     if (!data?.url) {
-      return { error: new Error("Google sign-in could not start.") };
+      return { error: new Error(`${provider === "apple" ? "Apple" : "Google"} sign-in could not start.`) };
     }
 
     const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
@@ -292,6 +292,8 @@ export function AuthProvider({ children }) {
   }, []);
 
   const signInWithGoogle = useCallback(() => signInWithOAuthProvider("google"), [signInWithOAuthProvider]);
+
+  const signInWithApple = useCallback(() => signInWithOAuthProvider("apple"), [signInWithOAuthProvider]);
 
   const signOut = useCallback(async (options) => {
     const client = getSupabaseClient();
@@ -312,6 +314,7 @@ export function AuthProvider({ children }) {
       requestPasswordReset,
       session,
       signIn,
+      signInWithApple,
       signInWithGoogle,
       signOut,
       signUp,
@@ -327,6 +330,7 @@ export function AuthProvider({ children }) {
       session,
       setRankingPreference,
       signIn,
+      signInWithApple,
       signInWithGoogle,
       signOut,
       signUp,

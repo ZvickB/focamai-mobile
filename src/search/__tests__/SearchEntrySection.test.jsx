@@ -36,6 +36,27 @@ describe("SearchEntrySection", () => {
     expect(getByText("Searching...")).toBeTruthy();
   });
 
+  it("keeps an empty submission inline and lets the user correct it", () => {
+    const startDiscoverySearch = jest.fn();
+    const { getByTestId, queryByTestId } = render(
+      <SearchEntrySection
+        isDiscovering={false}
+        productQuery=""
+        setProductQuery={jest.fn()}
+        startDiscoverySearch={startDiscoverySearch}
+      />,
+    );
+
+    fireEvent.press(getByTestId("search.submitButton"));
+
+    expect(getByTestId("search.emptyQueryMessage")).toBeTruthy();
+    expect(startDiscoverySearch).not.toHaveBeenCalled();
+
+    fireEvent.changeText(getByTestId("search.queryInput"), "travel stroller");
+
+    expect(queryByTestId("search.emptyQueryMessage")).toBeNull();
+  });
+
   it("submits the latest typed value without waiting for parent state", () => {
     const setProductQuery = jest.fn();
     const startDiscoverySearch = jest.fn();

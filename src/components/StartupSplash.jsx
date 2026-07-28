@@ -11,7 +11,7 @@ import Animated, {
 } from "react-native-reanimated";
 
 const SPLASH_BACKGROUND = "#fbf7ef";
-const STATIC_LOGO_DELAY_MS = 200;
+const STATIC_LOGO_DELAY_MS = 50;
 const SHIMMER_DURATION_MS = 900;
 const FINISHING_WINDOW_MS = 170;
 const MAX_SPLASH_LOGO_SIZE = 224;
