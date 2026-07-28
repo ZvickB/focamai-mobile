@@ -81,70 +81,46 @@ function OfferCard({ index, offer }) {
   );
 }
 
-function ReviewSections({ reviews }) {
-  const insights = Array.isArray(reviews?.topInsights) ? reviews.topInsights.slice(0, 6) : [];
-  const criticRatings = Array.isArray(reviews?.criticRatings) ? reviews.criticRatings.slice(0, 4) : [];
-  const userReviews = Array.isArray(reviews?.userReviews) ? reviews.userReviews.slice(0, 4) : [];
-
-  if (!reviews?.summary && insights.length === 0 && criticRatings.length === 0 && userReviews.length === 0) {
-    return null;
-  }
+function SimilarOptionCard({ index, option }) {
+  const price = formatMoney(option.price, option.currency || "USD");
 
   return (
-    <View className="gap-4">
-      {reviews?.summary ? (
-        <View className="gap-2 border-t border-line pt-5">
-          <Text className="text-lg font-semibold text-ink">What reviewers say</Text>
-          <Text className="text-sm leading-6 text-stone-600">{reviews.summary}</Text>
-          {Array.isArray(reviews.sources) && reviews.sources.length > 0 ? (
-            <Text className="text-xs leading-5 text-stone-500">
-              Sources: {reviews.sources.join(", ")}
-            </Text>
-          ) : null}
-        </View>
-      ) : null}
+    <Surface className="gap-3" testID={`deepDive.similarOption.${index}`}>
+      <View className="gap-1">
+        <Text className="text-base font-semibold text-ink" numberOfLines={2}>
+          {option.title || "Similar option"}
+        </Text>
+        {option.difference ? (
+          <Text className="text-sm leading-6 text-stone-600">{option.difference}</Text>
+        ) : null}
+      </View>
+      <View className="flex-row items-center justify-between gap-3">
+        {price ? <Text className="text-base font-semibold text-accent">{price}</Text> : <View />}
+        <Pressable
+          accessibilityRole="link"
+          className="min-h-[44px] flex-row items-center justify-center gap-2 rounded-[16px] border border-line bg-white px-4"
+          onPress={() => openExternalLink(option.url)}
+        >
+          <Text className="text-sm font-semibold text-ink">View in Google Shopping</Text>
+          <ArrowUpRight color="#0F6175" size={16} strokeWidth={2.2} />
+        </Pressable>
+      </View>
+    </Surface>
+  );
+}
 
-      {insights.length > 0 ? (
-        <View className="gap-3 border-t border-line pt-5">
-          <Text className="text-lg font-semibold text-ink">Review signals</Text>
-          <Text className="text-xs leading-5 text-stone-500">
-            Themes Google surfaced from available product reviews.
-          </Text>
-          {insights.map((insight, index) => (
-            <QuietStatusPanel key={`${insight.text}-${index}`}>
-              <Text className="text-sm leading-6 text-stone-700">{insight.text}</Text>
-            </QuietStatusPanel>
-          ))}
-        </View>
-      ) : null}
-
-      {criticRatings.length > 0 ? (
-        <View className="gap-2 border-t border-line pt-5">
-          <Text className="text-lg font-semibold text-ink">Critic ratings</Text>
-          {criticRatings.map((rating, index) => (
-            <Text className="text-sm leading-6 text-stone-600" key={`${rating.source}-${index}`}>
-              <Text className="font-semibold text-ink">{rating.source || "Review source"}</Text>
-              {rating.rating ? `: ${rating.rating}` : ""}
-            </Text>
-          ))}
-        </View>
-      ) : null}
-
-      {userReviews.length > 0 ? (
-        <View className="gap-3 border-t border-line pt-5">
-          <Text className="text-lg font-semibold text-ink">Buyer reviews</Text>
-          {userReviews.map((review, index) => (
-            <QuietStatusPanel key={`${review.source}-${review.date}-${index}`}>
-              <Text className="text-xs font-medium text-stone-500">
-                {[review.rating ? `${review.rating} stars` : "", review.source, review.date]
-                  .filter(Boolean)
-                  .join(" | ")}
-              </Text>
-              <Text className="mt-1 text-sm leading-6 text-stone-700">{review.text}</Text>
-            </QuietStatusPanel>
-          ))}
-        </View>
-      ) : null}
+function SimilarOptions({ alternatives }) {
+  return (
+    <View className="gap-3">
+      <View className="gap-1">
+        <Text className="text-lg font-semibold text-ink">Other options to consider</Text>
+        <Text className="text-sm leading-6 text-stone-600">
+          These aren't the exact item. We've noted the main difference so you can compare confidently.
+        </Text>
+      </View>
+      {alternatives.map((option, index) => (
+        <SimilarOptionCard index={index} key={`${option.url}-${index}`} option={option} />
+      ))}
     </View>
   );
 }
@@ -155,7 +131,7 @@ function ProductVariantNote({ product }) {
 
   return (
     <Text className="border-t border-line pt-4 text-xs leading-5 text-stone-500">
-      Reviews and store offers may cover other variants of this product. Check size, color, and edition before buying.
+      Store offers may cover other variants of this product. Check size, color, and edition before buying.
     </Text>
   );
 }
@@ -176,12 +152,12 @@ export default function DeepDiveScreen({ navigation, route }) {
 
   async function loadDeepDive({ crossMarketFallback = false } = {}) {
     if (!user || !session?.access_token) {
-      setPayload({ status: "gated", error: "Sign in to use Deep Dive." });
+      setPayload({ status: "gated", error: "Sign in to compare prices." });
       return;
     }
 
     if (!item || !activeSearchSession?.discoveryToken || !activeSearchSession?.submittedQuery) {
-      setError("Deep Dive needs an active finalized search. Return to your picks and try again.");
+      setError("Price comparison needs an active finalized search. Return to your picks and try again.");
       return;
     }
 
@@ -199,7 +175,7 @@ export default function DeepDiveScreen({ navigation, route }) {
       setPayload(nextPayload);
       setShowingUsFallback(crossMarketFallback);
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Deep Dive was limited this time.");
+      setError(requestError instanceof Error ? requestError.message : "Price comparison was limited this time.");
     } finally {
       setLoading(false);
     }
@@ -212,6 +188,10 @@ export default function DeepDiveScreen({ navigation, route }) {
   }, [candidateId]);
 
   const offers = Array.isArray(payload?.offers) ? payload.offers : [];
+  const similarAlternatives = Array.isArray(payload?.similarAlternatives)
+    ? payload.similarAlternatives
+    : [];
+  const isSimilarOnly = payload?.status === "similar_only";
   const isCanadianMarket = /amazon\.ca/i.test(activeSearchSession?.amazonDomain || "");
   const canOfferUsFallback =
     isCanadianMarket && payload?.status === "ready" && offers.length === 0 && !showingUsFallback;
@@ -231,12 +211,12 @@ export default function DeepDiveScreen({ navigation, route }) {
         <DeepDiveHeader onBack={() => navigation.goBack()} />
 
         <View className="gap-2">
-          <Text className="text-xs font-semibold uppercase tracking-[1px] text-accent">Deep Dive</Text>
+          <Text className="text-xs font-semibold uppercase tracking-[1px] text-accent">Compare prices</Text>
           <Text className="text-[28px] font-semibold leading-[35px] text-ink">
-            Store prices and reviews
+            Compare prices at other stores
           </Text>
           <Text className="text-[15px] leading-6 text-stone-600">
-            An optional check for verified lower offers and review signals for this exact pick.
+            An optional check for verified lower offers for this exact pick.
           </Text>
         </View>
 
@@ -264,7 +244,7 @@ export default function DeepDiveScreen({ navigation, route }) {
             <View className="flex-row items-center gap-3">
               <ActivityIndicator color="#0F6175" size="small" />
               <Text className="flex-1 text-sm leading-6 text-stone-600">
-                Checking store offers and review signals...
+                Checking store offers...
               </Text>
             </View>
           </QuietStatusPanel>
@@ -279,9 +259,9 @@ export default function DeepDiveScreen({ navigation, route }) {
 
         {payload?.status === "gated" ? (
           <QuietStatusPanel>
-            <Text className="text-sm font-semibold text-ink">Deep Dive is account-based.</Text>
+            <Text className="text-sm font-semibold text-ink">Compare prices is account-based.</Text>
             <Text className="mt-1 text-sm leading-6 text-stone-600">
-              {payload.error || "Sign in to use Deep Dive."}
+              {payload.error || "Sign in to compare prices."}
             </Text>
           </QuietStatusPanel>
         ) : null}
@@ -298,7 +278,7 @@ export default function DeepDiveScreen({ navigation, route }) {
         {payload?.ambiguous ? (
           <QuietStatusPanel className="border-amber-200 bg-amber-50">
             <Text className="text-sm leading-6 text-amber-800">
-              Google Shopping returned similar products. Offers and reviews may cover a different color, size, or edition.
+              Google Shopping returned multiple similar products. Offers may cover a different color, size, or edition.
             </Text>
           </QuietStatusPanel>
         ) : null}
@@ -325,7 +305,26 @@ export default function DeepDiveScreen({ navigation, route }) {
           </View>
         ) : null}
 
-        <ReviewSections reviews={payload?.reviews} />
+        {isSimilarOnly ? (
+          <View className="gap-3">
+            <QuietStatusPanel>
+              <Text className="text-sm font-semibold text-ink">
+                Couldn't find a direct match for this exact item
+              </Text>
+              <Text className="mt-1 text-sm leading-6 text-stone-600">
+                Here are a few similar options to consider. They aren't the same product, so we've called out the main difference for each one.
+              </Text>
+            </QuietStatusPanel>
+            {similarAlternatives.length > 0 ? (
+              <SimilarOptions alternatives={similarAlternatives} />
+            ) : null}
+          </View>
+        ) : null}
+
+        {payload?.status === "ready" && offers.length === 0 && similarAlternatives.length > 0 ? (
+          <SimilarOptions alternatives={similarAlternatives} />
+        ) : null}
+
         {payload?.status === "ready" ? <ProductVariantNote product={payload.product} /> : null}
 
         {payload?.status === "ready" && offers.length === 0 && !canOfferUsFallback ? (
@@ -333,7 +332,7 @@ export default function DeepDiveScreen({ navigation, route }) {
             <View className="flex-row items-start gap-3">
               <SearchCheck color="#0F6175" size={19} strokeWidth={2} />
               <Text className="flex-1 text-sm leading-6 text-stone-600">
-                No verified lower store offer was found. Any available review signals are shown above.
+                No verified lower store offer was found.
               </Text>
             </View>
           </QuietStatusPanel>

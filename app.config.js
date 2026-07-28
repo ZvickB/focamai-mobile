@@ -34,7 +34,7 @@ export default {
     scheme: "focamai",
     // Match the first App Store Connect version already created for iOS.
     // Android's published versioning remains independent.
-    version: "1.0",
+    version: "1.6.1",
     orientation: "portrait",
     icon: "./assets/app-icon.png",
     userInterfaceStyle: "light",
@@ -46,6 +46,7 @@ export default {
     },
     ios: {
       bundleIdentifier: "com.focamai.app",
+      buildNumber: "6",
       supportsTablet: true,
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,
