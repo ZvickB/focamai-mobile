@@ -34,12 +34,15 @@ import {
 } from "../lib/mobileAnalytics";
 
 const ENRICHMENT_POLL_INTERVAL_MS = 1500;
-const ENRICHMENT_POLL_TIMEOUT_MS = 30000;
+// Product-detail hydration can take a full provider round trip before the
+// same background job generates the AI retry chips. Keep polling long enough
+// for that useful, non-blocking result to arrive.
+const ENRICHMENT_POLL_TIMEOUT_MS = 60000;
 const QUERY_QUALITY_POLL_INTERVAL_MS = 1500;
 const QUERY_QUALITY_POLL_TIMEOUT_MS = 20000;
 const CANDIDATE_RECOVERY_QUERY_MAX_LENGTH = 200;
 
-function createSearchSession({ amazonDomain, requestId, submittedQuery }) {
+function createSearchSession({ amazonDomain, requestId, retryContext = null, submittedQuery }) {
   return {
     amazonDomain,
     candidatePool: null,
@@ -53,6 +56,7 @@ function createSearchSession({ amazonDomain, requestId, submittedQuery }) {
     },
     previewCount: 0,
     requestId,
+    retryContext,
     submittedQuery,
   };
 }
@@ -724,6 +728,7 @@ export function useMobileSearchController() {
     cacheMode = "",
     initialFollowUpNotes = "",
     queryOverride,
+    retryContext = null,
     retrySearchQueryOverride = "",
   } = {}) {
     const normalizedQuery = String(queryOverride ?? productQuery).trim();
@@ -758,6 +763,7 @@ export function useMobileSearchController() {
     const nextSession = createSearchSession({
       amazonDomain: requestedAmazonDomain,
       requestId,
+      retryContext,
       submittedQuery: normalizedQuery,
     });
     const mobileAnalyticsRun = createMobileAnalyticsRun({
@@ -968,6 +974,7 @@ export function useMobileSearchController() {
     cacheMode = "",
     initialFollowUpNotes = "",
     queryOverride,
+    retryContext = null,
     retrySearchQueryOverride = "",
   } = {}) {
     const normalizedQuery = String(queryOverride ?? productQuery).trim();
@@ -995,6 +1002,7 @@ export function useMobileSearchController() {
         cacheMode,
         initialFollowUpNotes,
         queryOverride: normalizedQuery,
+        retryContext,
         retrySearchQueryOverride,
       };
       setErrorMessage("");
@@ -1006,6 +1014,7 @@ export function useMobileSearchController() {
       cacheMode,
       initialFollowUpNotes,
       queryOverride: normalizedQuery,
+      retryContext,
       retrySearchQueryOverride,
     });
   }
@@ -1141,6 +1150,7 @@ export function useMobileSearchController() {
   async function finalizeFocusedPicks({ followUpNotesOverride } = {}) {
     const session = activeSearchSessionRef.current;
     const notesForRequest = String(followUpNotesOverride ?? followUpNotes).trim();
+    const retryContext = session?.retryContext || null;
 
     if (finalizingRequestIdRef.current) {
       console.info("[Focamai API] finalize request not attempted", {
@@ -1236,6 +1246,8 @@ export function useMobileSearchController() {
         followUpNotes: notesForRequest,
         query: finalizeQuery,
         rankingPreference: normalizeRankingPreference(rankingPreference),
+        rejectionFeedback: retryContext?.rejectionFeedback || "",
+        retryCount: retryContext ? 1 : 0,
       });
 
       if (!isActiveRequest(requestId) || finalizingRequestIdRef.current !== requestId) {
@@ -1405,7 +1417,9 @@ export function useMobileSearchController() {
 
       return startDiscoverySearch({
         cacheMode: "refresh",
+        initialFollowUpNotes: snapshot.followUpNotes,
         queryOverride: suggestedQuery,
+        retryContext: { rejectionFeedback: normalizedFeedback },
         retrySearchQueryOverride: suggestedQuery,
       });
     } catch (error) {

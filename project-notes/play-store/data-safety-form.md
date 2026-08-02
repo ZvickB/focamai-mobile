@@ -1,6 +1,6 @@
 # Google Play App Content — Answers for Focamai v1.0
 
-Last updated: 2026-06-15
+Last updated: 2026-07-29
 
 Answers for Play Console > App content sections: Data safety and Content rating.
 Based on what the mobile app does today (no auth, no subscriptions).
@@ -52,6 +52,13 @@ Yes — local search history can be deleted per-entry or cleared entirely from S
 - **Is processing ephemeral?** No
 - **Is collection required or optional?** Required (automatic as part of the search flow)
 
+### User IDs
+- **Collected:** Yes, when a user is signed in
+- **Shared with third parties:** No (sent only to Focamai's first-party backend over HTTPS)
+- **Purpose:** Analytics — to separate internal testing from general mobile usage
+- **Is processing ephemeral?** No — the nullable account link is stored with first-party analytics rows and is cleared when the account is deleted
+- **Is collection required or optional?** Optional — it is absent for signed-out searches
+
 ---
 
 ## Data types — what to answer "No" to
@@ -59,7 +66,7 @@ Yes — local search history can be deleted per-entry or cleared entirely from S
 All of these: the app does not collect any of them.
 
 - Location (no GPS, no IP-based location, marketplace is explicit user choice)
-- Personal info (name, email, phone, address, date of birth, user IDs)
+- Personal info (name, email, phone, address, date of birth)
 - Financial info (purchase history, credit card, payment info)
 - Health and fitness
 - Messages

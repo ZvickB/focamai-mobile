@@ -335,6 +335,40 @@ describe("useMobileSearchController", () => {
 
     unmount();
   });
+
+  it("keeps retry feedback and follow-up notes for the refreshed finalize", async () => {
+    getRetryAdvice.mockResolvedValue({
+      rationale: "This focuses the next search on more premium options.",
+      suggestedQuery: "premium headphones",
+    });
+    const { result, unmount } = renderHook(() => useMobileSearchController());
+
+    act(() => {
+      result.current.startDiscoverySearch({
+        initialFollowUpNotes: "Comfort matters most",
+        queryOverride: "headphones",
+      });
+    });
+    await waitFor(() => expect(result.current.canFinalize).toBe(true));
+    await act(async () => { await result.current.finalizeFocusedPicks(); });
+
+    await act(async () => {
+      await result.current.requestRetryAdvice({
+        rejectionFeedback: "I want more premium picks",
+      });
+    });
+    await waitFor(() => expect(result.current.canFinalize).toBe(true));
+
+    await act(async () => { await result.current.finalizeFocusedPicks(); });
+
+    expect(finalizeSearch).toHaveBeenLastCalledWith(expect.objectContaining({
+      followUpNotes: "Comfort matters most",
+      rejectionFeedback: "I want more premium picks",
+      retryCount: 1,
+    }));
+
+    unmount();
+  });
 });
 
 describe("mergeDeepDiveEligibilityIntoResults", () => {

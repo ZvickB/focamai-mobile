@@ -137,10 +137,39 @@ describe("request timeouts", () => {
           platform: "mobile-ios",
           query: "travel stroller",
           rankingPreference: "price",
+          rejectionFeedback: "",
+          retryCount: 0,
           requestMode: "guided_refined",
         }),
       }),
     );
+  });
+
+  it("sends retry context when finalizing refreshed picks", async () => {
+    jest.resetModules();
+    const { finalizeSearch } = require("../searchApi");
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      headers: { get: jest.fn(() => "application/json") },
+      text: jest.fn().mockResolvedValue(JSON.stringify({ results: [] })),
+    });
+
+    await finalizeSearch({
+      amazonDomain: "amazon.com",
+      discoveryToken: "retry-token",
+      followUpNotes: "Comfort matters most",
+      query: "premium headphones",
+      rejectionFeedback: "I want more premium picks",
+      retryCount: 1,
+    });
+
+    expect(JSON.parse(global.fetch.mock.calls[0][1].body)).toMatchObject({
+      followUpNotes: "Comfort matters most",
+      rejectionFeedback: "I want more premium picks",
+      retryCount: 1,
+      requestMode: "guided_refined",
+    });
   });
 });
 

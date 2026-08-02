@@ -1,8 +1,17 @@
 import { Platform } from "react-native";
+import { getSupabaseClient } from "./supabase";
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || "";
 const ENABLED = String(process.env.EXPO_PUBLIC_MOBILE_ANALYTICS_ENABLED || "").toLowerCase() === "true";
 let postChain = Promise.resolve();
+
+async function getAnalyticsAccessToken() {
+  const client = getSupabaseClient();
+  if (!client) return "";
+
+  const { data } = await client.auth.getSession();
+  return data?.session?.access_token || "";
+}
 
 function createId() {
   if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID();
@@ -49,9 +58,15 @@ export function trackMobileAnalytics(run, event, payload = {}) {
   }
 
   postChain = postChain
-    .then(() => fetch(`${API_BASE_URL}/api/analytics/mobile`, {
+    .then(async () => {
+      const accessToken = await getAnalyticsAccessToken();
+
+      return fetch(`${API_BASE_URL}/api/analytics/mobile`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+      },
       body: JSON.stringify({
         event,
         payload,
@@ -59,7 +74,8 @@ export function trackMobileAnalytics(run, event, payload = {}) {
         searchId: run.searchId,
         sessionId: run.sessionId,
       }),
-    }))
+      });
+    })
     .then((response) => {
       if (!response.ok) {
         throw new Error(`Analytics endpoint returned ${response.status}.`);
@@ -78,6 +94,8 @@ export function trackMobileAnalytics(run, event, payload = {}) {
       }
       // Tracking must never affect the shopping flow.
     });
+
+  return postChain;
 }
 
 export function trackMobileSearchStarted(run) {

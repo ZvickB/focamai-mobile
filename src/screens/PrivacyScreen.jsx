@@ -43,7 +43,7 @@ export default function PrivacyScreen() {
       <ScreenIntro
         eyebrow="Privacy Policy"
         title="How Focamai handles your information."
-        description="This policy applies to the Focamai website and mobile app and reflects the features implemented as of July 13, 2026."
+        description="This policy applies to the Focamai website and mobile app and reflects the features implemented as of July 29, 2026."
       />
 
       <View className="mt-8 gap-7">
@@ -116,8 +116,10 @@ export default function PrivacyScreen() {
             Mobile stores up to 50 signed-out search-history entries and Amazon marketplace
             preferences in device storage, and stores the Supabase session in secure device storage.
             The mobile app does not include an advertising analytics SDK. Search requests can still
-            create backend operational, analytics, and diagnostic records. The website separately
-            uses browser local storage plus Vercel Analytics and Speed Insights.
+            create backend operational, analytics, and diagnostic records. When you are signed in,
+            first-party mobile analytics may use the verified account ID to distinguish internal
+            testing from general usage; it does not send your email to analytics. The website
+            separately uses browser local storage plus Vercel Analytics and Speed Insights.
           </PolicyText>
           <PolicyText>
             Mobile Sentry reporting includes crashes, serious errors, and a 10% sample of app-start
@@ -163,7 +165,8 @@ export default function PrivacyScreen() {
             successful deletion. Anonymous operational search logs, analytics, diagnostics, caches,
             hashed rate-limit records, hosting logs, feedback, and third-party provider records are
             not deleted by this control when they cannot be reliably linked to the account. They are
-            not used to recreate the account after deletion.
+            not used to recreate the account after deletion. Analytics recorded while signed in have
+            their account link cleared when the Supabase account is deleted.
           </PolicyText>
         </PolicySection>
 

@@ -182,12 +182,18 @@ export async function finalizeSearch({
   followUpNotes = "",
   query,
   rankingPreference = "balanced",
+  rejectionFeedback = "",
+  retryCount = 0,
 }) {
   assertApiBaseUrl();
 
   const requestStartedAt = Date.now();
   const normalizedNotes = followUpNotes.trim();
-  const requestMode = normalizedNotes ? "guided_refined" : "guided_empty_notes";
+  const normalizedRejectionFeedback = rejectionFeedback.trim();
+  const normalizedRetryCount = Math.max(0, Number(retryCount) || 0);
+  const requestMode = normalizedNotes || normalizedRejectionFeedback || normalizedRetryCount > 0
+    ? "guided_refined"
+    : "guided_empty_notes";
   const response = await fetchWithTimeout(
     `${API_BASE_URL}/api/search/finalize`,
     {
@@ -202,6 +208,8 @@ export async function finalizeSearch({
         platform: MOBILE_PLATFORM,
         query,
         rankingPreference,
+        rejectionFeedback: normalizedRejectionFeedback,
+        retryCount: normalizedRetryCount,
         requestMode,
       }),
     },
