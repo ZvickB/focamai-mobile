@@ -6,6 +6,7 @@ import {
 } from "../SearchRefineSection";
 
 const refinementPrompt = {
+  alternatePrompt: "Is there a feature you would not compromise on?",
   followUpPlaceholder: "Budget, must-haves, or dealbreakers",
   helperText: "A short answer is enough.",
   prompt: "What matters most for this purchase?",
@@ -51,6 +52,17 @@ describe("SearchRefineSection", () => {
     fireEvent(getByTestId("followup.notesInput"), "focus");
 
     expect(onNotesFocus).toHaveBeenCalledTimes(1);
+  });
+
+  it("shows the AI question and replaces it once with its alternate", () => {
+    const { getByTestId, getByText, queryByTestId } = renderRefineSection();
+
+    expect(getByText("What matters most for this purchase?")).toBeTruthy();
+
+    fireEvent.press(getByTestId("followup.differentQuestionButton"));
+
+    expect(getByText("Is there a feature you would not compromise on?")).toBeTruthy();
+    expect(queryByTestId("followup.differentQuestionButton")).toBeNull();
   });
 
   it("adds static refinement chips to the notes without replacing the user's answer", () => {

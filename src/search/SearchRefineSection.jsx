@@ -1,4 +1,5 @@
 import { Search } from "lucide-react-native";
+import { useEffect, useState } from "react";
 import { Pressable, Text, TextInput, useWindowDimensions, View } from "react-native";
 import { GuidanceText, cx } from "../components/MobileUI";
 import { useVoiceRecorder } from "./useVoiceRecorder";
@@ -118,6 +119,7 @@ export function SearchRefineSection({
   const { width } = useWindowDimensions();
   const isCompact = width <= 415;
   const canFitLongThreeColumn = width >= THREE_COLUMN_LONG_CHIP_MIN_WIDTH;
+  const [isShowingAlternateQuestion, setIsShowingAlternateQuestion] = useState(false);
   const { status: voiceStatus, handleMicPress } = useVoiceRecorder({
     onTranscribed: (text) => {
       setFollowUpNotes(clampFollowUpNotes(
@@ -131,6 +133,18 @@ export function SearchRefineSection({
     : DEFAULT_REFINEMENT_CHIPS;
   const arrangedChips = arrangeRefinementChipsForLayout(visibleChips, { canFitLongThreeColumn });
   const isPromptStillLoading = isGeneratingPrompt && !refinementPrompt;
+  const primaryPrompt = String(refinementPrompt?.prompt ?? "").trim();
+  const alternatePrompt = String(refinementPrompt?.alternatePrompt ?? "").trim();
+  const canAskDifferentQuestion = Boolean(
+    alternatePrompt && primaryPrompt && alternatePrompt.toLowerCase() !== primaryPrompt.toLowerCase(),
+  );
+  const displayedPrompt = isShowingAlternateQuestion && canAskDifferentQuestion
+    ? alternatePrompt
+    : primaryPrompt;
+
+  useEffect(() => {
+    setIsShowingAlternateQuestion(false);
+  }, [primaryPrompt, alternatePrompt]);
 
   function handleChipPress(chip) {
     if (chip.prompt) {
@@ -160,6 +174,22 @@ export function SearchRefineSection({
           <GuidanceText className="mt-4 text-center">
             Add any preferences, must-haves, or deal breakers.
           </GuidanceText>
+          {displayedPrompt ? (
+            <Text className="mt-3 text-center text-[15px] font-medium leading-6 text-secondary">
+              {displayedPrompt}
+            </Text>
+          ) : null}
+          {canAskDifferentQuestion && !isShowingAlternateQuestion && !isGeneratingPrompt ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Get a different question"
+              className="mt-3 min-h-[44px] items-center justify-center px-3"
+              onPress={() => setIsShowingAlternateQuestion(true)}
+              testID="followup.differentQuestionButton"
+            >
+              <Text className="text-sm font-semibold text-accent">Get a different question</Text>
+            </Pressable>
+          ) : null}
         </View>
 
         {isPromptStillLoading ? (

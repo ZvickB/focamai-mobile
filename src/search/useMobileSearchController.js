@@ -110,6 +110,7 @@ function buildDiscoverySummary(discoveryPayload, query) {
 
 function buildRefinementPrompt(refinementPayload) {
   return {
+    alternatePrompt: refinementPayload.alternatePrompt || "",
     followUpPlaceholder:
       refinementPayload.followUpPlaceholder ||
       "Add budget, size, must-haves, dealbreakers, or how you plan to use it.",
@@ -465,6 +466,19 @@ export function useMobileSearchController() {
     const pollingStartedAt = Date.now();
     let hasReceivedEligibility = false;
     let hasReceivedEnrichment = false;
+    let hasRecordedReadyOutcome = false;
+    let hadPollError = false;
+    let pollCount = 0;
+    const mobileAnalyticsRun = activeSearchSessionRef.current?.mobileAnalyticsRun || null;
+
+    function trackEnrichmentOutcome(outcome, payload = {}) {
+      trackMobileAnalytics(mobileAnalyticsRun, "enrichment_diagnostic", {
+        elapsedMs: Math.max(0, Date.now() - pollingStartedAt),
+        outcome,
+        pollCount,
+        ...payload,
+      });
+    }
 
     updateSessionForRequest(requestId, (currentSession) => ({
       ...currentSession,
@@ -492,6 +506,7 @@ export function useMobileSearchController() {
       const hasTimedOut = Date.now() - pollingStartedAt >= ENRICHMENT_POLL_TIMEOUT_MS;
 
       if (hasTimedOut) {
+        trackEnrichmentOutcome(hadPollError ? "poll_errors" : "timed_out");
         updateSessionForRequest(requestId, (currentSession) => ({
           ...currentSession,
           phases: {
@@ -521,6 +536,7 @@ export function useMobileSearchController() {
       }
 
       try {
+        pollCount += 1;
         const payload = await pollEnrichment({
           amazonDomain,
           query,
@@ -533,9 +549,17 @@ export function useMobileSearchController() {
 
         const entries = Array.isArray(payload.entries) ? payload.entries : [];
         const eligibilitySettled = Array.isArray(payload.deepDiveEligibility?.decisions);
+        const suggestions = normalizeImprovePicksSuggestions(payload);
 
         if (payload.ready) {
-          setImprovePicksSuggestions(normalizeImprovePicksSuggestions(payload));
+          setImprovePicksSuggestions(suggestions);
+          if (!hasRecordedReadyOutcome) {
+            hasRecordedReadyOutcome = true;
+            trackEnrichmentOutcome(suggestions.length > 0 ? "suggestions_ready" : "ready_without_suggestions", {
+              entryCount: entries.length,
+              suggestionCount: suggestions.length,
+            });
+          }
         }
 
         if (payload.ready && entries.length > 0) {
@@ -571,6 +595,7 @@ export function useMobileSearchController() {
           return;
         }
       } catch {
+        hadPollError = true;
         // Enrichment is best-effort; keep the shortlist usable if polling fails.
       }
 
@@ -1248,6 +1273,7 @@ export function useMobileSearchController() {
         rankingPreference: normalizeRankingPreference(rankingPreference),
         rejectionFeedback: retryContext?.rejectionFeedback || "",
         retryCount: retryContext ? 1 : 0,
+        searchId: mobileAnalyticsRun?.searchId || "",
       });
 
       if (!isActiveRequest(requestId) || finalizingRequestIdRef.current !== requestId) {

@@ -184,6 +184,7 @@ export async function finalizeSearch({
   rankingPreference = "balanced",
   rejectionFeedback = "",
   retryCount = 0,
+  searchId = "",
 }) {
   assertApiBaseUrl();
 
@@ -211,6 +212,7 @@ export async function finalizeSearch({
         rejectionFeedback: normalizedRejectionFeedback,
         retryCount: normalizedRetryCount,
         requestMode,
+        ...(searchId ? { searchId } : {}),
       }),
     },
     REQUEST_TIMEOUTS_MS.finalize,

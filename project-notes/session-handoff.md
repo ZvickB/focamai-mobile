@@ -16,6 +16,10 @@
 
 ## Current direction
 
+**Improve Picks delivery diagnostics (2026-08-02):** Each production mobile finalized search now emits exactly one aggregate enrichment outcome (`suggestions_ready`, `ready_without_suggestions`, `timed_out`, or `poll_errors`) with poll/timing/count metadata only. Its anonymous search ID is also passed to finalize, allowing the Render async-enrichment logs to correlate the result. Never add query, refinement/retry text, product title, URL, token, or email to this event. New iOS/TestFlight build required.
+
+**Mobile alternate refinement question (2026-08-02):** Mobile now preserves and displays the backend primary refinement question. When the response supplies a distinct alternate, the native refine screen shows one `Get a different question` control that replaces the primary question; notes and refinement chips remain unchanged. This is JavaScript-only but requires a new iOS build for TestFlight because Expo Updates is not configured. Focused Jest passes.
+
 **Android retry keyboard fix (2026-08-02):** `Improve these picks` now treats its correction input as a concise one-line search correction. It uses Android's `returnKeyType="search"` so the keyboard shows the native magnifying-glass action and triggers the same handler as `Update my picks`. `ResultsScreen` passes its retry submit control to `useKeyboardInputScroll`; the hook scrolls that control above the resized keyboard edge instead of merely bringing the input into view. Focused Jest and Android Expo export passed; confirm on the reporting Android device before release because keyboard height varies by device.
 
 **Production builds requested (2026-07-28):** EAS production builds were queued from `ff14ab1`: Android `versionCode` 9 and iOS `buildNumber` 7, both retaining app version `1.6.1`. `eas.json` uses remote app versioning with production `autoIncrement`, so do not manually change the local Android/iOS counter placeholders for this release. Check the EAS dashboard for completion before store submission.
