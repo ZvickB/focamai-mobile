@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Search, Star } from "lucide-react-native";
 import {
   KeyboardAvoidingView,
@@ -204,7 +204,10 @@ function SelectedResultImagePanel({ isCompact, item, onPress }) {
 }
 
 export default function ResultsScreen({ navigation }) {
-  const { handleInputFocus, scrollViewRef } = useKeyboardInputScroll();
+  const retrySubmitButtonContainerRef = useRef(null);
+  const { handleInputFocus, scrollViewRef } = useKeyboardInputScroll({
+    scrollTargetRef: retrySubmitButtonContainerRef,
+  });
   const { height, width } = useWindowDimensions();
   const isCompact = width <= 415;
   const bottomScrollPadding = Math.min(
@@ -395,6 +398,7 @@ export default function ResultsScreen({ navigation }) {
           retryAdviceError={retryAdviceError}
           retryFeedback={retryFeedback}
           setRetryFeedback={setRetryFeedback}
+          submitButtonContainerRef={retrySubmitButtonContainerRef}
         />,
       ];
 

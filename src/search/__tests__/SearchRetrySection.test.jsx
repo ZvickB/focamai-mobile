@@ -41,6 +41,22 @@ describe("SearchRetrySection", () => {
     expect(onUpdatePicks).toHaveBeenCalledWith("avoid bulky options");
   });
 
+  it("uses the keyboard search action to submit a correction", () => {
+    const onUpdatePicks = jest.fn();
+    const { getByLabelText } = renderRetrySection({
+      onUpdatePicks,
+      retryFeedback: "avoid bulky options",
+    });
+
+    fireEvent.press(getByLabelText("Show correction options"));
+    const input = getByLabelText("What should we change?");
+
+    expect(input.props.returnKeyType).toBe("search");
+    fireEvent(input, "submitEditing");
+
+    expect(onUpdatePicks).toHaveBeenCalledWith("avoid bulky options");
+  });
+
   it("shows automatic-update progress without a second confirmation", () => {
     const { getByLabelText, getByText, queryByLabelText, queryByText } = renderRetrySection({
       isGeneratingRetryAdvice: true,

@@ -13,6 +13,7 @@ export function SearchRetrySection({
   retryAdviceError,
   retryFeedback,
   setRetryFeedback,
+  submitButtonContainerRef,
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -103,20 +104,22 @@ export function SearchRetrySection({
             value={retryFeedback}
             onChangeText={setRetryFeedback}
             onFocus={onInputFocus}
-            placeholder="Example: Make it lighter and under $100, but keep one-hand folding."
+            onSubmitEditing={canAskForAdvice ? handleRequestAdvice : undefined}
+            placeholder="Example: Lighter, under $100, with one-hand folding."
             placeholderTextColor="#8B8175"
-            multiline
-            textAlignVertical="top"
-            className="mt-4 min-h-[104px] rounded-[18px] border border-line bg-cream px-4 py-4 text-base leading-6 text-ink"
+            returnKeyType="search"
+            className="mt-4 min-h-[56px] rounded-[18px] border border-line bg-cream px-4 py-3 text-base leading-6 text-ink"
           />
-          <Button
-            disabled={!canAskForAdvice}
-            onPress={handleRequestAdvice}
-            className="mt-4"
-            variant="primary"
-          >
-            {isGeneratingRetryAdvice ? "Updating your picks..." : "Update my picks"}
-          </Button>
+          <View ref={submitButtonContainerRef} collapsable={false}>
+            <Button
+              disabled={!canAskForAdvice}
+              onPress={handleRequestAdvice}
+              className="mt-4"
+              variant="primary"
+            >
+              {isGeneratingRetryAdvice ? "Updating your picks..." : "Update my picks"}
+            </Button>
+          </View>
           {isGeneratingRetryAdvice ? (
             <Text className="mt-3 text-sm leading-5 text-stone-600">
               Preparing a better search based on what should change.
