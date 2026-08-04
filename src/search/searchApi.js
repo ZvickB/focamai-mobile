@@ -6,8 +6,9 @@ const FINAL_RESULT_LIMIT = 6;
 const MOBILE_PLATFORM = Platform.OS === "ios" ? "mobile-ios" : "mobile-android";
 const PREVIEW_RESULT_LIMIT = 3;
 const RETRY_ADVICE_SUGGESTED_QUERY_MAX_LENGTH = 80;
-const REFINEMENT_SUGGESTION_LIMIT = 3;
-const REFINEMENT_SUGGESTION_MAX_LENGTH = 30;
+const REFINEMENT_ANSWER_LIMIT = 4;
+const REFINEMENT_ANSWER_LABEL_MAX_LENGTH = 30;
+const REFINEMENT_ANSWER_PROMPT_MAX_LENGTH = 500;
 const IMPROVE_PICKS_SUGGESTION_LIMIT = 3;
 const IMPROVE_PICKS_SUGGESTION_LABEL_MAX_LENGTH = 30;
 const IMPROVE_PICKS_SUGGESTION_FEEDBACK_MAX_LENGTH = 180;
@@ -345,29 +346,76 @@ export function normalizeQueryQualitySuggestion(payload, fallbackQuery = "") {
   };
 }
 
-export function normalizeRefinementSuggestions(payload) {
-  const rawSuggestions = Array.isArray(payload?.refinementSuggestions)
-    ? payload.refinementSuggestions
-    : Array.isArray(payload?.refinement_suggestions)
-      ? payload.refinement_suggestions
-      : [];
+export function normalizeRefinementAnswerOptions(payload, { alternate = false } = {}) {
+  const rawOptions = alternate
+    ? Array.isArray(payload?.alternateAnswerOptions)
+      ? payload.alternateAnswerOptions
+      : Array.isArray(payload?.alternate_answer_options)
+        ? payload.alternate_answer_options
+        : []
+    : Array.isArray(payload?.answerOptions)
+      ? payload.answerOptions
+      : Array.isArray(payload?.answer_options)
+        ? payload.answer_options
+        : [];
 
-  return rawSuggestions
+  const options = rawOptions
     .map((item) => {
-      if (typeof item === "string") {
-        const label = item.trim().replace(/\s+/g, " ");
-        return label ? { label } : null;
+      const label = typeof item?.label === "string"
+        ? item.label.trim().replace(/\s+/g, " ")
+        : "";
+      const prompt = typeof item?.prompt === "string"
+        ? item.prompt.trim().replace(/\s+/g, " ")
+        : "";
+
+      if (
+        !label ||
+        !prompt ||
+        label.length > REFINEMENT_ANSWER_LABEL_MAX_LENGTH
+      ) {
+        return null;
       }
-      if (item && typeof item.label === "string") {
-        const label = item.label.trim().replace(/\s+/g, " ");
-        if (!label) return null;
-        const prompt = typeof item.prompt === "string" ? item.prompt.trim() : undefined;
-        return prompt ? { label, prompt } : { label };
-      }
-      return null;
+
+      return {
+        label,
+        prompt: prompt.slice(0, REFINEMENT_ANSWER_PROMPT_MAX_LENGTH).trim(),
+      };
     })
-    .filter((item) => item?.label && item.label.length <= REFINEMENT_SUGGESTION_MAX_LENGTH)
-    .slice(0, REFINEMENT_SUGGESTION_LIMIT);
+    .filter(Boolean)
+    .slice(0, REFINEMENT_ANSWER_LIMIT);
+
+  if (options.length < 3) {
+    return [];
+  }
+
+  const neutralOptionIndex = options.findIndex((option) =>
+    /\b(?:no preference|not sure|nothing specific|no priority)\b/i.test(option.label),
+  );
+  const hasNeutralOption = neutralOptionIndex >= 0;
+
+  if (options.length === 3 && hasNeutralOption) {
+    return [];
+  }
+
+  if (!hasNeutralOption) {
+    const neutralOption = {
+      label: alternate ? "Not sure" : "No preference",
+      prompt: alternate
+        ? "I am not sure what I want to avoid."
+        : "I do not have a preference here.",
+    };
+
+    if (options.length === REFINEMENT_ANSWER_LIMIT) {
+      options[REFINEMENT_ANSWER_LIMIT - 1] = neutralOption;
+    } else {
+      options.push(neutralOption);
+    }
+  } else if (neutralOptionIndex !== REFINEMENT_ANSWER_LIMIT - 1) {
+    const [neutralOption] = options.splice(neutralOptionIndex, 1);
+    options.push(neutralOption);
+  }
+
+  return options;
 }
 
 export function normalizeImprovePicksSuggestions(payload) {

@@ -1,7 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const STORAGE_KEY = "focamai:searchFlowSnapshot:v1";
-const SNAPSHOT_TTL_MS = 60 * 60 * 1000;
+const SNAPSHOT_TTL_MS = 30 * 60 * 1000;
 
 export async function saveFlowSnapshot(snapshot) {
   if (!snapshot || (snapshot.phase !== "refine" && snapshot.phase !== "results")) {

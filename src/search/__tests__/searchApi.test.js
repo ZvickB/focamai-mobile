@@ -4,7 +4,7 @@ import {
   normalizeFinalResults,
   normalizeImprovePicksSuggestions,
   normalizeQueryQualitySuggestion,
-  normalizeRefinementSuggestions,
+  normalizeRefinementAnswerOptions,
   normalizeRetryAdvice,
 } from "../searchApi";
 
@@ -237,46 +237,55 @@ describe("normalizeQueryQualitySuggestion", () => {
   });
 });
 
-describe("normalizeRefinementSuggestions", () => {
-  it("normalizes short string suggestions into label objects and caps at 3", () => {
+describe("normalizeRefinementAnswerOptions", () => {
+  it("keeps four complete primary answers", () => {
     expect(
-      normalizeRefinementSuggestions({
-        refinementSuggestions: [
-          "  Easy   cleaning ",
-          "Quiet operation",
-          "Small batches",
-          "Extra valid",
+      normalizeRefinementAnswerOptions({
+        answerOptions: [
+          { label: " Daily use ", prompt: " I will use it every day. " },
+          { label: "Weekly use", prompt: "I will use it a few times each week." },
+          { label: "Occasional", prompt: "I will use it occasionally." },
+          { label: "Not sure", prompt: "I am not sure how often I will use it." },
         ],
       }),
     ).toEqual([
-      { label: "Easy cleaning" },
-      { label: "Quiet operation" },
-      { label: "Small batches" },
+      { label: "Daily use", prompt: "I will use it every day." },
+      { label: "Weekly use", prompt: "I will use it a few times each week." },
+      { label: "Occasional", prompt: "I will use it occasionally." },
+      { label: "Not sure", prompt: "I am not sure how often I will use it." },
     ]);
   });
 
-  it("passes through object chips with prompt and drops malformed or overlong entries", () => {
+  it("adds a neutral fourth answer to three valid alternate answers", () => {
     expect(
-      normalizeRefinementSuggestions({
-        refinement_suggestions: [
-          "Easy cleaning",
-          "",
-          "Good for small kitchens maybe",
-          "This label is definitely too long for a chip",
-          { label: "Quiet operation", prompt: "I need something that runs quietly" },
-          123,
-          "Small space",
+      normalizeRefinementAnswerOptions(
+        {
+          alternate_answer_options: [
+            { label: "Too large", prompt: "I want to avoid something too large." },
+            { label: "Too costly", prompt: "I want to avoid something too costly." },
+            { label: "Too complex", prompt: "I want to avoid something too complex." },
+          ],
+        },
+        { alternate: true },
+      ),
+    ).toEqual([
+      { label: "Too large", prompt: "I want to avoid something too large." },
+      { label: "Too costly", prompt: "I want to avoid something too costly." },
+      { label: "Too complex", prompt: "I want to avoid something too complex." },
+      { label: "Not sure", prompt: "I am not sure what I want to avoid." },
+    ]);
+  });
+
+  it("rejects incomplete answer sets and answers without a complete prompt", () => {
+    expect(
+      normalizeRefinementAnswerOptions({
+        answerOptions: [
+          { label: "Daily use", prompt: "I will use it every day." },
+          { label: "Weekly use" },
+          { label: "Not sure", prompt: "I am not sure." },
         ],
       }),
-    ).toEqual([
-      { label: "Easy cleaning" },
-      { label: "Good for small kitchens maybe" },
-      { label: "Quiet operation", prompt: "I need something that runs quietly" },
-    ]);
-  });
-
-  it("returns an empty array when suggestions are missing", () => {
-    expect(normalizeRefinementSuggestions({ prompt: "What matters most?" })).toEqual([]);
+    ).toEqual([]);
   });
 });
 

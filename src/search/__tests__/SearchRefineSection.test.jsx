@@ -2,198 +2,144 @@ import { fireEvent, render } from "@testing-library/react-native";
 import {
   MAX_FOLLOW_UP_NOTES_LENGTH,
   SearchRefineSection,
-  arrangeRefinementChipsForLayout,
 } from "../SearchRefineSection";
 
 const refinementPrompt = {
-  alternatePrompt: "Is there a feature you would not compromise on?",
+  alternateAnswerOptions: [
+    { label: "Under $150", prompt: "I want to stay under $150." },
+    { label: "$150–$350", prompt: "My budget is between $150 and $350." },
+    { label: "Above $350", prompt: "I can spend more than $350." },
+    { label: "No preference", prompt: "I do not have a budget preference." },
+  ],
+  alternatePrompt: "What is your target budget?",
+  answerOptions: [
+    { label: "Every workday", prompt: "I will use it every workday." },
+    { label: "A few times weekly", prompt: "I will use it a few times each week." },
+    { label: "Occasionally", prompt: "I will use it occasionally." },
+    { label: "Not sure", prompt: "I am not sure how often I will use it." },
+  ],
   followUpPlaceholder: "Budget, must-haves, or dealbreakers",
-  helperText: "A short answer is enough.",
-  prompt: "What matters most for this purchase?",
+  helperText: "",
+  prompt: "How often will you use it?",
 };
 
-function renderRefineSection(props = {}) {
-  return render(
-    <SearchRefineSection
-      followUpNotes=""
-      isGeneratingPrompt={false}
-      refinementPrompt={refinementPrompt}
-      setFollowUpNotes={jest.fn()}
-      {...props}
-    />,
-  );
+function createProps(overrides = {}) {
+  return {
+    activeQuestionKey: "primary",
+    followUpNotes: "",
+    isGeneratingPrompt: false,
+    onSelectAnswer: jest.fn(),
+    onShowAlternateQuestion: jest.fn(),
+    refinementPrompt,
+    selectedAnswer: { questionKey: "", value: "" },
+    setFollowUpNotes: jest.fn(),
+    ...overrides,
+  };
 }
 
 describe("SearchRefineSection", () => {
-  it("renders the form heading, chips, and text input", () => {
-    const setFollowUpNotes = jest.fn();
-    const { getByPlaceholderText, getByText } = renderRefineSection({
-      setFollowUpNotes,
-      productQuery: "ice cream machine",
-    });
+  it("renders one question, four complete answers, and a separate optional notes input", () => {
+    const props = createProps();
+    const { getByPlaceholderText, getByText } = render(<SearchRefineSection {...props} />);
+
+    expect(getByText("One quick question")).toBeTruthy();
+    expect(getByText("How often will you use it?")).toBeTruthy();
+    expect(getByText("Every workday")).toBeTruthy();
+    expect(getByText("A few times weekly")).toBeTruthy();
+    expect(getByText("Occasionally")).toBeTruthy();
+    expect(getByText("Not sure")).toBeTruthy();
+    expect(getByText("Anything else?")).toBeTruthy();
+    expect(getByText("Optional")).toBeTruthy();
 
     fireEvent.changeText(
-      getByPlaceholderText("Tell Focamai anything that's important..."),
+      getByPlaceholderText("Budget, must-haves, or dealbreakers"),
       "under $200",
     );
 
-    expect(getByText("What should Focamai keep in\u00A0mind?")).toBeTruthy();
-    expect(getByText("A few starting points")).toBeTruthy();
-    expect(getByText("Good value")).toBeTruthy();
-    expect(getByText("Easy to use")).toBeTruthy();
-    expect(getByText("Fits my space")).toBeTruthy();
-    expect(setFollowUpNotes).toHaveBeenCalledWith("under $200");
+    expect(props.setFollowUpNotes).toHaveBeenCalledWith("under $200");
   });
 
-  it("notifies the screen when the notes input is focused so it can stay above the keyboard", () => {
+  it("selects one prepared answer without writing it into the notes field", () => {
+    const props = createProps({ followUpNotes: "breathable fabric" });
+    const { getByTestId } = render(<SearchRefineSection {...props} />);
+
+    fireEvent.press(getByTestId("followup.refinementAnswer.Every workday"));
+
+    expect(props.onSelectAnswer).toHaveBeenCalledWith({
+      questionKey: "primary",
+      value: "I will use it every workday.",
+    });
+    expect(props.setFollowUpNotes).not.toHaveBeenCalled();
+    expect(getByTestId("followup.notesInput").props.value).toBe("breathable fabric");
+  });
+
+  it("exposes radio checked state and lets the selected answer be cleared", () => {
+    const props = createProps({
+      selectedAnswer: {
+        questionKey: "primary",
+        value: "I will use it every workday.",
+      },
+    });
+    const { getByTestId } = render(<SearchRefineSection {...props} />);
+    const selectedAnswer = getByTestId("followup.refinementAnswer.Every workday");
+
+    expect(selectedAnswer.props.accessibilityState).toEqual({ checked: true });
+    fireEvent.press(selectedAnswer);
+    expect(props.onSelectAnswer).toHaveBeenCalledWith({ questionKey: "", value: "" });
+  });
+
+  it("switches to the alternate question's answers while preserving notes", () => {
+    const props = createProps({ followUpNotes: "breathable fabric" });
+    const view = render(<SearchRefineSection {...props} />);
+
+    fireEvent.press(view.getByTestId("followup.differentQuestionButton"));
+    expect(props.onShowAlternateQuestion).toHaveBeenCalledTimes(1);
+
+    view.rerender(
+      <SearchRefineSection
+        {...props}
+        activeQuestionKey="alternate"
+        selectedAnswer={{ questionKey: "", value: "" }}
+      />,
+    );
+
+    expect(view.getByText("What is your target budget?")).toBeTruthy();
+    expect(view.getByText("Under $150")).toBeTruthy();
+    expect(view.getByText("$150–$350")).toBeTruthy();
+    expect(view.queryByText("Every workday")).toBeNull();
+    expect(view.getByTestId("followup.notesInput").props.value).toBe("breathable fabric");
+    expect(view.queryByTestId("followup.differentQuestionButton")).toBeNull();
+  });
+
+  it("notifies the screen when the notes input is focused", () => {
     const onNotesFocus = jest.fn();
-    const { getByTestId } = renderRefineSection({ onNotesFocus });
+    const { getByTestId } = render(
+      <SearchRefineSection {...createProps({ onNotesFocus })} />,
+    );
 
     fireEvent(getByTestId("followup.notesInput"), "focus");
-
     expect(onNotesFocus).toHaveBeenCalledTimes(1);
   });
 
-  it("shows the AI question and replaces it once with its alternate", () => {
-    const { getByTestId, getByText, queryByTestId } = renderRefineSection();
-
-    expect(getByText("What matters most for this purchase?")).toBeTruthy();
-
-    fireEvent.press(getByTestId("followup.differentQuestionButton"));
-
-    expect(getByText("Is there a feature you would not compromise on?")).toBeTruthy();
-    expect(queryByTestId("followup.differentQuestionButton")).toBeNull();
-  });
-
-  it("adds static refinement chips to the notes without replacing the user's answer", () => {
-    const setFollowUpNotes = jest.fn();
-    const { getByTestId } = renderRefineSection({
-      followUpNotes: "under $200",
-      setFollowUpNotes,
-    });
-
-    fireEvent.press(getByTestId("followup.refinementChip.Good value"));
-
-    expect(setFollowUpNotes).toHaveBeenCalledWith("under $200, Good value");
-  });
-
-  it("renders fallback chips when AI suggestions are missing", () => {
-    const { getByText } = renderRefineSection({
-      suggestedRefinements: [],
-    });
-
-    expect(getByText("Good value")).toBeTruthy();
-    expect(getByText("Easy to use")).toBeTruthy();
-    expect(getByText("Fits my space")).toBeTruthy();
-  });
-
-  it("renders AI refinement chips when suggestions exist", () => {
-    const { getByText, queryByText } = renderRefineSection({
-      suggestedRefinements: [
-        { label: "Easy cleaning" },
-        { label: "Good for small kitchens maybe" },
-        { label: "Small batches" },
-      ],
-    });
-
-    expect(getByText("Easy cleaning")).toBeTruthy();
-    expect(getByText("Good for small kitchens maybe")).toBeTruthy();
-    expect(getByText("Small batches")).toBeTruthy();
-    expect(queryByText("Good value")).toBeNull();
-  });
-
-  it("moves the longest long chip after the shorter chips on narrow screens", () => {
-    expect(
-      arrangeRefinementChipsForLayout([
-        { label: "Good for small kitchens maybe" },
-        { label: "Easy cleaning" },
-        { label: "Small batches" },
-      ]),
-    ).toEqual([
-      { label: "Easy cleaning" },
-      { label: "Small batches" },
-      { label: "Good for small kitchens maybe", isWide: true },
-    ]);
-  });
-
-  it("keeps long chips in their original order on screens wide enough for 3 columns", () => {
-    expect(
-      arrangeRefinementChipsForLayout(
-        [
-          { label: "Good for small kitchens maybe" },
-          { label: "Easy cleaning" },
-          { label: "Small batches" },
-        ],
-        { canFitLongThreeColumn: true },
-      ),
-    ).toEqual([
-      { label: "Good for small kitchens maybe" },
-      { label: "Easy cleaning" },
-      { label: "Small batches" },
-    ]);
-  });
-
-  it("adds AI refinement chips to the notes", () => {
-    const setFollowUpNotes = jest.fn();
-    const { getByTestId } = renderRefineSection({
-      followUpNotes: "under $200",
-      setFollowUpNotes,
-      suggestedRefinements: [
-        { label: "Easy cleaning" },
-        { label: "Quiet operation" },
-        { label: "Small batches" },
-      ],
-    });
-
-    fireEvent.press(getByTestId("followup.refinementChip.Easy cleaning"));
-
-    expect(setFollowUpNotes).toHaveBeenCalledWith("under $200, Easy cleaning");
-  });
-
-  it("allows long AI chip prompts up to the refine note limit", () => {
-    const setFollowUpNotes = jest.fn();
-    const longPrompt = `I need this to be kosher certified and clearly labeled for a dairy-free kitchen. ${"x".repeat(120)}`;
-    const { getByTestId } = renderRefineSection({
-      setFollowUpNotes,
-      suggestedRefinements: [{ label: "Dietary fit", prompt: longPrompt }],
-    });
-
-    fireEvent.press(getByTestId("followup.refinementChip.Dietary fit"));
-
-    expect(setFollowUpNotes).toHaveBeenCalledWith(longPrompt);
-  });
-
-  it("clamps chip prompts above 500 characters", () => {
-    const setFollowUpNotes = jest.fn();
-    const oversizedPrompt = `I need a very specific fit. ${"x".repeat(600)}`;
-    const { getByTestId } = renderRefineSection({
-      setFollowUpNotes,
-      suggestedRefinements: [{ label: "Specific fit", prompt: oversizedPrompt }],
-    });
-
-    fireEvent.press(getByTestId("followup.refinementChip.Specific fit"));
-
-    expect(setFollowUpNotes).toHaveBeenCalledWith(
-      oversizedPrompt.slice(0, MAX_FOLLOW_UP_NOTES_LENGTH),
+  it("shows four answer placeholders while the prompt is loading", () => {
+    const { getByTestId, getByText } = render(
+      <SearchRefineSection
+        {...createProps({ isGeneratingPrompt: true, refinementPrompt: null })}
+      />,
     );
+
+    expect(getByText("Finding the most useful thing to ask…")).toBeTruthy();
+    expect(getByTestId("followup.answerPlaceholders").children).toHaveLength(4);
   });
 
-  it("shows a loading message while prompt details are still generating", () => {
-    const { getByText } = renderRefineSection({
-      isGeneratingPrompt: true,
-      refinementPrompt: null,
-    });
+  it("clamps optional notes to the 500-character refinement limit", () => {
+    const props = createProps();
+    const { getByTestId } = render(<SearchRefineSection {...props} />);
 
-    expect(
-      getByText("Getting a few ideas ready. You can still refine in your own words."),
-    ).toBeTruthy();
-  });
+    fireEvent.changeText(getByTestId("followup.notesInput"), "x".repeat(600));
 
-  it("does not apply the search query limit to refine notes", () => {
-    const { queryByTestId } = renderRefineSection({
-      followUpNotes: "x".repeat(MAX_FOLLOW_UP_NOTES_LENGTH),
-    });
-
-    expect(queryByTestId("followup.notesInlineMessage")).toBeNull();
+    expect(props.setFollowUpNotes).toHaveBeenCalledWith(
+      "x".repeat(MAX_FOLLOW_UP_NOTES_LENGTH),
+    );
   });
 });

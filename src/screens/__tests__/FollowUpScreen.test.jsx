@@ -8,6 +8,7 @@ jest.mock("../../search/SearchFlowContext", () => ({
 
 function buildSearchFlow(overrides = {}) {
   return {
+    activeRefinementQuestionKey: "primary",
     canFinalize: true,
     errorMessage: "",
     finalResults: [],
@@ -18,9 +19,25 @@ function buildSearchFlow(overrides = {}) {
     isGeneratingPrompt: false,
     productQuery: "travel stroller",
     refinementPrompt: {
-      suggestedRefinements: [],
+      alternateAnswerOptions: [
+        { label: "Under $200", prompt: "I want to stay under $200." },
+        { label: "$200–$400", prompt: "My budget is between $200 and $400." },
+        { label: "Above $400", prompt: "I can spend more than $400." },
+        { label: "No preference", prompt: "I do not have a budget preference." },
+      ],
+      alternatePrompt: "What is your target budget?",
+      answerOptions: [
+        { label: "Daily", prompt: "I will use it every day." },
+        { label: "Weekly", prompt: "I will use it weekly." },
+        { label: "Occasionally", prompt: "I will use it occasionally." },
+        { label: "Not sure", prompt: "I am not sure how often I will use it." },
+      ],
+      prompt: "How often will you use it?",
     },
+    selectedRefinementAnswer: { questionKey: "", value: "" },
+    selectRefinementAnswer: jest.fn(),
     setFollowUpNotes: jest.fn(),
+    showAlternateRefinementQuestion: jest.fn(),
     ...overrides,
   };
 }
@@ -73,6 +90,31 @@ describe("FollowUpScreen", () => {
 
     await waitFor(() => {
       expect(navigation.navigate).toHaveBeenCalledWith("Results");
+    });
+  });
+
+  it("uses the new initial refinement action copy", () => {
+    const { getByText } = renderFollowUp();
+
+    expect(getByText("Show focused picks")).toBeTruthy();
+    expect(getByText("Skip and show results")).toBeTruthy();
+  });
+
+  it("skips both the prepared answer and optional notes", async () => {
+    const finalizeFocusedPicks = jest.fn().mockResolvedValue(true);
+    const { getByTestId } = renderFollowUp({
+      finalizeFocusedPicks,
+      followUpNotes: "under $200",
+      selectedRefinementAnswer: {
+        questionKey: "primary",
+        value: "I will use it every day.",
+      },
+    });
+
+    fireEvent.press(getByTestId("followup.skipButton"));
+
+    await waitFor(() => {
+      expect(finalizeFocusedPicks).toHaveBeenCalledWith({ followUpNotesOverride: "" });
     });
   });
 

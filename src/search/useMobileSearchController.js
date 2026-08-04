@@ -8,7 +8,7 @@ import {
   normalizeImprovePicksSuggestions,
   normalizeQueryQualitySuggestion,
   normalizePreviewResults,
-  normalizeRefinementSuggestions,
+  normalizeRefinementAnswerOptions,
   pollEnrichment,
   pollQueryQuality,
 } from "./searchApi";
@@ -41,6 +41,60 @@ const ENRICHMENT_POLL_TIMEOUT_MS = 60000;
 const QUERY_QUALITY_POLL_INTERVAL_MS = 1500;
 const QUERY_QUALITY_POLL_TIMEOUT_MS = 20000;
 const CANDIDATE_RECOVERY_QUERY_MAX_LENGTH = 200;
+const MAX_FOLLOW_UP_CONTEXT_LENGTH = 500;
+
+function createFallbackAnswerOptions({ alternate = false } = {}) {
+  if (alternate) {
+    return [
+      { label: "Too expensive", prompt: "I want to avoid options that cost too much." },
+      { label: "Too complicated", prompt: "I want to avoid options that are complicated to use." },
+      { label: "Wrong size", prompt: "I want to avoid options that do not fit my space or needs." },
+      { label: "Not sure", prompt: "I am not sure what I want to avoid." },
+    ];
+  }
+
+  return [
+    { label: "Best value", prompt: "I want the best balance of price and fit." },
+    { label: "Easiest to use", prompt: "Ease of use matters most to me." },
+    { label: "Best fit", prompt: "Fit for my needs matters most to me." },
+    { label: "No preference", prompt: "I do not have a preference here." },
+  ];
+}
+
+function normalizeSelectedRefinementAnswer(value) {
+  const questionKey = value?.questionKey === "alternate" ? "alternate" : "primary";
+  const answerValue = typeof value?.value === "string" ? value.value.trim() : "";
+
+  return answerValue ? { questionKey, value: answerValue } : { questionKey: "", value: "" };
+}
+
+function validateSelectedRefinementAnswer(value, refinementPrompt) {
+  const normalizedAnswer = normalizeSelectedRefinementAnswer(value);
+
+  if (!normalizedAnswer.value) {
+    return normalizedAnswer;
+  }
+
+  const answerOptions = normalizedAnswer.questionKey === "alternate"
+    ? refinementPrompt?.alternateAnswerOptions
+    : refinementPrompt?.answerOptions;
+  const hasMatchingAnswer = Array.isArray(answerOptions) && answerOptions.some(
+    (answer) => answer?.prompt === normalizedAnswer.value,
+  );
+
+  return hasMatchingAnswer ? normalizedAnswer : { questionKey: "", value: "" };
+}
+
+function buildEffectiveFollowUpNotes(followUpNotes, selectedAnswer) {
+  const answerValue = normalizeSelectedRefinementAnswer(selectedAnswer).value;
+  const notesValue = String(followUpNotes ?? "").trim();
+
+  return [answerValue, notesValue]
+    .filter(Boolean)
+    .join(" ")
+    .slice(0, MAX_FOLLOW_UP_CONTEXT_LENGTH)
+    .trim();
+}
 
 function createSearchSession({ amazonDomain, requestId, retryContext = null, submittedQuery }) {
   return {
@@ -109,14 +163,28 @@ function buildDiscoverySummary(discoveryPayload, query) {
 }
 
 function buildRefinementPrompt(refinementPayload) {
+  const answerOptions = normalizeRefinementAnswerOptions(refinementPayload);
+  const alternateAnswerOptions = normalizeRefinementAnswerOptions(refinementPayload, {
+    alternate: true,
+  });
+  const hasPrimaryAnswers = answerOptions.length >= 3;
+  const hasAlternateAnswers = alternateAnswerOptions.length >= 3;
+
   return {
-    alternatePrompt: refinementPayload.alternatePrompt || "",
+    alternateAnswerOptions: hasAlternateAnswers
+      ? alternateAnswerOptions
+      : createFallbackAnswerOptions({ alternate: true }),
+    alternatePrompt: hasAlternateAnswers
+      ? refinementPayload.alternatePrompt || ""
+      : "What would make an option a poor fit?",
+    answerOptions: hasPrimaryAnswers ? answerOptions : createFallbackAnswerOptions(),
     followUpPlaceholder:
       refinementPayload.followUpPlaceholder ||
       "Add budget, size, must-haves, dealbreakers, or how you plan to use it.",
     helperText: refinementPayload.helperText || "",
-    prompt: refinementPayload.prompt || "What should we optimize for?",
-    suggestedRefinements: normalizeRefinementSuggestions(refinementPayload),
+    prompt: hasPrimaryAnswers
+      ? refinementPayload.prompt || "What should we optimize for?"
+      : "What matters most for this purchase?",
     timingMs: refinementPayload.clientTimingMs,
   };
 }
@@ -250,6 +318,7 @@ export function useMobileSearchController() {
   const finalResultsRef = useRef([]);
   const finalizingRequestIdRef = useRef(null);
   const followUpNotesRef = useRef("");
+  const selectedRefinementAnswerRef = useRef({ questionKey: "", value: "" });
   const queryQualityPollTimerRef = useRef(null);
   const retryFeedbackRef = useRef("");
   const retryAdviceRequestIdRef = useRef(0);
@@ -264,6 +333,11 @@ export function useMobileSearchController() {
   const [errorMessage, setErrorMessage] = useState("");
   const [finalResults, setFinalResults] = useState([]);
   const [followUpNotes, setFollowUpNotes] = useState("");
+  const [activeRefinementQuestionKey, setActiveRefinementQuestionKey] = useState("primary");
+  const [selectedRefinementAnswer, setSelectedRefinementAnswer] = useState({
+    questionKey: "",
+    value: "",
+  });
   const [isDiscovering, setIsDiscovering] = useState(false);
   const [isFinalizing, setIsFinalizing] = useState(false);
   const [isGeneratingPrompt, setIsGeneratingPrompt] = useState(false);
@@ -621,6 +695,10 @@ export function useMobileSearchController() {
   }, [followUpNotes]);
 
   useEffect(() => {
+    selectedRefinementAnswerRef.current = selectedRefinementAnswer;
+  }, [selectedRefinementAnswer]);
+
+  useEffect(() => {
     retryFeedbackRef.current = retryFeedback;
   }, [retryFeedback]);
 
@@ -642,6 +720,8 @@ export function useMobileSearchController() {
       previewItems: Array.isArray(discoverySummary?.previewItems) ? discoverySummary.previewItems : [],
       productQuery,
       refinementPrompt,
+      activeRefinementQuestionKey,
+      selectedRefinementAnswer,
       submittedQuery,
     };
 
@@ -653,7 +733,7 @@ export function useMobileSearchController() {
     if (refinementPrompt) {
       void saveFlowSnapshot({ ...baseSnapshot, phase: "refine" });
     }
-  }, [activeSearchSession, candidateRecovery, discoverySummary, finalResults, improvePicksSuggestions, productQuery, refinementPrompt]);
+  }, [activeRefinementQuestionKey, activeSearchSession, candidateRecovery, discoverySummary, finalResults, improvePicksSuggestions, productQuery, refinementPrompt, selectedRefinementAnswer]);
 
   useEffect(() => {
     let isMounted = true;
@@ -714,6 +794,15 @@ export function useMobileSearchController() {
       setSession(restoredSession);
       setProductQuery(snapshot.productQuery || snapshot.submittedQuery || "");
       setFollowUpNotes(snapshot.followUpNotes || "");
+      setActiveRefinementQuestionKey(
+        snapshot.activeRefinementQuestionKey === "alternate" ? "alternate" : "primary",
+      );
+      setSelectedRefinementAnswer(
+        validateSelectedRefinementAnswer(
+          snapshot.selectedRefinementAnswer,
+          snapshot.refinementPrompt,
+        ),
+      );
       setDiscoverySummary({
         amazonDomain: restoredSession.amazonDomain,
         candidateCount: restoredSession.candidateCount,
@@ -809,6 +898,8 @@ export function useMobileSearchController() {
     setFinalResults([]);
     setImprovePicksSuggestions([]);
     setFollowUpNotes(String(initialFollowUpNotes ?? "").trim());
+    setActiveRefinementQuestionKey("primary");
+    setSelectedRefinementAnswer({ questionKey: "", value: "" });
     void clearFlowSnapshot();
     setRetryFeedback("");
     setPhaseEvents([
@@ -1172,9 +1263,33 @@ export function useMobileSearchController() {
     return refreshedDiscovery;
   }
 
+  function selectRefinementAnswer(nextAnswer) {
+    const normalizedAnswer = validateSelectedRefinementAnswer(nextAnswer, refinementPrompt);
+
+    if (
+      normalizedAnswer.value &&
+      normalizedAnswer.questionKey !== activeRefinementQuestionKey
+    ) {
+      return;
+    }
+
+    setSelectedRefinementAnswer(normalizedAnswer);
+  }
+
+  function showAlternateRefinementQuestion() {
+    if (!refinementPrompt?.alternatePrompt || !refinementPrompt?.alternateAnswerOptions?.length) {
+      return;
+    }
+
+    setActiveRefinementQuestionKey("alternate");
+    setSelectedRefinementAnswer({ questionKey: "", value: "" });
+  }
+
   async function finalizeFocusedPicks({ followUpNotesOverride } = {}) {
     const session = activeSearchSessionRef.current;
-    const notesForRequest = String(followUpNotesOverride ?? followUpNotes).trim();
+    const notesForRequest = followUpNotesOverride !== undefined
+      ? String(followUpNotesOverride).trim()
+      : buildEffectiveFollowUpNotes(followUpNotes, selectedRefinementAnswer);
     const retryContext = session?.retryContext || null;
 
     if (finalizingRequestIdRef.current) {
@@ -1374,6 +1489,10 @@ export function useMobileSearchController() {
     const session = activeSearchSessionRef.current;
     const normalizedVisibleFeedback = retryFeedback.trim();
     const normalizedFeedback = String(rejectionFeedback ?? normalizedVisibleFeedback).trim();
+    const effectiveFollowUpNotes = buildEffectiveFollowUpNotes(
+      followUpNotes,
+      selectedRefinementAnswer,
+    );
 
     if (finalResults.length === 0 || !normalizedFeedback || isGeneratingRetryAdvice) {
       console.info("[Focamai API] retry-advice request not attempted", {
@@ -1395,7 +1514,7 @@ export function useMobileSearchController() {
     const requestId = retryAdviceRequestIdRef.current + 1;
     const snapshot = {
       feedback: normalizedFeedback,
-      followUpNotes,
+      followUpNotes: effectiveFollowUpNotes,
       requestId,
       resultsKey: getFinalResultsKey(finalResults),
       searchRequestId: session.requestId,
@@ -1414,7 +1533,10 @@ export function useMobileSearchController() {
         retryAdviceRequestIdRef.current !== snapshot.requestId ||
         activeSearchSessionRef.current?.requestId !== snapshot.searchRequestId ||
         activeSearchSessionRef.current?.submittedQuery !== snapshot.submittedQuery ||
-        followUpNotesRef.current !== snapshot.followUpNotes ||
+        buildEffectiveFollowUpNotes(
+          followUpNotesRef.current,
+          selectedRefinementAnswerRef.current,
+        ) !== snapshot.followUpNotes ||
         retryFeedbackRef.current.trim() !== snapshot.visibleFeedback ||
         getFinalResultsKey(finalResultsRef.current) !== snapshot.resultsKey
       );
@@ -1422,7 +1544,7 @@ export function useMobileSearchController() {
 
     try {
       const payload = await getRetryAdvice({
-        followUpNotes,
+        followUpNotes: effectiveFollowUpNotes,
         query: session.submittedQuery,
         rejectionFeedback: normalizedFeedback,
         shortlist: finalResults.map((result) => ({
@@ -1484,7 +1606,10 @@ export function useMobileSearchController() {
 
     return startDiscoverySearch({
       cacheMode: "refresh",
-      initialFollowUpNotes: followUpNotesRef.current,
+      initialFollowUpNotes: buildEffectiveFollowUpNotes(
+        followUpNotesRef.current,
+        selectedRefinementAnswerRef.current,
+      ),
       queryOverride: recovery.suggestedQuery,
       retrySearchQueryOverride: recovery.suggestedQuery,
     });
@@ -1543,6 +1668,8 @@ export function useMobileSearchController() {
     setCandidateRecovery(null);
     setRefinementPrompt(MOCK_REFINEMENT_PROMPT);
     setFollowUpNotes("");
+    setActiveRefinementQuestionKey("primary");
+    setSelectedRefinementAnswer({ questionKey: "", value: "" });
     setErrorMessage("");
     setIsDiscovering(false);
     setIsGeneratingPrompt(false);
@@ -1620,6 +1747,8 @@ export function useMobileSearchController() {
     setFinalResults([]);
     setImprovePicksSuggestions([]);
     setFollowUpNotes("");
+    setActiveRefinementQuestionKey("primary");
+    setSelectedRefinementAnswer({ questionKey: "", value: "" });
     setRefinementPrompt(null);
     setRetryFeedback("");
     setErrorMessage(
@@ -1679,6 +1808,7 @@ export function useMobileSearchController() {
   }
 
   return {
+    activeRefinementQuestionKey,
     activeSearchSession,
     candidateRecovery,
     canFinalize,
@@ -1710,6 +1840,7 @@ export function useMobileSearchController() {
     retryAdviceError,
     retryFeedback,
     retrySearchQuery,
+    selectedRefinementAnswer,
     selectedAmazonDomain,
     showMarketplacePrompt,
     confirmSelectedAmazonDomain,
@@ -1717,6 +1848,8 @@ export function useMobileSearchController() {
     setProductQuery,
     setRetryFeedback: updateRetryFeedback,
     setSelectedAmazonDomain,
+    selectRefinementAnswer,
+    showAlternateRefinementQuestion,
     startDiscoverySearch,
     ...(__DEV__ ? { loadDevFixture } : {}),
   };

@@ -4,10 +4,22 @@
 export const MOCK_PRODUCT_QUERY = "ergonomic office chair for long work sessions";
 
 export const MOCK_REFINEMENT_PROMPT = {
+  alternateAnswerOptions: [
+    { label: "Under $250", prompt: "I want to stay under $250." },
+    { label: "$250–$500", prompt: "My budget is between $250 and $500." },
+    { label: "Above $500", prompt: "I can spend more than $500." },
+    { label: "No preference", prompt: "I do not have a budget preference." },
+  ],
+  alternatePrompt: "What is your target budget for the chair?",
+  answerOptions: [
+    { label: "Every workday", prompt: "I will use the chair every workday." },
+    { label: "A few times weekly", prompt: "I will use the chair a few times each week." },
+    { label: "Occasionally", prompt: "I will use the chair occasionally." },
+    { label: "Not sure", prompt: "I am not sure how often I will use the chair." },
+  ],
   followUpPlaceholder: "Add budget, size, must-haves, dealbreakers, or how you plan to use it.",
-  helperText: "The more context you give, the better the picks.",
-  prompt: "What matters most for how you'll use this chair?",
-  suggestedRefinements: ["Under $400", "Lumbar support", "Mesh backrest", "Adjustable armrests"],
+  helperText: "",
+  prompt: "How often will you use this chair?",
   timingMs: 320,
 };
 

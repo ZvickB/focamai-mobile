@@ -43,6 +43,7 @@ export default function FollowUpScreen({ navigation }) {
   const isCompact = width <= 415;
   const { handleInputFocus, scrollViewRef } = useKeyboardInputScroll();
   const {
+    activeRefinementQuestionKey,
     canFinalize,
     errorMessage,
     finalResults,
@@ -51,9 +52,11 @@ export default function FollowUpScreen({ navigation }) {
     hasStartedSearch,
     isFinalizing,
     isGeneratingPrompt,
-    productQuery,
     refinementPrompt,
+    selectedRefinementAnswer,
+    selectRefinementAnswer,
     setFollowUpNotes,
+    showAlternateRefinementQuestion,
   } = useSearchFlow();
   const currentPickCount = Array.isArray(finalResults) ? finalResults.length : 0;
   const canUseSecondaryAction = currentPickCount > 0 || canFinalize;
@@ -112,7 +115,7 @@ export default function FollowUpScreen({ navigation }) {
             onPress={finalizeAndOpenResults}
             className="min-h-[56px] bg-accent shadow-sm"
           >
-            Update my picks
+            {currentPickCount > 0 ? "Update my picks" : "Show focused picks"}
           </Button>
           <View className="flex-row items-center justify-center gap-3">
             <View className="h-[2px] w-11 rounded-full bg-ember opacity-60" />
@@ -130,7 +133,7 @@ export default function FollowUpScreen({ navigation }) {
                     : "text-base font-semibold text-stone-400"
                 }
               >
-                {currentPickCount > 0 ? "Return to picks" : "Skip for now"}
+                {currentPickCount > 0 ? "Return to picks" : "Skip and show results"}
               </Text>
             </Pressable>
             <View className="h-[2px] w-11 rounded-full bg-ember opacity-60" />
@@ -153,13 +156,15 @@ export default function FollowUpScreen({ navigation }) {
         ) : (
           <>
             <SearchRefineSection
+              activeQuestionKey={activeRefinementQuestionKey}
               followUpNotes={followUpNotes}
               isGeneratingPrompt={isGeneratingPrompt}
               onNotesFocus={handleInputFocus}
+              onSelectAnswer={selectRefinementAnswer}
+              onShowAlternateQuestion={showAlternateRefinementQuestion}
               refinementPrompt={refinementPrompt}
+              selectedAnswer={selectedRefinementAnswer}
               setFollowUpNotes={setFollowUpNotes}
-              productQuery={productQuery}
-              suggestedRefinements={refinementPrompt?.suggestedRefinements}
             />
 
             {errorMessage ? (

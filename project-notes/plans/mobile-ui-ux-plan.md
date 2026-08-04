@@ -226,15 +226,16 @@ Done when:
 - The user can understand the app's first action in a few seconds and submit without distraction.
 
 ### Slice 5 - Follow-up/refine screen
-Status: complete in code, component smoke verified, and Android export verified. The Follow-up screen now leads with one optional AI question, keeps the multiline answer natural, keeps `Get focused picks` and `Skip and show results` together in the same surface, shows query-quality suggestions as a quiet secondary prompt, and has readable prompt-loading/fallback states. The follow-up hard-constraint refresh product-completeness slice is now implemented in the mobile controller: kosher/Jewish-use, dietary/allergy, safety/material, and compatibility/exclusion notes trigger one refreshed discovery request with `cacheMode=refresh` before finalize.
+Status: updated in code for the matched-answer direction; focused component/controller/API Jest and Android Expo export pass, with live Expo Go QA against the updated shared backend still to run. The Follow-up screen leads with `One quick question`, four complete single-select answers, a separate optional multiline/voice note, `Show focused picks`, and `Skip and show results`. The selected answer and notes remain separate on screen but combine for downstream context, including the existing hard-constraint refresh.
 
 Goal: make the one-question refinement feel useful, optional, and low-friction.
 
 Do:
 - Show the AI question prominently.
-- Let the user answer naturally in a multiline input.
+- Let one prepared answer be complete enough to use by itself.
+- Keep `Anything else? Optional` as a separate natural multiline/voice input.
 - Keep actions clear:
-  - primary: get focused picks
+  - primary: show focused picks
   - secondary: skip and show results
 - Place query-quality suggestions without interrupting the user.
 - Make loading and fallback prompt states readable.
@@ -243,7 +244,8 @@ Important product parity:
 - Web refreshes discovery before finalize when follow-up notes add hard constraints. Mobile now mirrors this through a bounded controller slice without copying the full web guided-search hook.
 
 Avoid:
-- Turning follow-up into many preference controls.
+- Adding more than the single four-choice question.
+- Returning generic or incomplete answers that require the shopper to finish them.
 - Making the user feel blocked if they do not answer.
 - Overexplaining the backend phases.
 
